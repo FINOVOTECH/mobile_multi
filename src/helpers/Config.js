@@ -1,0 +1,107 @@
+export const baseUrl = "https://onekyc.finovo.tech:8015";
+// export const baseUrl = "http://192.168.100.40:8018";
+export const store_key_login_details = "token"
+
+export const clientCode = "clientCode";
+export const WEIGHTS = {
+    regular: "normal",
+    bold: "bold",
+    semibold: "500",
+    medium: "600",
+    light: "300",
+    extraBold: "900"
+};
+
+export const fontFamilys = {
+    Poppins_Black: 'Poppins-Black',
+    Poppins_BlackItalic: 'Poppins-BlackItalic',
+    Poppins_Bold: 'Poppins-Bold',
+    Poppins_BoldItalic: 'Poppins-BoldItalic',
+    Poppins_ExtraBold: 'Poppins-ExtraBold',
+    Poppins_ExtraBoldItalic: 'Poppins-ExtraBoldItalic',
+    Poppins_ExtraLightItalic: 'Poppins-ExtraLightItalic',
+    Poppins_Italic: 'Poppins-Italic',
+    Poppins_Light: 'Poppins-Light',
+    Poppins_LightItalic: 'Poppins-LightItalic',
+    Poppins_Medium: 'Poppins-Medium',
+    Poppins_MediumItalic: 'Poppins-MediumItalic',
+    Poppins_Regular: 'Poppins-Regular',
+    Poppins_SemiBold: 'Poppins-SemiBold',
+    Poppins_SemiBoldItalic: 'Poppins-SemiBoldItalic',
+    Poppins_Thin: 'Poppins-Thin',
+    Poppins_ThinItalic: 'Poppins-ThinItalic',
+
+};
+
+export const Colors = {
+    primary: '#1768BF',
+    secondary: '#94BC39',
+    bottomTabColor: '#f6fbff',
+    activeColor: '#000000',
+    inactiveColor: '#000000',
+    inputField: '#F6F6F6',
+    bodyBg: '#F5F5F5',
+    errorField: '#FFE8E8',
+    errorText: '#BD0000',
+    successField: '#F5FFEA',
+    successText: '#6FB423',
+    defaultColor: '#FFFF',
+    lineColor: '#204461',
+    inputField_1: '#E4E4E4',
+    errorFieldBorder: '#f02424',
+    black: '#000',
+    white: '#FFFFFF',
+    borderColor: '#FFFFFF',
+    borderColor1: 'rgba(52, 52, 52, 0.3)',
+    bottomColor: "#0061A1",
+    bottomTabColor: "rgba(28, 30, 32, 1)",
+    red: '#A41616',
+    searchBgInput: "#ECECEC",
+    searchBriderInput: "#C6CACF",
+    yellow: "#FFEE02",
+    green: "#098F3C",
+    cyan_blue: '#f6fbff',
+    purple_main:'#5F3C80',
+    itemSeparatorBorder: "#515151",
+    gray:"#c9c6c5",
+    RGBAColors: {
+        primary: 'rgba(32, 78, 113, 1.0)',
+        secondary: 'rgba(173, 59, 68, 1.0)',
+        inputField: '#F6F6F6',
+        bodyBg: '#F5F5F5',
+        errorField: '#FFE8E8',
+        errorText: '#BD0000',
+        successField: '#F5FFEA',
+        successText: '#6FB423',
+        defaultColor: '#fff',
+        lineColor: 'rgba(32, 68, 97, 1.0)',
+        inputField_1: 'rgba(228, 228, 228, 1.0)',
+        themeColor: 'rgba(32, 68, 97, 1.0)',
+        lightBlue: 'rgba(0, 142, 238, 1)',
+        lightBlack: 'rgba(28, 30, 32, 0.3)',
+        lightBlack1: 'rgba(52, 52, 52, 0.33)',
+        white: 'rgba(255, 255, 255, 0.5)',
+        lightWhite: 'rgba(255, 255, 255, 0.5)'
+    },
+    textColor: {
+        textColor_1: "#FFFFFF",
+        textColor_2: "#787878",
+        textColor_3: "#6FCB4E",
+        textColor_4: "#888888",
+        textColor_5: "rgba(174, 174, 174, 0.8)",
+        textColor_6: "rgba(203, 130, 78, 1)",
+        textColor_7: "rgba(63, 148, 205, 1)",
+
+    },
+    backgroundColors: {
+        bg_1: '#060606',
+        bg_2: "#1c241f",
+        bg_3: "#e4e4e5",
+        bg_4: "#1C1E20",
+        bg_5: "rgba(78, 203, 113, 0.19)",
+        bg_6: "rgba(203, 145, 78, 0.19)",
+        bg_7: "rgba(137, 59, 59, 0.19)",
+        bg_8: "rgba(2, 28, 45, 1)",
+        bg_9: "rgba(0, 90, 195, 1)",
+    },
+};

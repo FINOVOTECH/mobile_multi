@@ -1,0 +1,3637 @@
+export default MandateSelection;
+
+// components/common/DatePickerSection.js
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  TouchableWithoutFeedback,
+  Platform
+} from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+const DatePickerSection = ({
+  selectedDate,
+  setSelectedDate,
+  showDatePicker,
+  setShowDatePicker,
+  errors,
+  setErrors,
+  styles
+}) => {
+  const getMinimumDateForMandate = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    let minDate = new Date(now);
+
+    if (currentHour >= 14) { // After 2 PM
+      minDate.setDate(now.getDate() + 3); // Today + 3 days
+    } else {
+      minDate.setDate(now.getDate() + 2); // Today + 2 days
+    }
+
+    // Skip weekends
+    while (minDate.getDay() === 0 || minDate.getDay() === 6) {
+      minDate.setDate(minDate.getDate() + 1);
+    }
+
+    return minDate;
+  };
+
+  const onDateChange = (event, date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+
+    if (date) {
+      set// Common Components and Hooks
+// hooks/useMandate.js
+import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+
+export const useMandate = () => {
+  const UserData = useSelector(state => state.login.loginData);
+  const [mandateOptions, setMandateOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchingMandate = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${Config.baseUrl}/api/client/registration/mandate/history`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            clientcode: UserData?.user?.clientCode,
+            Authorization: `${UserData?.accessToken.replace(
+              /^"(.*)"$/,
+              '$1',
+            )}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        const filteredIds = data?.mandates.filter(item => item.UMRNNo !== null)
+          .map(item => item);
+        setMandateOptions(filteredIds || []);
+      } else {
+        console.error('Error fetching mandate history:', data?.message);
+      }
+    } catch (error) {
+      console.error('Error fetching mandate history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchingMandate();
+  }, []);
+
+  return { mandateOptions, isLoading, fetchingMandate };
+};
+
+// components/common/StickyHeader.js
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+
+const StickyHeader = ({ navigation, investmentType, description, styles, SInfoSvg }) => (
+  <View style={styles.stickyHeader}>
+    <TouchableOpacity
+      onPress={() => navigation.goBack()}
+      style={styles.backButton}
+      activeOpacity={0.7}
+    >
+      <View style={styles.backArrow}>
+        <SInfoSvg.BackButton/>
+      </View>
+    </TouchableOpacity>
+    <View style={styles.headerContent}>
+      <Text style={styles.headerTitle}>{investmentType}</Text>
+      <Text style={styles.headerSubtitle} numberOfLines={2}>
+        {description || 'Investment Plan'}
+      </Text>
+    </View>
+  </View>
+);
+
+export default StickyHeader;
+
+// components/common/AmountSection.js
+import React from 'react';
+import { View, Text, TextInput, Keyboard } from 'react-native';
+
+const AmountSection = ({
+  customAmount,
+  selectedAmount,
+  minimumAmount,
+  errors,
+  handleCustomAmountChange,
+  handleAmountInputFocus,
+  amountInputRef,
+  styles,
+  label
+}) => (
+  <View style={styles.compactAmountSection}>
+    <Text style={styles.compactAmountLabel}>{label}</Text>
+    <View style={styles.compactAmountContainer}>
+      <Text style={styles.compactRupeeSymbol}>₹</Text>
+      <TextInput
+        ref={amountInputRef}
+        style={[styles.compactAmountInput, errors.amount && styles.errorInput]}
+        value={customAmount || (selectedAmount > 0 ? selectedAmount.toString() : '')}
+        onChangeText={handleCustomAmountChange}
+        onFocus={handleAmountInputFocus}
+        keyboardType="numeric"
+        placeholder="Enter amount"
+        placeholderTextColor="#999999"
+        maxLength={10}
+        returnKeyType="done"
+        onSubmitEditing={() => Keyboard.dismiss()}
+      />
+    </View>
+    <Text style={styles.compactMinimumText}>
+      Min: ₹{minimumAmount.toLocaleString()}
+    </Text>
+    {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
+  </View>
+);
+
+export default AmountSection;
+
+// components/common/QuickAmountSection.js
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+
+const QuickAmountSection = ({
+  amounts,
+  selectedAmount,
+  customAmount,
+  handleAmountSelect,
+  styles
+}) => (
+  <View style={styles.compactQuickAmountSection}>
+    <Text style={styles.compactSectionTitle}>Quick Select</Text>
+    <View style={styles.compactQuickAmountContainer}>
+      {amounts.map((amount, index) => (
+        <TouchableOpacity
+          key={`${amount}-${index}`}
+          style={[
+            styles.compactQuickAmountButton,
+            selectedAmount === amount && !customAmount && styles.selectedCompactAmountButton,
+          ]}
+          onPress={() => handleAmountSelect(amount)}
+          activeOpacity={0.7}
+        >
+          <Text style={[
+            styles.compactQuickAmountText,
+            selectedAmount === amount && !customAmount && styles.selectedCompactAmountText,
+          ]}>
+            ₹{amount.toLocaleString()}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  </View>
+);
+
+export default QuickAmountSection;
+
+// components/common/PaymentMethodSection.js
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+
+const PaymentMethodSection = ({
+  paymentToday,
+  setPaymentToday,
+  setErrors,
+  styles
+}) => (
+  <View style={styles.compactPaymentTodaySection}>
+    <Text style={styles.compactSectionTitle}>Payment Method</Text>
+    <View style={styles.paymentTodayContainer}>
+      <TouchableOpacity
+        style={[
+          styles.paymentTodayOption,
+          paymentToday && styles.selectedPaymentTodayOption
+        ]}
+        onPress={() => {
+          setPaymentToday(true);
+          setErrors(prev => ({...prev, mandate: '', date: ''}));
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={[
+          styles.radioButton,
+          paymentToday && styles.selectedRadioButton
+        ]}>
+          {paymentToday && <View style={styles.radioButtonInner} />}
+        </View>
+        <Text style={[
+          styles.paymentTodayText,
+          paymentToday && styles.selectedPaymentTodayText
+        ]}>
+          Pay via UPI
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[
+          styles.paymentTodayOption,
+          !paymentToday && styles.selectedPaymentTodayOption
+        ]}
+        onPress={() => setPaymentToday(false)}
+        activeOpacity={0.7}
+      >
+        <View style={[
+          styles.radioButton,
+          !paymentToday && styles.selectedRadioButton
+        ]}>
+          {!paymentToday && <View style={styles.radioButtonInner} />}
+        </View>
+        <Text style={[
+          styles.paymentTodayText,
+          !paymentToday && styles.selectedPaymentTodayText
+        ]}>
+          Pay via Mandate
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+);
+
+export default PaymentMethodSection;
+
+// components/LUMPSUM/LumpsumInvestment.js
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  Platform,
+  Keyboard
+} from 'react-native';
+import { useSelector } from 'react-redux';
+import StickyHeader from '../common/StickyHeader';
+import AmountSection from '../common/AmountSection';
+import QuickAmountSection from '../common/QuickAmountSection';
+import PaymentMethodSection from '../common/PaymentMethodSection';
+import MandateSelection from '../common/MandateSelection';
+import { useMandate } from '../../hooks/useMandate';
+
+const LumpsumInvestment = ({ navigation, styles, Config, SInfoSvg }) => {
+  const InvestData = useSelector(state => state.marketWatch.investment);
+  const UserData = useSelector(state => state.login.loginData);
+  
+  const [selectedAmount, setSelectedAmount] = useState(0);
+  const [customAmount, setCustomAmount] = useState('');
+  const [minimumAmount, setMinimumAmount] = useState(500);
+  const [paymentToday, setPaymentToday] = useState(true);
+  const [selectedMandate, setSelectedMandate] = useState(null);
+  const [showMandateModal, setShowMandateModal] = useState(false);
+  const [errors, setErrors] = useState({});
+  
+  const scrollViewRef = useRef(null);
+  const amountInputRef = useRef(null);
+  const { mandateOptions } = useMandate();
+
+  // Get minimum amount for LUMPSUM
+  useEffect(() => {
+    if (InvestData && InvestData.purchaseMinimumAmount) {
+      const minAmount = parseFloat(InvestData.purchaseMinimumAmount || '500');
+      setMinimumAmount(minAmount);
+      setSelectedAmount(minAmount);
+    }
+  }, [InvestData]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    const amount = getCurrentAmount();
+
+    if (amount === 0) {
+      newErrors.amount = 'Please enter an amount';
+    } else if (amount < minimumAmount) {
+      newErrors.amount = `Minimum amount is ₹${minimumAmount}`;
+    }
+
+    if (!paymentToday && !selectedMandate) {
+      newErrors.mandate = 'Please select a mandate';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAmountSelect = amount => {
+    if (amount < minimumAmount) {
+      setErrors(prev => ({...prev, amount: `Minimum amount is ₹${minimumAmount}`}));
+      return;
+    }
+    setSelectedAmount(amount);
+    setCustomAmount('');
+    setErrors(prev => ({...prev, amount: ''}));
+    Keyboard.dismiss();
+  };
+
+  const handleCustomAmountChange = text => {
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setCustomAmount(numericValue);
+    setSelectedAmount(0);
+    setErrors(prev => ({...prev, amount: ''}));
+  };
+
+  const getCurrentAmount = () => {
+    return customAmount ? parseInt(customAmount) || 0 : selectedAmount;
+  };
+
+  const handleAmountInputFocus = () => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  };
+
+  const handleInvestment = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const amount = getCurrentAmount();
+    const payload = {
+      amount: amount.toString(),
+      buyType: "FRESH",
+      schemaCode: InvestData?.schemeCode,
+      mandateId: paymentToday ? "" : selectedMandate?.mandateId,
+    };
+
+    try {
+      const response = await fetch(`${Config.baseUrl}/api/v1/order/purchase/order/entry`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          clientcode: UserData?.user?.clientCode,
+          Authorization: UserData?.accessToken?.replace(/^"|"$/g, ''),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      console.log('Lumpsum Investment Response:', result);
+
+      if (response.ok) {
+        navigation.navigate("PaymentComponent");
+      } else {
+        setErrors({general: result?.message || 'Something went wrong.'});
+      }
+    } catch (error) {
+      console.error('Investment Error:', error);
+      setErrors({general: 'Network error. Please try again.'});
+    }
+  };
+
+  const quickAmounts = [500, 1000, 2000, 5000, 8000, 10000];
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
+
+      <StickyHeader 
+        navigation={navigation}
+        investmentType="LUMPSUM"
+        description={InvestData?.description}
+        styles={styles}
+        SInfoSvg={SInfoSvg}
+      />
+
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.compactScrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AmountSection
+          customAmount={customAmount}
+          selectedAmount={selectedAmount}
+          minimumAmount={minimumAmount}
+          errors={errors}
+          handleCustomAmountChange={handleCustomAmountChange}
+          handleAmountInputFocus={handleAmountInputFocus}
+          amountInputRef={amountInputRef}
+          styles={styles}
+          label="Investment amount"
+        />
+        
+        <QuickAmountSection
+          amounts={quickAmounts}
+          selectedAmount={selectedAmount}
+          customAmount={customAmount}
+          handleAmountSelect={handleAmountSelect}
+          styles={styles}
+        />
+        
+        <PaymentMethodSection
+          paymentToday={paymentToday}
+          setPaymentToday={setPaymentToday}
+          setErrors={setErrors}
+          styles={styles}
+        />
+        
+        {!paymentToday && (
+          <MandateSelection
+            selectedMandate={selectedMandate}
+            setSelectedMandate={setSelectedMandate}
+            showMandateModal={showMandateModal}
+            setShowMandateModal={setShowMandateModal}
+            mandateOptions={mandateOptions}
+            errors={errors}
+            setErrors={setErrors}
+            styles={styles}
+            Config={Config}
+          />
+        )}
+        
+        {errors.general && (
+          <View style={styles.generalErrorContainer}>
+            <Text style={styles.errorText}>{errors.general}</Text>
+          </View>
+        )}
+        
+        <View style={styles.compactBottomPadding} />
+      </ScrollView>
+
+      <View style={styles.bottomButtons}>
+        <TouchableOpacity
+          style={styles.investButton}
+          onPress={handleInvestment}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.investButtonText}>
+            Invest Now
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+export default LumpsumInvestment;
+
+// components/SIP/SipInvestment.js
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  Platform,
+  Keyboard
+} from 'react-native';
+import { useSelector } from 'react-redux';
+import StickyHeader from '../common/StickyHeader';
+import AmountSection from '../common/AmountSection';
+import QuickAmountSection from '../common/QuickAmountSection';
+import PaymentMethodSection from '../common/PaymentMethodSection';
+import MandateSelection from '../common/MandateSelection';
+import DatePickerSection from '../common/DatePickerSection';
+import { useMandate } from '../../hooks/useMandate';
+
+const SipInvestment = ({ navigation, styles, Config, SInfoSvg }) => {
+  const InvestData = useSelector(state => state.marketWatch.investment);
+  const UserData = useSelector(state => state.login.loginData);
+  
+  const [selectedAmount, setSelectedAmount] = useState(0);
+  const [customAmount, setCustomAmount] = useState('');
+  const [minimumAmount, setMinimumAmount] = useState(1000);
+  const [paymentToday, setPaymentToday] = useState(true);
+  const [selectedMandate, setSelectedMandate] = useState(null);
+  const [showMandateModal, setShowMandateModal] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [errors, setErrors] = useState({});
+  
+  const scrollViewRef = useRef(null);
+  const amountInputRef = useRef(null);
+  const { mandateOptions } = useMandate();
+
+  // Get minimum amount from MONTHLY frequency for SIP
+  useEffect(() => {
+    if (InvestData && InvestData.frequency && InvestData.frequency.length > 0) {
+      const monthlyIndex = InvestData.frequency.findIndex(freq => freq === 'MONTHLY');
+      if (monthlyIndex !== -1 && InvestData.sipMinimumInstallmentAmount) {
+        const minAmount = parseFloat(InvestData.sipMinimumInstallmentAmount[monthlyIndex] || '500');
+        setMinimumAmount(minAmount);
+        setSelectedAmount(minAmount);
+        setCustomAmount('');
+      }
+    }
+  }, [InvestData]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    const amount = getCurrentAmount();
+
+    if (amount === 0) {
+      newErrors.amount = 'Please enter an amount';
+    } else if (amount < minimumAmount) {
+      newErrors.amount = `Minimum amount is ₹${minimumAmount}`;
+    }
+
+    if (!paymentToday && !selectedMandate) {
+      newErrors.mandate = 'Please select a mandate';
+    }
+
+    if (!paymentToday && !selectedDate) {
+      newErrors.date = 'Please select a date';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const getTodayOrNextBusinessDay = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    let date = new Date(now);
+
+    if (currentHour >= 15) {
+      date.setDate(now.getDate() + 1);
+      while (date.getDay() === 0 || date.getDay() === 6) {
+        date.setDate(date.getDate() + 1);
+      }
+    }
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  };
+
+  const handleAmountSelect = amount => {
+    if (amount < minimumAmount) {
+      setErrors(prev => ({...prev, amount: `Minimum amount is ₹${minimumAmount}`}));
+      return;
+    }
+    setSelectedAmount(amount);
+    setCustomAmount('');
+    setErrors(prev => ({...prev, amount: ''}));
+    Keyboard.dismiss();
+  };
+
+  const handleCustomAmountChange = text => {
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setCustomAmount(numericValue);
+    setSelectedAmount(0);
+    setErrors(prev => ({...prev, amount: ''}));
+  };
+
+  const getCurrentAmount = () => {
+    return customAmount ? parseInt(customAmount) || 0 : selectedAmount;
+  };
+
+  const handleAmountInputFocus = () => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  };
+
+  const handleInvestment = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const amount = getCurrentAmount();
+    const startDate = getTodayOrNextBusinessDay();
+    
+    const payload = {
+      installmentAmount: amount.toString(),
+      frequencyType: 'MONTHLY',
+      noOfInstallment: 300,
+      mandateId: selectedMandate?.mandateId || "",
+      firstOrderToday: true,
+      startDate: startDate,
+      schemaCode: InvestData?.schemeCode,
+      buyType: "FRESH",
+    };
+
+    try {
+      const response = await fetch(`${Config.baseUrl}/api/v1/order/purchase/sip/entry`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          clientcode: UserData?.user?.clientCode,
+          Authorization: UserData?.accessToken?.replace(/^"|"$/g, ''),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      console.log('SIP Investment Response:', result);
+
+      if (response.ok) {
+        navigation.navigate("PaymentComponent");
+      } else {
+        setErrors({general: result?.message || 'Something went wrong.'});
+      }
+    } catch (error) {
+      console.error('Investment Error:', error);
+      setErrors({general: 'Network error. Please try again.'});
+    }
+  };
+
+  const quickAmounts = [100, 500, 1000, 1500, 2000, 5000];
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
+
+      <StickyHeader 
+        navigation={navigation}
+        investmentType="SIP"
+        description={InvestData?.description}
+        styles={styles}
+        SInfoSvg={SInfoSvg}
+      />
+
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.compactScrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AmountSection
+          customAmount={customAmount}
+          selectedAmount={selectedAmount}
+          minimumAmount={minimumAmount}
+          errors={errors}
+          handleCustomAmountChange={handleCustomAmountChange}
+          handleAmountInputFocus={handleAmountInputFocus}
+          amountInputRef={amountInputRef}
+          styles={styles}
+          label="Instalment amount"
+        />
+        
+        <QuickAmountSection
+          amounts={quickAmounts}
+          selectedAmount={selectedAmount}
+          customAmount={customAmount}
+          handleAmountSelect={handleAmountSelect}
+          styles={styles}
+        />
+        
+        <PaymentMethodSection
+          paymentToday={paymentToday}
+          setPaymentToday={setPaymentToday}
+          setErrors={setErrors}
+          styles={styles}
+        />
+
+        {/* For SIP, mandate is required */}
+        <MandateSelection
+          selectedMandate={selectedMandate}
+          setSelectedMandate={setSelectedMandate}
+          showMandateModal={showMandateModal}
+          setShowMandateModal={setShowMandateModal}
+          mandateOptions={mandateOptions}
+          errors={errors}
+          setErrors={setErrors}
+          styles={styles}
+          Config={Config}
+        />
+        
+        {!paymentToday && (
+          <DatePickerSection
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            showDatePicker={showDatePicker}
+            setShowDatePicker={setShowDatePicker}
+            errors={errors}
+            setErrors={setErrors}
+            styles={styles}
+          />
+        )}
+        
+        {errors.general && (
+          <View style={styles.generalErrorContainer}>
+            <Text style={styles.errorText}>{errors.general}</Text>
+          </View>
+        )}
+        
+        <View style={styles.compactBottomPadding} />
+      </ScrollView>
+
+      <View style={styles.bottomButtons}>
+        <TouchableOpacity
+          style={styles.investButton}
+          onPress={handleInvestment}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.investButtonText}>
+            Start SIP
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+export default SipInvestment;
+
+// components/common/MandateSelection.js
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  TouchableWithoutFeedback
+} from 'react-native';
+
+const MandateSelection = ({
+  selectedMandate,
+  setSelectedMandate,
+  showMandateModal,
+  setShowMandateModal,
+  mandateOptions,
+  errors,
+  setErrors,
+  styles,
+  Config
+}) => {
+  const handleMandateSelect = (mandate) => {
+    setSelectedMandate(mandate);
+    setShowMandateModal(false);
+    setErrors(prev => ({...prev, mandate: ''}));
+  };
+
+  return (
+    <View style={styles.mandateContainer}>
+      <Text style={styles.compactSectionTitle}>Mandate</Text>
+      <TouchableOpacity
+        style={[styles.mandateSelector, errors.mandate && styles.errorInput]}
+        onPress={() => setShowMandateModal(true)}
+        activeOpacity={0.7}
+      >
+        {selectedMandate ? (
+          <>
+            <View style={[styles.mandateLogo, { backgroundColor: Config.Colors.primary }]}>
+              <Text style={styles.mandateLogoText}>{selectedMandate?.bankName.slice(0,1)}</Text>
+            </View>
+            <View style={styles.mandateDetails}>
+              <Text style={styles.mandateId}>{selectedMandate?.mandateId}</Text>
+              <Text style={styles.mandateBankName}>Bank Name: {selectedMandate?.bankName}</Text>
+            </View>
+          </>
+        ) : (
+          <Text style={styles.mandatePlaceholder}>Select mandate</Text>
+        )}
+        <Text style={styles.mandateArrow}>⌄</Text>
+      </TouchableOpacity>
+      {errors.mandate && <Text style={styles.errorText}>{errors.mandate}</Text>}
+
+      <Modal
+        visible={showMandateModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowMandateModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowMandateModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.mandateModalContainer}>
+                <View style={styles.mandateModalHeader}>
+                  <Text style={styles.mandateModalTitle}>Select Mandate</Text>
+                  <TouchableOpacity onPress={() => setShowMandateModal(false)}>
+                    <Text style={styles.mandateModalClose}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView style={styles.mandateList}>
+                  {mandateOptions?.map((mandate) => (
+                    <TouchableOpacity
+                      key={mandate?.UMRNNo}
+                      style={[
+                        styles.mandateOption,
+                        selectedMandate?.UMRNNo === mandate?.UMRNNo && styles?.selectedMandateOption
+                      ]}
+                      onPress={() => handleMandateSelect(mandate)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.mandateLogo, { backgroundColor: Config.Colors.primary }]}>
+                        <Text style={styles.mandateLogoText}>{mandate?.bankName.slice(0,1)}</Text>
+                      </View>
+                      <View style={styles.mandateDetails}>
+                        <Text style={styles.mandateId}>{mandate?.mandateId}</Text>
+                        <Text style={styles.mandateBankInfo}>
+                          Registration Date: {mandate?.registrationDate}
+                        </Text>
+                        <Text style={styles.mandateBankInfo}>
+                          Approved Date: {mandate?.approvedDate}
+                        </Text>
+                        <Text style={styles.mandateBankName}>Bank Name: {mandate?.bankName}</Text>
+                      </View>
+                      {selectedMandate?.UMRNNo === mandate?.UMRNNo && (
+                        <View style={styles.mandateCheckmark}>
+                          <Text style={styles.checkmarkText}>✓</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </View>
+  );
+};
+
+export default MandateSelection;
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Keyboard,
+  Platform,
+  Alert,
+} from 'react-native';
+import { useSelector } from 'react-redux';
+
+const LumpsumInvestment = ({ navigation }) => {
+  const InvestData = useSelector(state => state.marketWatch.investment);
+  const UserData = useSelector(state => state.login.loginData);
+  
+  // State variables specific to Lumpsum
+  const [selectedAmount, setSelectedAmount] = useState(0);
+  const [customAmount, setCustomAmount] = useState('');
+  const [minimumAmount, setMinimumAmount] = useState(500);
+  const scrollViewRef = useRef(null);
+  const amountInputRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [paymentModal, setPaymentModal] = useState(false);
+
+  // Set minimum amount for Lumpsum
+  useEffect(() => {
+    if (InvestData && InvestData.lumpsumMinimumAmount) {
+      const minAmount = parseFloat(InvestData.lumpsumMinimumAmount || '500');
+      setMinimumAmount(minAmount);
+      setSelectedAmount(minAmount);
+      setCustomAmount('');
+    }
+  }, [InvestData]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    const amount = getCurrentAmount();
+
+    if (amount === 0) {
+      newErrors.amount = 'Please enter an amount';
+    } else if (amount < minimumAmount) {
+      newErrors.amount = `Minimum amount is ₹${minimumAmount}`;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAmountSelect = amount => {
+    if (amount < minimumAmount) {
+      setErrors(prev => ({...prev, amount: `Minimum amount is ₹${minimumAmount}`}));
+      return;
+    }
+    setSelectedAmount(amount);
+    setCustomAmount('');
+    setErrors(prev => ({...prev, amount: ''}));
+    Keyboard.dismiss();
+  };
+
+  const handleCustomAmountChange = text => {
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setCustomAmount(numericValue);
+    setSelectedAmount(0);
+    setErrors(prev => ({...prev, amount: ''}));
+  };
+
+  const getCurrentAmount = () => {
+    return customAmount ? parseInt(customAmount) || 0 : selectedAmount;
+  };
+
+  const getQuickAmountButtons = () => {
+    return [500, 1000, 2000, 5000, 8000, 10000];
+  };
+
+  const handleAmountInputFocus = () => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  };
+
+  const handleLumpsumInvestment = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const amount = getCurrentAmount();
+    const payload = {
+      amount: amount.toString(),
+      buyType: "FRESH",
+      schemaCode: InvestData?.schemeCode,
+      mandateId: "", // Lumpsum doesn't need mandate for immediate payment
+    };
+
+    try {
+      setIsLoading(true);
+      console.log("Lumpsum Payload:", JSON.stringify(payload));
+      
+      const response = await fetch(`${Config.baseUrl}/api/v1/order/purchase/order/entry`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          clientcode: UserData?.user?.clientCode,
+          Authorization: UserData?.accessToken?.replace(/^"|"$/g, ''),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      console.log('Lumpsum Investment Response:', result);
+
+      if (response.ok) {
+        navigation.navigate("PaymentComponent");
+        setPaymentModal(true);
+      } else {
+        setErrors({general: result?.message || 'Something went wrong.'});
+      }
+    } catch (error) {
+      console.error('Lumpsum Investment Error:', error);
+      setErrors({general: 'Network error. Please try again.'});
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const StickyHeader = () => (
+    <View style={styles.stickyHeader}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        activeOpacity={0.7}
+      >
+        <View style={styles.backArrow}>
+          <SInfoSvg.BackButton/>
+        </View>
+      </TouchableOpacity>
+      <View style={styles.headerContent}>
+        <Text style={styles.headerTitle}>LUMPSUM</Text>
+        <Text style={styles.headerSubtitle} numberOfLines={2}>
+          {InvestData?.description || 'Investment Plan'}
+        </Text>
+      </View>
+    </View>
+  );
+
+  const AmountSection = () => (
+    <View style={styles.compactAmountSection}>
+      <Text style={styles.compactAmountLabel}>Investment amount</Text>
+      <View style={styles.compactAmountContainer}>
+        <Text style={styles.compactRupeeSymbol}>₹</Text>
+        <TextInput
+          ref={amountInputRef}
+          style={[styles.compactAmountInput, errors.amount && styles.errorInput]}
+          value={customAmount || (selectedAmount > 0 ? selectedAmount.toString() : '')}
+          onChangeText={handleCustomAmountChange}
+          onFocus={handleAmountInputFocus}
+          keyboardType="numeric"
+          placeholder="Enter amount"
+          placeholderTextColor="#999999"
+          maxLength={10}
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
+        />
+      </View>
+      <Text style={styles.compactMinimumText}>
+        Min: ₹{minimumAmount.toLocaleString()}
+      </Text>
+      {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
+    </View>
+  );
+
+  const CompactQuickAmountSection = () => (
+    <View style={styles.compactQuickAmountSection}>
+      <Text style={styles.compactSectionTitle}>Quick Select</Text>
+      <View style={styles.compactQuickAmountContainer}>
+        {getQuickAmountButtons().map((amount, index) => (
+          <TouchableOpacity
+            key={`${amount}-${index}`}
+            style={[
+              styles.compactQuickAmountButton,
+              selectedAmount === amount && !customAmount && styles.selectedCompactAmountButton,
+            ]}
+            onPress={() => handleAmountSelect(amount)}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.compactQuickAmountText,
+              selectedAmount === amount && !customAmount && styles.selectedCompactAmountText,
+            ]}>
+              ₹{amount.toLocaleString()}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const PaymentInfoSection = () => (
+    <View style={styles.compactPaymentTodaySection}>
+      <Text style={styles.compactSectionTitle}>Payment Method</Text>
+      <View style={styles.paymentInfoContainer}>
+        <Text style={styles.paymentInfoText}>
+          Your lumpsum investment will be processed immediately via UPI payment.
+        </Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
+
+      <StickyHeader />
+
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.compactScrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AmountSection />
+        <CompactQuickAmountSection />
+        <PaymentInfoSection />
+        
+        {errors.general && (
+          <View style={styles.generalErrorContainer}>
+            <Text style={styles.errorText}>{errors.general}</Text>
+          </View>
+        )}
+        
+        <View style={styles.compactBottomPadding} />
+      </ScrollView>
+
+      <View style={styles.bottomButtons}>
+        <TouchableOpacity
+          style={[styles.investButton, isLoading && styles.disabledButton]}
+          onPress={handleLumpsumInvestment}
+          activeOpacity={0.8}
+          disabled={isLoading}
+        >
+          <Text style={styles.investButtonText}>
+            {isLoading ? 'Processing...' : 'Invest Now'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+export default LumpsumInvestment;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Modal,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
+  Alert,
+} from 'react-native';
+import { useSelector } from 'react-redux';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+const SipInvestment = ({ navigation }) => {
+  const InvestData = useSelector(state => state.marketWatch.investment);
+  const UserData = useSelector(state => state.login.loginData);
+  
+  // State variables specific to SIP
+  const [selectedAmount, setSelectedAmount] = useState(0);
+  const [customAmount, setCustomAmount] = useState('');
+  const [minimumAmount, setMinimumAmount] = useState(1000);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const scrollViewRef = useRef(null);
+  const amountInputRef = useRef(null);
+  const [paymentToday, setPaymentToday] = useState(true);
+  const [selectedMandate, setSelectedMandate] = useState(null);
+  const [showMandateModal, setShowMandateModal] = useState(false);
+  const [mandateOptions, setMandateOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [paymentModal, setPaymentModal] = useState(false);
+
+  useEffect(() => {
+    fetchingMandate();
+  }, []);
+
+  const fetchingMandate = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${Config.baseUrl}/api/client/registration/mandate/history`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            clientcode: UserData?.user?.clientCode,
+            Authorization: `${UserData?.accessToken.replace(
+              /^"(.*)"$/,
+              '$1',
+            )}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+      console.log('Mandate history response:', data);
+
+      if (response.ok) {
+        const filteredIds = data?.mandates.filter(item => item.UMRNNo !== null)
+          .map(item => item);
+        setMandateOptions(filteredIds || []);
+      } else {
+        console.error('Error fetching mandate history:', data?.message);
+      }
+    } catch (error) {
+      console.error('Error fetching mandate history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Get minimum amount from MONTHLY frequency for SIP
+  useEffect(() => {
+    if (InvestData && InvestData.frequency && InvestData.frequency.length > 0) {
+      const monthlyIndex = InvestData.frequency.findIndex(freq => freq === 'MONTHLY');
+      if (monthlyIndex !== -1 && InvestData.sipMinimumInstallmentAmount) {
+        const minAmount = parseFloat(InvestData.sipMinimumInstallmentAmount[monthlyIndex] || '500');
+        setMinimumAmount(minAmount);
+        setSelectedAmount(minAmount);
+        setCustomAmount('');
+      }
+    }
+  }, [InvestData]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    const amount = getCurrentAmount();
+
+    if (amount === 0) {
+      newErrors.amount = 'Please enter an amount';
+    } else if (amount < minimumAmount) {
+      newErrors.amount = `Minimum amount is ₹${minimumAmount}`;
+    }
+
+    if (!paymentToday && !selectedMandate) {
+      newErrors.mandate = 'Please select a mandate';
+    }
+
+    if (!paymentToday && !selectedDate) {
+      newErrors.date = 'Please select a date';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const getMinimumDateForMandate = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    let minDate = new Date(now);
+
+    if (currentHour >= 14) { // After 2 PM
+      minDate.setDate(now.getDate() + 3); // Today + 3 days
+    } else {
+      minDate.setDate(now.getDate() + 2); // Today + 2 days
+    }
+
+    // Skip weekends
+    while (minDate.getDay() === 0 || minDate.getDay() === 6) {
+      minDate.setDate(minDate.getDate() + 1);
+    }
+
+    return minDate;
+  };
+
+  const getTodayOrNextBusinessDay = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    let date = new Date(now);
+
+    if (currentHour >= 15) {
+      date.setDate(now.getDate() + 1);
+      while (date.getDay() === 0 || date.getDay() === 6) {
+        date.setDate(date.getDate() + 1);
+      }
+    }
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  };
+
+  const handleAmountSelect = amount => {
+    if (amount < minimumAmount) {
+      setErrors(prev => ({...prev, amount: `Minimum amount is ₹${minimumAmount}`}));
+      return;
+    }
+    setSelectedAmount(amount);
+    setCustomAmount('');
+    setErrors(prev => ({...prev, amount: ''}));
+    Keyboard.dismiss();
+  };
+
+  const handleCustomAmountChange = text => {
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setCustomAmount(numericValue);
+    setSelectedAmount(0);
+    setErrors(prev => ({...prev, amount: ''}));
+  };
+
+  const getCurrentAmount = () => {
+    return customAmount ? parseInt(customAmount) || 0 : selectedAmount;
+  };
+
+  const getQuickAmountButtons = () => {
+    return [100, 500, 1000, 1500, 2000, 5000];
+  };
+
+  const handleAmountInputFocus = () => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  };
+
+  const onDateChange = (event, date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+
+    if (date) {
+      setSelectedDate(date);
+      setErrors(prev => ({...prev, date: ''}));
+      if (Platform.OS === 'ios') {
+        setShowDatePicker(false);
+      }
+    }
+  };
+
+  const getScheduleText = () => {
+    if (!selectedDate) return 'Select date';
+    
+    return selectedDate.toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
+  const handleSipInvestment = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const amount = getCurrentAmount();
+    const startDate = getTodayOrNextBusinessDay(selectedDate);
+    
+    const payload = {
+      installmentAmount: amount.toString(),
+      frequencyType: 'MONTHLY',
+      noOfInstallment: 300,
+      mandateId: paymentToday ? selectedMandate?.mandateId : selectedMandate?.mandateId,
+      firstOrderToday: true,
+      startDate: startDate,
+      schemaCode: InvestData?.schemeCode,
+      buyType: "FRESH",
+    };
+
+    try {
+      setIsLoading(true);
+      console.log("SIP Payload:", JSON.stringify(payload));
+      
+      const response = await fetch(`${Config.baseUrl}/api/v1/order/purchase/sip/entry`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          clientcode: UserData?.user?.clientCode,
+          Authorization: UserData?.accessToken?.replace(/^"|"$/g, ''),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      console.log('SIP Investment Response:', result);
+
+      if (response.ok) {
+        navigation.navigate("PaymentComponent");
+        setPaymentModal(true);
+      } else {
+        setErrors({general: result?.message || 'Something went wrong.'});
+      }
+    } catch (error) {
+      console.error('SIP Investment Error:', error);
+      setErrors({general: 'Network error. Please try again.'});
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const DatePickerComponent = () => {
+    const minimumDate = getMinimumDateForMandate();
+    const maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+
+    if (Platform.OS === 'ios') {
+      return (
+        <Modal
+          visible={showDatePicker}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.iosDatePickerContainer}>
+                  <View style={styles.datePickerHeader}>
+                    <TouchableOpacity
+                      onPress={() => setShowDatePicker(false)}
+                      style={styles.datePickerButton}
+                    >
+                      <Text style={styles.datePickerButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.datePickerTitle}>Select Date</Text>
+                    <TouchableOpacity
+                      onPress={() => setShowDatePicker(false)}
+                      style={styles.datePickerButton}
+                    >
+                      <Text style={[styles.datePickerButtonText, styles.doneButton]}>Done</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={selectedDate || minimumDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={onDateChange}
+                    minimumDate={minimumDate}
+                    maximumDate={maximumDate}
+                    locale="en-US"
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      );
+    }
+
+    return showDatePicker ? (
+      <DateTimePicker
+        value={selectedDate || minimumDate}
+        mode="date"
+        display="default"
+        onChange={onDateChange}
+        minimumDate={minimumDate}
+        maximumDate={maximumDate}
+        is24Hour={true}
+      />
+    ) : null;
+  };
+
+  const StickyHeader = () => (
+    <View style={styles.stickyHeader}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        activeOpacity={0.7}
+      >
+        <View style={styles.backArrow}>
+          <SInfoSvg.BackButton/>
+        </View>
+      </TouchableOpacity>
+      <View style={styles.headerContent}>
+        <Text style={styles.headerTitle}>SIP</Text>
+        <Text style={styles.headerSubtitle} numberOfLines={2}>
+          {InvestData?.description || 'Investment Plan'}
+        </Text>
+      </View>
+    </View>
+  );
+
+  const AmountSection = () => (
+    <View style={styles.compactAmountSection}>
+      <Text style={styles.compactAmountLabel}>Instalment amount</Text>
+      <View style={styles.compactAmountContainer}>
+        <Text style={styles.compactRupeeSymbol}>₹</Text>
+        <TextInput
+          ref={amountInputRef}
+          style={[styles.compactAmountInput, errors.amount && styles.errorInput]}
+          value={customAmount || (selectedAmount > 0 ? selectedAmount.toString() : '')}
+          onChangeText={handleCustomAmountChange}
+          onFocus={handleAmountInputFocus}
+          keyboardType="numeric"
+          placeholder="Enter amount"
+          placeholderTextColor="#999999"
+          maxLength={10}
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
+        />
+      </View>
+      <Text style={styles.compactMinimumText}>
+        Min: ₹{minimumAmount.toLocaleString()}
+      </Text>
+      {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
+    </View>
+  );
+
+  const CompactQuickAmountSection = () => (
+    <View style={styles.compactQuickAmountSection}>
+      <Text style={styles.compactSectionTitle}>Quick Select</Text>
+      <View style={styles.compactQuickAmountContainer}>
+        {getQuickAmountButtons().map((amount, index) => (
+          <TouchableOpacity
+            key={`${amount}-${index}`}
+            style={[
+              styles.compactQuickAmountButton,
+              selectedAmount === amount && !customAmount && styles.selectedCompactAmountButton,
+            ]}
+            onPress={() => handleAmountSelect(amount)}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.compactQuickAmountText,
+              selectedAmount === amount && !customAmount && styles.selectedCompactAmountText,
+            ]}>
+              ₹{amount.toLocaleString()}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const CompactScheduleSection = () => {
+    if (paymentToday) return null;
+
+    return (
+      <View style={styles.compactScheduleContainer}>
+        <Text style={styles.compactSectionTitle}>Select Date</Text>
+        <TouchableOpacity
+          style={[styles.compactScheduleButton, errors.date && styles.errorInput]}
+          onPress={() => setShowDatePicker(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.compactScheduleIcon}>📅</Text>
+          <Text style={styles.compactScheduleText}>{getScheduleText()}</Text>
+          <Text style={styles.compactScheduleArrow}>⌄</Text>
+        </TouchableOpacity>
+        {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
+      </View>
+    );
+  };
+
+  const PaymentTodaySection = () => (
+    <View style={styles.compactPaymentTodaySection}>
+      <Text style={styles.compactSectionTitle}>Payment Method</Text>
+      <View style={styles.paymentTodayContainer}>
+        <TouchableOpacity
+          style={[
+            styles.paymentTodayOption,
+            paymentToday && styles.selectedPaymentTodayOption
+          ]}
+          onPress={() => {
+            setPaymentToday(true);
+            setErrors(prev => ({...prev, mandate: '', date: ''}));
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={[
+            styles.radioButton,
+            paymentToday && styles.selectedRadioButton
+          ]}>
+            {paymentToday && <View style={styles.radioButtonInner} />}
+          </View>
+          <Text style={[
+            styles.paymentTodayText,
+            paymentToday && styles.selectedPaymentTodayText
+          ]}>
+            Pay via UPI
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.paymentTodayOption,
+            !paymentToday && styles.selectedPaymentTodayOption
+          ]}
+          onPress={() => setPaymentToday(false)}
+          activeOpacity={0.7}
+        >
+          <View style={[
+            styles.radioButton,
+            !paymentToday && styles.selectedRadioButton
+          ]}>
+            {!paymentToday && <View style={styles.radioButtonInner} />}
+          </View>
+          <Text style={[
+            styles.paymentTodayText,
+            !paymentToday && styles.selectedPaymentTodayText
+          ]}>
+            Pay via Mandate
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const MandateSelection = () => {
+    if (paymentToday) return null;
+
+    const handleMandateSelect = (mandate) => {
+      setSelectedMandate(mandate);
+      setShowMandateModal(false);
+      setErrors(prev => ({...prev, mandate: ''}));
+    };
+
+    return (
+      <View style={styles.mandateContainer}>
+        <Text style={styles.compactSectionTitle}>Mandate</Text>
+        <TouchableOpacity
+          style={[styles.mandateSelector, errors.mandate && styles.errorInput]}
+          onPress={() => setShowMandateModal(true)}
+          activeOpacity={0.7}
+        >
+          {selectedMandate ? (
+            <>
+              <View style={[styles.mandateLogo, { backgroundColor: Config.Colors.primary }]}>
+                <Text style={styles.mandateLogoText}>{selectedMandate?.bankName.slice(0,1)}</Text>
+              </View>
+              <View style={styles.mandateDetails}>
+                <Text style={styles.mandateId}>{selectedMandate?.mandateId}</Text>
+                <Text style={styles.mandateBankName}>Bank Name: {selectedMandate?.bankName}</Text>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.mandatePlaceholder}>Select mandate</Text>
+          )}
+          <Text style={styles.mandateArrow}>⌄</Text>
+        </TouchableOpacity>
+        {errors.mandate && <Text style={styles.errorText}>{errors.mandate}</Text>}
+
+        <Modal
+          visible={showMandateModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowMandateModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setShowMandateModal(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.mandateModalContainer}>
+                  <View style={styles.mandateModalHeader}>
+                    <Text style={styles.mandateModalTitle}>Select Mandate</Text>
+                    <TouchableOpacity onPress={() => setShowMandateModal(false)}>
+                      <Text style={styles.mandateModalClose}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView style={styles.mandateList}>
+                    {mandateOptions?.map((mandate) => (
+                      <TouchableOpacity
+                        key={mandate?.UMRNNo}
+                        style={[
+                          styles.mandateOption,
+                          selectedMandate?.UMRNNo === mandate?.UMRNNo && styles?.selectedMandateOption
+                        ]}
+                        onPress={() => handleMandateSelect(mandate)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={[styles.mandateLogo, { backgroundColor: Config.Colors.primary }]}>
+                          <Text style={styles.mandateLogoText}>{mandate?.bankName.slice(0,1)}</Text>
+                        </View>
+                        <View style={styles.mandateDetails}>
+                          <Text style={styles.mandateId}>{mandate?.mandateId}</Text>
+                          <Text style={styles.mandateBankInfo}>
+                            Registration Date: {mandate?.registrationDate}
+                          </Text>
+                          <Text style={styles.mandateBankInfo}>
+                            Approved Date: {mandate?.approvedDate}
+                          </Text>
+                          <Text style={styles.mandateBankName}>Bank Name: {mandate?.bankName}</Text>
+                        </View>
+                        {selectedMandate?.UMRNNo === mandate?.UMRNNo && (
+                          <View style={styles.mandateCheckmark}>
+                            <Text style={styles.checkmarkText}>✓</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
+
+      <StickyHeader />
+
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.compactScrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AmountSection />
+        <CompactQuickAmountSection
+
+
+
+
+
+
+
+        // import React, { useState, useRef } from 'react';
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   Dimensions,
+//   TouchableOpacity,
+//   Animated,
+// } from 'react-native';
+// import { PanGestureHandler, State } from 'react-native-gesture-handler';
+// import Svg, {
+//   Path,
+//   Circle,
+//   Line,
+//   LinearGradient,
+//   Stop,
+//   Defs,
+// } from 'react-native-svg';
+
+// const { width: screenWidth } = Dimensions.get('window');
+// const chartWidth = screenWidth - 40;
+// const chartHeight = 300;
+
+// const HistoricalNavChart = ({
+//   data = [],
+//   title = "Historical NAV Performance",
+//   subtitle = "Track net asset value over time",
+//   currency = "₹",
+//   initialChartType = 'area',
+//   initialTimeRange = '6M',
+//   primaryColor = '#3B82F6',
+//   backgroundColor = '#FFFFFF',
+//   onDataPointSelect = null,
+//   chartHeight: customHeight = 300,
+//   timeRanges = ['1M', '3M', '6M', '1Y', 'ALL'],
+// }) => {
+//   const [chartType, setChartType] = useState(initialChartType);
+//   const [timeRange, setTimeRange] = useState(initialTimeRange);
+//   const [selectedPoint, setSelectedPoint] = useState(null);
+//   const [tooltipVisible, setTooltipVisible] = useState(false);
+//   const [isDragging, setIsDragging] = useState(false);
+  
+//   const tooltipOpacity = useRef(new Animated.Value(0)).current;
+//   const tooltipScale = useRef(new Animated.Value(0.8)).current;
+//   const lastGestureTime = useRef(0);
+//   const gestureThrottleMs = 16; // ~60fps
+
+//   // Use custom height if provided
+//   const actualChartHeight = customHeight;
+  
+//   // Helper function to parse different date formats
+//   const parseDate = (dateStr) => {
+//     if (!dateStr) return new Date();
+    
+//     // If it's already a Date object
+//     if (dateStr instanceof Date) return dateStr;
+    
+//     // Handle DD-MM-YYYY format (your data format)
+//     if (typeof dateStr === 'string' && dateStr.includes('-')) {
+//       const parts = dateStr.split('-');
+//       if (parts.length === 3) {
+//         // Check if it's DD-MM-YYYY format (day > 12 or month > 12)
+//         const first = parseInt(parts[0]);
+//         const second = parseInt(parts[1]);
+//         const third = parseInt(parts[2]);
+        
+//         if (third > 1000) { // Year is likely the third part
+//           if (first > 12) { // DD-MM-YYYY
+//             return new Date(third, second - 1, first);
+//           } else if (second > 12) { // MM-DD-YYYY  
+//             return new Date(third, first - 1, second);
+//           } else { // Ambiguous, assume DD-MM-YYYY
+//             return new Date(third, second - 1, first);
+//           }
+//         }
+//       }
+//     }
+    
+//     // Fallback to standard Date parsing
+//     return new Date(dateStr);
+//   };
+
+//   // Validate and process data - only date and nav required
+//   const processedData = data.map(item => {
+//     const parsedDate = parseDate(item.date);
+//     return {
+//       date: parsedDate.toISOString().split('T')[0], // Convert to YYYY-MM-DD
+//       nav: parseFloat(item.nav) || 0,
+//       formattedDate: parsedDate.toLocaleDateString('en-US', {
+//         month: 'short',
+//         day: 'numeric',
+//         year: 'numeric'
+//       }),
+//       originalDate: item.date // Keep original for debugging
+//     };
+//   }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date ascending
+
+//   const filterDataByTimeRange = (data, range) => {
+//     if (!data.length) return [];
+    
+//     const endDate = new Date();
+//     let startDate;
+
+//     switch (range) {
+//       case '1M':
+//         startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '3M':
+//         startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '6M':
+//         startDate = new Date(endDate.getTime() - 180 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '1Y':
+//         startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+//         break;
+//       default:
+//         return data;
+//     }
+
+//     return data.filter(item => new Date(item.date) >= startDate);
+//   };
+
+//   const filteredData = filterDataByTimeRange(processedData, timeRange);
+  
+//   // Calculate chart dimensions and scaling
+//   const padding = 40;
+//   const graphWidth = chartWidth - padding * 2;
+//   const graphHeight = actualChartHeight - padding * 2;
+  
+//   if (!filteredData.length) {
+//     return (
+//       <View style={[styles.container, { backgroundColor }]}>
+//         <View style={styles.emptyContainer}>
+//           <Text style={styles.emptyText}>No data available</Text>
+//         </View>
+//       </View>
+//     );
+//   }
+  
+//   const minNAV = Math.min(...filteredData.map(d => d.nav));
+//   const maxNAV = Math.max(...filteredData.map(d => d.nav));
+//   const navRange = maxNAV - minNAV || 1; // Prevent division by zero
+
+//   const currentNAV = filteredData[filteredData.length - 1]?.nav || 0;
+//   const previousNAV = filteredData[filteredData.length - 2]?.nav || currentNAV;
+//   const change = currentNAV - previousNAV;
+//   const changePercent = previousNAV ? ((change / previousNAV) * 100) : 0;
+
+//   // Create path data for the chart
+//   const createPath = () => {
+//     const points = filteredData.map((item, index) => {
+//       const x = padding + (index / (filteredData.length - 1)) * graphWidth;
+//       const y = padding + ((maxNAV - item.nav) / navRange) * graphHeight;
+//       return { x, y, data: item };
+//     });
+
+//     const pathData = points.reduce((path, point, index) => {
+//       if (index === 0) {
+//         return `M${point.x},${point.y}`;
+//       }
+//       return `${path} L${point.x},${point.y}`;
+//     }, '');
+
+//     return { pathData, points };
+//   };
+
+//   const createAreaPath = () => {
+//     const { pathData, points } = createPath();
+//     if (!points.length) return { areaPath: '', points: [] };
+    
+//     const firstPoint = points[0];
+//     const lastPoint = points[points.length - 1];
+    
+//     const areaPath = `${pathData} L${lastPoint.x},${actualChartHeight - padding} L${firstPoint.x},${actualChartHeight - padding} Z`;
+//     return { areaPath, points };
+//   };
+
+//   const { pathData, points } = chartType === 'area' ? createAreaPath() : createPath();
+
+//   const findClosestDataPoint = (gestureX) => {
+//     if (!points.length) return null;
+    
+//     let closestPoint = null;
+//     let minDistance = Infinity;
+    
+//     points.forEach((point, index) => {
+//       const distance = Math.abs(point.x - gestureX);
+//       if (distance < minDistance) {
+//         minDistance = distance;
+//         closestPoint = { ...point, index };
+//       }
+//     });
+
+//     return closestPoint;
+//   };
+
+//   const showTooltipWithAnimation = (point) => {
+//     setSelectedPoint(point);
+//     setTooltipVisible(true);
+    
+//     // Call callback if provided
+//     if (onDataPointSelect) {
+//       onDataPointSelect(point.data, point.index);
+//     }
+    
+//     // Fast, lightweight animation
+//     Animated.timing(tooltipOpacity, {
+//       toValue: 1,
+//       duration: 150,
+//       useNativeDriver: true,
+//     }).start();
+    
+//     Animated.timing(tooltipScale, {
+//       toValue: 1,
+//       duration: 150,
+//       useNativeDriver: true,
+//     }).start();
+//   };
+
+//   const hideTooltipWithAnimation = () => {
+//     Animated.timing(tooltipOpacity, {
+//       toValue: 0,
+//       duration: 100,
+//       useNativeDriver: true,
+//     }).start();
+    
+//     Animated.timing(tooltipScale, {
+//       toValue: 0.8,
+//       duration: 100,
+//       useNativeDriver: true,
+//     }).start(() => {
+//       setTooltipVisible(false);
+//       setSelectedPoint(null);
+//     });
+//   };
+
+//   const updateSelectedPointFast = (point) => {
+//     // Direct state update without animation during drag
+//     setSelectedPoint(point);
+    
+//     if (onDataPointSelect) {
+//       onDataPointSelect(point.data, point.index);
+//     }
+//   };
+
+//   const onGestureEvent = (event) => {
+//     const currentTime = Date.now();
+    
+//     // Throttle gesture events for better performance
+//     if (currentTime - lastGestureTime.current < gestureThrottleMs) {
+//       return;
+//     }
+//     lastGestureTime.current = currentTime;
+    
+//     const { x } = event.nativeEvent;
+//     const closestPoint = findClosestDataPoint(x);
+    
+//     if (closestPoint) {
+//       if (isDragging) {
+//         // Fast update during drag - no animation
+//         updateSelectedPointFast(closestPoint);
+//       } else {
+//         // Initial selection with animation
+//         if (!tooltipVisible) {
+//           showTooltipWithAnimation(closestPoint);
+//         } else {
+//           updateSelectedPointFast(closestPoint);
+//         }
+//       }
+//     }
+//   };
+
+//   const onHandlerStateChange = (event) => {
+//     const { state, x } = event.nativeEvent;
+    
+//     switch (state) {
+//       case State.BEGAN:
+//         setIsDragging(true);
+//         const closestPoint = findClosestDataPoint(x);
+//         if (closestPoint) {
+//           showTooltipWithAnimation(closestPoint);
+//         }
+//         break;
+        
+//       case State.ACTIVE:
+//         // Gesture is active - onGestureEvent handles updates
+//         break;
+        
+//       case State.END:
+//       case State.CANCELLED:
+//       case State.FAILED:
+//         setIsDragging(false);
+//         // Keep tooltip visible briefly, then hide
+//         setTimeout(() => {
+//           hideTooltipWithAnimation();
+//         }, 800);
+//         break;
+//     }
+//   };
+
+//   const TimeRangeButton = ({ range, active, onPress }) => (
+//     <TouchableOpacity
+//       style={[
+//         styles.timeButton, 
+//         active && { ...styles.timeButtonActive, backgroundColor: primaryColor }
+//       ]}
+//       onPress={onPress}
+//     >
+//       <Text style={[
+//         styles.timeButtonText, 
+//         active && styles.timeButtonTextActive
+//       ]}>
+//         {range}
+//       </Text>
+//     </TouchableOpacity>
+//   );
+
+//   const ChartTypeButton = ({ type, active, onPress, title }) => (
+//     <TouchableOpacity
+//       style={[
+//         styles.chartTypeButton, 
+//         active && { ...styles.chartTypeButtonActive, backgroundColor: primaryColor }
+//       ]}
+//       onPress={onPress}
+//     >
+//       <Text style={[
+//         styles.chartTypeButtonText, 
+//         active && styles.chartTypeButtonTextActive
+//       ]}>
+//         {title}
+//       </Text>
+//     </TouchableOpacity>
+//   );
+
+//   return (
+//     <View style={[styles.container, { backgroundColor }]}>
+//       {/* Header */}
+//       <View style={styles.header}>
+//         <View style={styles.titleSection}>
+//           <Text style={styles.title}>{title}</Text>
+//           <Text style={styles.subtitle}>{subtitle}</Text>
+//         </View>
+//         <View style={styles.valueSection}>
+//           <Text style={[styles.currentValue, { color: primaryColor }]}>
+//             {currency}{currentNAV.toFixed(2)}
+//           </Text>
+//           <View style={[
+//             styles.changeBadge, 
+//             { backgroundColor: change >= 0 ? '#10B981' : '#EF4444' }
+//           ]}>
+//             <Text style={styles.changeText}>
+//               {change >= 0 ? '+' : ''}{currency}{change.toFixed(2)} ({changePercent >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
+//             </Text>
+//           </View>
+//         </View>
+//       </View>
+
+//       {/* Controls */}
+//       <View style={styles.controls}>
+//         <View style={styles.timeRangeButtons}>
+//           {timeRanges.map((range) => (
+//             <TimeRangeButton
+//               key={range}
+//               range={range}
+//               active={timeRange === range}
+//               onPress={() => setTimeRange(range)}
+//             />
+//           ))}
+//         </View>
+        
+//         <View style={styles.chartTypeButtons}>
+//           <ChartTypeButton
+//             type="line"
+//             title="Line"
+//             active={chartType === 'line'}
+//             onPress={() => setChartType('line')}
+//           />
+//           <ChartTypeButton
+//             type="area"
+//             title="Area"
+//             active={chartType === 'area'}
+//             onPress={() => setChartType('area')}
+//           />
+//         </View>
+//       </View>
+
+//       {/* Chart */}
+//       <View style={styles.chartContainer}>
+//         <PanGestureHandler
+//           onGestureEvent={onGestureEvent}
+//           onHandlerStateChange={onHandlerStateChange}
+//           minDist={0}
+//           activeOffsetX={[-5, 5]}
+//           activeOffsetY={[-100, 100]}
+//           shouldCancelWhenOutside={false}
+//           enableTrackpadTwoFingerGesture={false}
+//         >
+//           <Animated.View style={styles.chartTouchArea}>
+//             <Svg width={chartWidth} height={actualChartHeight}>
+//               <Defs>
+//                 <LinearGradient id="navGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+//                   <Stop offset="0%" stopColor={primaryColor} stopOpacity={0.3} />
+//                   <Stop offset="100%" stopColor={primaryColor} stopOpacity={0} />
+//                 </LinearGradient>
+//               </Defs>
+              
+//               {/* Grid lines */}
+//               {[0, 1, 2, 3, 4].map((i) => (
+//                 <Line
+//                   key={`grid-${i}`}
+//                   x1={padding}
+//                   y1={padding + (i * graphHeight) / 4}
+//                   x2={chartWidth - padding}
+//                   y2={padding + (i * graphHeight) / 4}
+//                   stroke="#E5E7EB"
+//                   strokeWidth={1}
+//                   strokeDasharray="3,3"
+//                 />
+//               ))}
+
+//               {/* Chart area/line */}
+//               {chartType === 'area' ? (
+//                 <Path
+//                   d={pathData}
+//                   fill="url(#navGradient)"
+//                   stroke={primaryColor}
+//                   strokeWidth={2}
+//                 />
+//               ) : (
+//                 <Path
+//                   d={pathData}
+//                   fill="none"
+//                   stroke={primaryColor}
+//                   strokeWidth={2}
+//                 />
+//               )}
+
+//               {/* Selected point indicator */}
+//               {selectedPoint && tooltipVisible && (
+//                 <>
+//                   <Circle
+//                     cx={selectedPoint.x}
+//                     cy={selectedPoint.y}
+//                     r={8}
+//                     fill={primaryColor}
+//                     stroke="#FFFFFF"
+//                     strokeWidth={3}
+//                     opacity={isDragging ? 1 : 0.9}
+//                   />
+//                   <Circle
+//                     cx={selectedPoint.x}
+//                     cy={selectedPoint.y}
+//                     r={12}
+//                     fill="none"
+//                     stroke={primaryColor}
+//                     strokeWidth={2}
+//                     opacity={0.3}
+//                   />
+//                 </>
+//               )}
+              
+//               {/* Vertical line for selected point */}
+//               {selectedPoint && tooltipVisible && (
+//                 <Line
+//                   x1={selectedPoint.x}
+//                   y1={padding}
+//                   x2={selectedPoint.x}
+//                   y2={actualChartHeight - padding}
+//                   stroke="#9CA3AF"
+//                   strokeWidth={1.5}
+//                   strokeDasharray="5,5"
+//                   opacity={0.7}
+//                 />
+//               )}
+//             </Svg>
+//           </Animated.View>
+//         </PanGestureHandler>
+
+//         {/* Tooltip */}
+//         {tooltipVisible && selectedPoint && (
+//           <Animated.View
+//             style={[
+//               styles.tooltip,
+//               {
+//                 left: Math.max(10, Math.min(selectedPoint.x - 70, chartWidth - 150)),
+//                 top: Math.max(10, selectedPoint.y - 90),
+//                 opacity: tooltipOpacity,
+//                 transform: [{ scale: tooltipScale }],
+//               },
+//             ]}
+//           >
+//             <View style={styles.tooltipContent}>
+//               <Text style={styles.tooltipDate}>{selectedPoint.data.formattedDate}</Text>
+//               <Text style={[styles.tooltipNAV, { color: primaryColor }]}>
+//                 {currency}{selectedPoint.data.nav.toFixed(2)}
+//               </Text>
+//               {isDragging && (
+//                 <View style={styles.dragIndicator}>
+//                   <Text style={styles.dragText}>Slide to explore</Text>
+//                 </View>
+//               )}
+//             </View>
+//             <View style={[
+//               styles.tooltipPointer,
+//               {
+//                 left: Math.max(50, Math.min(70, selectedPoint.x - (Math.max(10, Math.min(selectedPoint.x - 70, chartWidth - 150))))),
+//               }
+//             ]} />
+//           </Animated.View>
+//         )}
+//       </View>
+//     </View>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     padding: 20,
+//   },
+//   emptyContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     height: 200,
+//   },
+//   emptyText: {
+//     fontSize: 16,
+//     color: '#6B7280',
+//     textAlign: 'center',
+//   },
+//   header: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     alignItems: 'flex-start',
+//     marginBottom: 20,
+//   },
+//   titleSection: {
+//     flex: 1,
+//   },
+//   title: {
+//     fontSize: 24,
+//     fontWeight: 'bold',
+//     color: '#1F2937',
+//     marginBottom: 4,
+//   },
+//   subtitle: {
+//     fontSize: 14,
+//     color: '#6B7280',
+//   },
+//   valueSection: {
+//     alignItems: 'flex-end',
+//   },
+//   currentValue: {
+//     fontSize: 32,
+//     fontWeight: 'bold',
+//     marginBottom: 8,
+//   },
+//   changeBadge: {
+//     paddingHorizontal: 12,
+//     paddingVertical: 6,
+//     borderRadius: 20,
+//   },
+//   changeText: {
+//     color: '#FFFFFF',
+//     fontSize: 12,
+//     fontWeight: '600',
+//   },
+//   controls: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     alignItems: 'center',
+//     marginBottom: 20,
+//   },
+//   timeRangeButtons: {
+//     flexDirection: 'row',
+//     gap: 8,
+//   },
+//   timeButton: {
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderRadius: 8,
+//     borderWidth: 1,
+//     borderColor: '#D1D5DB',
+//     backgroundColor: '#FFFFFF',
+//   },
+//   timeButtonActive: {
+//     borderColor: '#3B82F6',
+//   },
+//   timeButtonText: {
+//     fontSize: 12,
+//     fontWeight: '500',
+//     color: '#6B7280',
+//   },
+//   timeButtonTextActive: {
+//     color: '#FFFFFF',
+//   },
+//   chartTypeButtons: {
+//     flexDirection: 'row',
+//     gap: 8,
+//   },
+//   chartTypeButton: {
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderRadius: 8,
+//     borderWidth: 1,
+//     borderColor: '#D1D5DB',
+//     backgroundColor: '#FFFFFF',
+//   },
+//   chartTypeButtonActive: {
+//     borderColor: '#3B82F6',
+//   },
+//   chartTypeButtonText: {
+//     fontSize: 12,
+//     fontWeight: '500',
+//     color: '#6B7280',
+//   },
+//   chartTypeButtonTextActive: {
+//     color: '#FFFFFF',
+//   },
+//   chartContainer: {
+//     backgroundColor: '#FFFFFF',
+//     borderRadius: 12,
+//     borderWidth: 1,
+//     borderColor: '#E5E7EB',
+//     shadowColor: '#000',
+//     shadowOffset: {
+//       width: 0,
+//       height: 2,
+//     },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 3.84,
+//     elevation: 5,
+//     position: 'relative',
+//   },
+//   chartTouchArea: {
+//     width: chartWidth,
+//     height: chartHeight,
+//   },
+//   tooltip: {
+//     position: 'absolute',
+//     backgroundColor: '#1F2937',
+//     borderRadius: 12,
+//     shadowColor: '#000',
+//     shadowOffset: {
+//       width: 0,
+//       height: 8,
+//     },
+//     shadowOpacity: 0.25,
+//     shadowRadius: 12,
+//     elevation: 12,
+//     minWidth: 140,
+//     zIndex: 1000,
+//   },
+//   tooltipContent: {
+//     padding: 16,
+//   },
+//   tooltipPointer: {
+//     position: 'absolute',
+//     bottom: -8,
+//     width: 16,
+//     height: 16,
+//     backgroundColor: '#1F2937',
+//     transform: [{ rotate: '45deg' }],
+//     zIndex: -1,
+//   },
+//   tooltipDate: {
+//     fontSize: 12,
+//     color: '#9CA3AF',
+//     marginBottom: 6,
+//     textAlign: 'center',
+//   },
+//   tooltipNAV: {
+//     fontSize: 20,
+//     fontWeight: 'bold',
+//     marginBottom: 4,
+//     textAlign: 'center',
+//   },
+//   tooltipVolume: {
+//     fontSize: 12,
+//     color: '#9CA3AF',
+//     textAlign: 'center',
+//   },
+//   dragIndicator: {
+//     marginTop: 8,
+//     paddingTop: 8,
+//     borderTopWidth: 1,
+//     borderTopColor: '#374151',
+//   },
+//   dragText: {
+//     fontSize: 10,
+//     color: '#6B7280',
+//     textAlign: 'center',
+//     fontStyle: 'italic',
+//   },
+// });
+
+// export default HistoricalNavChart;
+
+
+// import React, { useState, useRef } from 'react';
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   Dimensions,
+//   TouchableOpacity,
+//   Animated,
+// } from 'react-native';
+// import { PanGestureHandler, State } from 'react-native-gesture-handler';
+// import Svg, {
+//   Path,
+//   Circle,
+//   Line,
+//   LinearGradient,
+//   Stop,
+//   Defs,
+// } from 'react-native-svg';
+
+// const { width: screenWidth } = Dimensions.get('window');
+// const chartWidth = screenWidth - 40;
+// const chartHeight = 300;
+
+// const HistoricalNavChart = ({
+//   data = [],
+//   title = "Historical NAV Performance",
+//   subtitle = "Track net asset value over time",
+//   currency = "₹",
+//   initialChartType = 'line',
+//   initialTimeRange = '6M',
+//   primaryColor = '#3B82F6',
+//   backgroundColor = '#FFFFFF',
+//   onDataPointSelect = null,
+//   chartHeight: customHeight = 300,
+//   timeRanges = ['1M', '3M', '6M', '1Y', 'ALL'],
+// }) => {
+//   const [chartType, setChartType] = useState(initialChartType);
+//   const [timeRange, setTimeRange] = useState(initialTimeRange);
+//   const [selectedPoint, setSelectedPoint] = useState(null);
+//   const [tooltipVisible, setTooltipVisible] = useState(false);
+//   const [isDragging, setIsDragging] = useState(false);
+  
+//   const tooltipOpacity = useRef(new Animated.Value(0)).current;
+//   const tooltipScale = useRef(new Animated.Value(0.8)).current;
+//   const lastGestureTime = useRef(0);
+//   const gestureThrottleMs = 16; // ~60fps
+
+//   // Use custom height if provided
+//   const actualChartHeight = customHeight;
+  
+//   // Helper function to parse different date formats
+//   const parseDate = (dateStr) => {
+//     if (!dateStr) return new Date();
+    
+//     // If it's already a Date object
+//     if (dateStr instanceof Date) return dateStr;
+    
+//     // Handle DD-MM-YYYY format (your data format)
+//     if (typeof dateStr === 'string' && dateStr.includes('-')) {
+//       const parts = dateStr.split('-');
+//       if (parts.length === 3) {
+//         // Check if it's DD-MM-YYYY format (day > 12 or month > 12)
+//         const first = parseInt(parts[0]);
+//         const second = parseInt(parts[1]);
+//         const third = parseInt(parts[2]);
+        
+//         if (third > 1000) { // Year is likely the third part
+//           if (first > 12) { // DD-MM-YYYY
+//             return new Date(third, second - 1, first);
+//           } else if (second > 12) { // MM-DD-YYYY  
+//             return new Date(third, first - 1, second);
+//           } else { // Ambiguous, assume DD-MM-YYYY
+//             return new Date(third, second - 1, first);
+//           }
+//         }
+//       }
+//     }
+    
+//     // Fallback to standard Date parsing
+//     return new Date(dateStr);
+//   };
+
+//   // Validate and process data - only date and nav required
+//   const processedData = data.map(item => {
+//     const parsedDate = parseDate(item.date);
+//     return {
+//       date: parsedDate.toISOString().split('T')[0], // Convert to YYYY-MM-DD
+//       nav: parseFloat(item.nav) || 0,
+//       formattedDate: parsedDate.toLocaleDateString('en-US', {
+//         month: 'short',
+//         day: 'numeric',
+//         year: 'numeric'
+//       }),
+//       originalDate: item.date // Keep original for debugging
+//     };
+//   }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date ascending
+
+//   const filterDataByTimeRange = (data, range) => {
+//     if (!data.length) return [];
+    
+//     const endDate = new Date();
+//     let startDate;
+
+//     switch (range) {
+//       case '1M':
+//         startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '3M':
+//         startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '6M':
+//         startDate = new Date(endDate.getTime() - 180 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '1Y':
+//         startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+//         break;
+//       default:
+//         return data;
+//     }
+
+//     return data.filter(item => new Date(item.date) >= startDate);
+//   };
+
+//   const filteredData = filterDataByTimeRange(processedData, timeRange);
+  
+//   // Calculate chart dimensions and scaling
+//   const padding = 40;
+//   const graphWidth = chartWidth - padding * 2;
+//   const graphHeight = actualChartHeight - padding * 2;
+  
+//   if (!filteredData.length) {
+//     return (
+//       <View style={[styles.container, { backgroundColor }]}>
+//         <View style={styles.emptyContainer}>
+//           <Text style={styles.emptyText}>No data available</Text>
+//         </View>
+//       </View>
+//     );
+//   }
+  
+//   const minNAV = Math.min(...filteredData.map(d => d.nav));
+//   const maxNAV = Math.max(...filteredData.map(d => d.nav));
+//   const navRange = maxNAV - minNAV || 1; // Prevent division by zero
+
+//   const currentNAV = filteredData[filteredData.length - 1]?.nav || 0;
+//   const previousNAV = filteredData[filteredData.length - 2]?.nav || currentNAV;
+//   const change = currentNAV - previousNAV;
+//   const changePercent = previousNAV ? ((change / previousNAV) * 100) : 0;
+
+//   // Create path data for the chart
+//   const createPath = () => {
+//     const points = filteredData.map((item, index) => {
+//       const x = padding + (index / (filteredData.length - 1)) * graphWidth;
+//       const y = padding + ((maxNAV - item.nav) / navRange) * graphHeight;
+//       return { x, y, data: item };
+//     });
+
+//     const pathData = points.reduce((path, point, index) => {
+//       if (index === 0) {
+//         return `M${point.x},${point.y}`;
+//       }
+//       return `${path} L${point.x},${point.y}`;
+//     }, '');
+
+//     return { pathData, points };
+//   };
+
+//   const createAreaPath = () => {
+//     const { pathData, points } = createPath();
+//     if (!points.length) return { areaPath: '', points: [] };
+    
+//     const firstPoint = points[0];
+//     const lastPoint = points[points.length - 1];
+    
+//     const areaPath = `${pathData} L${lastPoint.x},${actualChartHeight - padding} L${firstPoint.x},${actualChartHeight - padding} Z`;
+//     return { areaPath, points };
+//   };
+
+//   const { pathData, points } = chartType === 'area' ? createAreaPath() : createPath();
+
+//   const findClosestDataPoint = (gestureX) => {
+//     if (!points.length) return null;
+    
+//     let closestPoint = null;
+//     let minDistance = Infinity;
+    
+//     points.forEach((point, index) => {
+//       const distance = Math.abs(point.x - gestureX);
+//       if (distance < minDistance) {
+//         minDistance = distance;
+//         closestPoint = { ...point, index };
+//       }
+//     });
+
+//     return closestPoint;
+//   };
+
+//   const showTooltipWithAnimation = (point) => {
+//     setSelectedPoint(point);
+//     setTooltipVisible(true);
+    
+//     // Call callback if provided
+//     if (onDataPointSelect) {
+//       onDataPointSelect(point.data, point.index);
+//     }
+    
+//     // Fast, lightweight animation
+//     Animated.timing(tooltipOpacity, {
+//       toValue: 1,
+//       duration: 150,
+//       useNativeDriver: true,
+//     }).start();
+    
+//     Animated.timing(tooltipScale, {
+//       toValue: 1,
+//       duration: 150,
+//       useNativeDriver: true,
+//     }).start();
+//   };
+
+//   const hideTooltipWithAnimation = () => {
+//     Animated.timing(tooltipOpacity, {
+//       toValue: 0,
+//       duration: 100,
+//       useNativeDriver: true,
+//     }).start();
+    
+//     Animated.timing(tooltipScale, {
+//       toValue: 0.8,
+//       duration: 100,
+//       useNativeDriver: true,
+//     }).start(() => {
+//       setTooltipVisible(false);
+//       setSelectedPoint(null);
+//     });
+//   };
+
+//   const updateSelectedPointFast = (point) => {
+//     // Direct state update without animation during drag
+//     setSelectedPoint(point);
+    
+//     if (onDataPointSelect) {
+//       onDataPointSelect(point.data, point.index);
+//     }
+//   };
+
+//   const onGestureEvent = (event) => {
+//     const currentTime = Date.now();
+    
+//     // Throttle gesture events for better performance
+//     if (currentTime - lastGestureTime.current < gestureThrottleMs) {
+//       return;
+//     }
+//     lastGestureTime.current = currentTime;
+    
+//     const { x } = event.nativeEvent;
+//     const closestPoint = findClosestDataPoint(x);
+    
+//     if (closestPoint) {
+//       if (isDragging) {
+//         // Fast update during drag - no animation
+//         updateSelectedPointFast(closestPoint);
+//       } else {
+//         // Initial selection with animation
+//         if (!tooltipVisible) {
+//           showTooltipWithAnimation(closestPoint);
+//         } else {
+//           updateSelectedPointFast(closestPoint);
+//         }
+//       }
+//     }
+//   };
+
+//   const onHandlerStateChange = (event) => {
+//     const { state, x } = event.nativeEvent;
+    
+//     switch (state) {
+//       case State.BEGAN:
+//         setIsDragging(true);
+//         const closestPoint = findClosestDataPoint(x);
+//         if (closestPoint) {
+//           showTooltipWithAnimation(closestPoint);
+//         }
+//         break;
+        
+//       case State.ACTIVE:
+//         // Gesture is active - onGestureEvent handles updates
+//         break;
+        
+//       case State.END:
+//       case State.CANCELLED:
+//       case State.FAILED:
+//         setIsDragging(false);
+//         // Keep tooltip visible briefly, then hide
+//         setTimeout(() => {
+//           hideTooltipWithAnimation();
+//         }, 800);
+//         break;
+//     }
+//   };
+
+//   const TimeRangeButton = ({ range, active, onPress }) => (
+//     <TouchableOpacity
+//       style={[
+//         styles.timeButton, 
+//         active && { ...styles.timeButtonActive, backgroundColor: primaryColor }
+//       ]}
+//       onPress={onPress}
+//     >
+//       <Text style={[
+//         styles.timeButtonText, 
+//         active && styles.timeButtonTextActive
+//       ]}>
+//         {range}
+//       </Text>
+//     </TouchableOpacity>
+//   );
+
+//   const ChartTypeButton = ({ type, active, onPress, title }) => (
+//     <TouchableOpacity
+//       style={[
+//         styles.chartTypeButton, 
+//         active && { ...styles.chartTypeButtonActive, backgroundColor: primaryColor }
+//       ]}
+//       onPress={onPress}
+//     >
+//       <Text style={[
+//         styles.chartTypeButtonText, 
+//         active && styles.chartTypeButtonTextActive
+//       ]}>
+//         {title}
+//       </Text>
+//     </TouchableOpacity>
+//   );
+
+//   return (
+//     <View style={[styles.container, { backgroundColor }]}>
+//       <View style={styles.chartContainer}>
+//         <PanGestureHandler
+//           onGestureEvent={onGestureEvent}
+//           onHandlerStateChange={onHandlerStateChange}
+//           minDist={0}
+//           activeOffsetX={[-5, 5]}
+//           activeOffsetY={[-100, 100]}
+//           shouldCancelWhenOutside={false}
+//           enableTrackpadTwoFingerGesture={false}
+//         >
+//           <Animated.View style={styles.chartTouchArea}>
+//             <Svg width={chartWidth} height={actualChartHeight}>
+//               <Defs>
+//                 <LinearGradient id="navGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+//                   <Stop offset="0%" stopColor={primaryColor} stopOpacity={0.3} />
+//                   <Stop offset="100%" stopColor={primaryColor} stopOpacity={0} />
+//                 </LinearGradient>
+//               </Defs>
+              
+//               {/* Grid lines */}
+//               {[0, 1, 2, 3, 4].map((i) => (
+//                 <Line
+//                   key={`grid-${i}`}
+//                   x1={padding}
+//                   y1={padding + (i * graphHeight) / 4}
+//                   x2={chartWidth - padding}
+//                   y2={padding + (i * graphHeight) / 4}
+//                   stroke="#E5E7EB"
+//                   strokeWidth={1}
+//                   strokeDasharray="3,3"
+//                 />
+//               ))}
+
+//               {/* Chart area/line */}
+//               {chartType === 'area' ? (
+//                 <Path
+//                   d={pathData}
+//                   fill="url(#navGradient)"
+//                   stroke={primaryColor}
+//                   strokeWidth={2}
+//                 />
+//               ) : (
+//                 <Path
+//                   d={pathData}
+//                   fill="none"
+//                   stroke={primaryColor}
+//                   strokeWidth={2}
+//                 />
+//               )}
+
+//               {/* Selected point indicator */}
+//               {selectedPoint && tooltipVisible && (
+//                 <>
+//                   <Circle
+//                     cx={selectedPoint.x}
+//                     cy={selectedPoint.y}
+//                     r={8}
+//                     fill={primaryColor}
+//                     stroke="#FFFFFF"
+//                     strokeWidth={3}
+//                     opacity={isDragging ? 1 : 0.9}
+//                   />
+//                   <Circle
+//                     cx={selectedPoint.x}
+//                     cy={selectedPoint.y}
+//                     r={12}
+//                     fill="none"
+//                     stroke={primaryColor}
+//                     strokeWidth={2}
+//                     opacity={0.3}
+//                   />
+//                 </>
+//               )}
+              
+//               {/* Vertical line for selected point */}
+//               {selectedPoint && tooltipVisible && (
+//                 <Line
+//                   x1={selectedPoint.x}
+//                   y1={padding}
+//                   x2={selectedPoint.x}
+//                   y2={actualChartHeight - padding}
+//                   stroke="#9CA3AF"
+//                   strokeWidth={1.5}
+//                   strokeDasharray="5,5"
+//                   opacity={0.7}
+//                 />
+//               )}
+//             </Svg>
+//           </Animated.View>
+//         </PanGestureHandler>
+
+//         {/* Tooltip */}
+//         {tooltipVisible && selectedPoint && (
+//           <Animated.View
+//             style={[
+//               styles.tooltip,
+//               {
+//                 left: Math.max(10, Math.min(selectedPoint.x - 70, chartWidth - 150)),
+//                 top: Math.max(10, selectedPoint.y - 90),
+//                 opacity: tooltipOpacity,
+//                 transform: [{ scale: tooltipScale }],
+//               },
+//             ]}
+//           >
+//             <View style={styles.tooltipContent}>
+//               <Text style={styles.tooltipDate}>{selectedPoint.data.formattedDate}</Text>
+//               <Text style={[styles.tooltipNAV, { color: primaryColor }]}>
+//                 {currency}{selectedPoint.data.nav.toFixed(2)}
+//               </Text>
+//               {isDragging && (
+//                 <View style={styles.dragIndicator}>
+//                   <Text style={styles.dragText}>Slide to explore</Text>
+//                 </View>
+//               )}
+//             </View>
+//             <View style={[
+//               styles.tooltipPointer,
+//               {
+//                 left: Math.max(50, Math.min(70, selectedPoint.x - (Math.max(10, Math.min(selectedPoint.x - 70, chartWidth - 150))))),
+//               }
+//             ]} />
+//           </Animated.View>
+//         )}
+//       </View>
+//          <View style={styles.timeRangeButtons}>
+//           {timeRanges.map((range) => (
+//             <TimeRangeButton
+//               key={range}
+//               range={range}
+//               active={timeRange === range}
+//               onPress={() => setTimeRange(range)}
+//             />
+//           ))}
+//         </View>
+        
+//     </View>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     // padding: 20,
+//   },
+//   emptyContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     height: 200,
+//   },
+//   emptyText: {
+//     fontSize: 16,
+//     color: '#6B7280',
+//     textAlign: 'center',
+//   },
+//   header: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     alignItems: 'flex-start',
+//     marginBottom: 20,
+//   },
+//   titleSection: {
+//     flex: 1,
+//   },
+//   title: {
+//     fontSize: 24,
+//     fontWeight: 'bold',
+//     color: '#1F2937',
+//     marginBottom: 4,
+//   },
+//   subtitle: {
+//     fontSize: 14,
+//     color: '#6B7280',
+//   },
+//   valueSection: {
+//     alignItems: 'flex-end',
+//   },
+//   currentValue: {
+//     fontSize: 32,
+//     fontWeight: 'bold',
+//     marginBottom: 8,
+//   },
+//   changeBadge: {
+//     paddingHorizontal: 12,
+//     paddingVertical: 6,
+//     borderRadius: 20,
+//   },
+//   changeText: {
+//     color: '#FFFFFF',
+//     fontSize: 12,
+//     fontWeight: '600',
+//   },
+//   controls: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     alignItems: 'center',
+//     marginBottom: 20,
+//   },
+//   timeRangeButtons: {
+//     flexDirection: 'row',
+//     gap: 8,
+//   },
+//   timeButton: {
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderRadius: 8,
+//     borderWidth: 1,
+//     borderColor: '#D1D5DB',
+//     backgroundColor: '#FFFFFF',
+//   },
+//   timeButtonActive: {
+//     borderColor: '#3B82F6',
+//   },
+//   timeButtonText: {
+//     fontSize: 12,
+//     fontWeight: '500',
+//     color: '#6B7280',
+//   },
+//   timeButtonTextActive: {
+//     color: '#FFFFFF',
+//   },
+//   chartTypeButtons: {
+//     flexDirection: 'row',
+//     gap: 8,
+//   },
+//   chartTypeButton: {
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderRadius: 8,
+//     borderWidth: 1,
+//     borderColor: '#D1D5DB',
+//     backgroundColor: '#FFFFFF',
+//   },
+//   chartTypeButtonActive: {
+//     borderColor: '#3B82F6',
+//   },
+//   chartTypeButtonText: {
+//     fontSize: 12,
+//     fontWeight: '500',
+//     color: '#6B7280',
+//   },
+//   chartTypeButtonTextActive: {
+//     color: '#FFFFFF',
+//   },
+//   chartContainer: {
+//     backgroundColor: '#FFFFFF',
+//     borderRadius: 12,
+//     borderWidth: 1,
+//     borderColor: '#E5E7EB',
+//     shadowColor: '#000',
+//     shadowOffset: {
+//       width: 0,
+//       height: 2,
+//     },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 3.84,
+//     elevation: 5,
+//     position: 'relative',
+//   },
+//   chartTouchArea: {
+//     width: chartWidth,
+//     height: chartHeight,
+//     borderWidth:2,
+//     borderColor:"black"
+//   },
+//   tooltip: {
+//     position: 'absolute',
+//     backgroundColor: '#1F2937',
+//     borderRadius: 12,
+//     shadowColor: '#000',
+//     shadowOffset: {
+//       width: 0,
+//       height: 8,
+//     },
+//     shadowOpacity: 0.25,
+//     shadowRadius: 12,
+//     elevation: 12,
+//     minWidth: 140,
+//     zIndex: 1000,
+//   },
+//   tooltipContent: {
+//     padding: 16,
+//   },
+//   tooltipPointer: {
+//     position: 'absolute',
+//     bottom: -8,
+//     width: 16,
+//     height: 16,
+//     backgroundColor: '#1F2937',
+//     transform: [{ rotate: '45deg' }],   
+//     zIndex: -1,
+//   },
+//   tooltipDate: {
+//     fontSize: 12,
+//     color: '#9CA3AF',
+//     marginBottom: 6,
+//     textAlign: 'center',
+//   },
+//   tooltipNAV: {
+//     fontSize: 20,
+//     fontWeight: 'bold',
+//     marginBottom: 4,
+//     textAlign: 'center',
+//   },
+//   tooltipVolume: {
+//     fontSize: 12,
+//     color: '#9CA3AF',
+//     textAlign: 'center',
+//   },
+//   dragIndicator: {
+//     marginTop: 8,
+//     paddingTop: 8,
+//     borderTopWidth: 1,
+//     borderTopColor: '#374151',
+//   },
+//   dragText: {
+//     fontSize: 10,
+//     color: '#6B7280',
+//     textAlign: 'center',
+//     fontStyle: 'italic',
+//   },
+// });
+
+// export default HistoricalNavChart;
+
+
+// import React, { useState, useRef, useMemo, useCallback } from 'react';
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   Dimensions,
+//   TouchableOpacity,
+//   Animated,
+//   Platform,
+// } from 'react-native';
+// import { PanGestureHandler, State } from 'react-native-gesture-handler';
+// import Svg, {
+//   Path,
+//   Circle,
+//   Line,
+//   LinearGradient,
+//   Stop,
+//   Defs,
+// } from 'react-native-svg';
+
+// const { width: screenWidth } = Dimensions.get('window');
+// const chartWidth = screenWidth - 40;
+// const chartHeight = 300;
+
+// const HistoricalNavChart = ({
+//   data = [],
+//   title = "Historical NAV Performance",
+//   subtitle = "Track net asset value over time",
+//   currency = "₹",
+//   initialChartType = 'line',
+//   initialTimeRange = '6M',
+//   primaryColor = '#3B82F6',
+//   backgroundColor = '#FFFFFF',
+//   onDataPointSelect = null,
+//   chartHeight: customHeight = 300,
+//   timeRanges = ['1M', '3M', '6M', '1Y', 'ALL'],
+// }) => {
+//   const [chartType, setChartType] = useState(initialChartType);
+//   const [timeRange, setTimeRange] = useState(initialTimeRange);
+//   const [selectedPoint, setSelectedPoint] = useState(null);
+//   const [tooltipVisible, setTooltipVisible] = useState(false);
+  
+//   // Optimized refs - removed unnecessary animated values
+//   const tooltipOpacity = useRef(new Animated.Value(0)).current;
+//   const gestureState = useRef({
+//     isDragging: false,
+//     lastUpdateTime: 0,
+//     selectedIndex: -1
+//   });
+
+//   const actualChartHeight = customHeight;
+  
+//   // Optimized date parsing function
+//   const parseDate = useCallback((dateStr) => {
+//     if (!dateStr) return new Date();
+//     if (dateStr instanceof Date) return dateStr;
+    
+//     if (typeof dateStr === 'string' && dateStr.includes('-')) {
+//       const parts = dateStr.split('-');
+//       if (parts.length === 3) {
+//         const first = parseInt(parts[0]);
+//         const second = parseInt(parts[1]);
+//         const third = parseInt(parts[2]);
+        
+//         if (third > 1000) {
+//           if (first > 12) {
+//             return new Date(third, second - 1, first);
+//           } else if (second > 12) {
+//             return new Date(third, first - 1, second);
+//           } else {
+//             return new Date(third, second - 1, first);
+//           }
+//         }
+//       }
+//     }
+    
+//     return new Date(dateStr);
+//   }, []);
+
+//   // Memoized data processing - expensive operations cached
+//   const processedData = useMemo(() => {
+//     return data.map(item => {
+//       const parsedDate = parseDate(item.date);
+//       return {
+//         date: parsedDate.toISOString().split('T')[0],
+//         nav: parseFloat(item.nav) || 0,
+//         formattedDate: parsedDate.toLocaleDateString('en-US', {
+//           month: 'short',
+//           day: 'numeric',
+//           year: 'numeric'
+//         }),
+//         originalDate: item.date
+//       };
+//     }).sort((a, b) => new Date(a.date) - new Date(b.date));
+//   }, [data, parseDate]);
+
+//   // Memoized filtered data
+//   const filteredData = useMemo(() => {
+//     if (!processedData.length) return [];
+    
+//     const endDate = new Date();
+//     let startDate;
+
+//     switch (timeRange) {
+//       case '1M':
+//         startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '3M':
+//         startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '6M':
+//         startDate = new Date(endDate.getTime() - 180 * 24 * 60 * 60 * 1000);
+//         break;
+//       case '1Y':
+//         startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+//         break;
+//       default:
+//         return processedData;
+//     }
+
+//     return processedData.filter(item => new Date(item.date) >= startDate);
+//   }, [processedData, timeRange]);
+  
+//   // Memoized chart calculations
+//   const chartCalculations = useMemo(() => {
+//     const padding = 40;
+//     const graphWidth = chartWidth - padding * 2;
+//     const graphHeight = actualChartHeight - padding * 2;
+    
+//     if (!filteredData.length) return null;
+    
+//     const minNAV = Math.min(...filteredData.map(d => d.nav));
+//     const maxNAV = Math.max(...filteredData.map(d => d.nav));
+//     const navRange = maxNAV - minNAV || 1;
+
+//     const currentNAV = filteredData[filteredData.length - 1]?.nav || 0;
+//     const previousNAV = filteredData[filteredData.length - 2]?.nav || currentNAV;
+//     const change = currentNAV - previousNAV;
+//     const changePercent = previousNAV ? ((change / previousNAV) * 100) : 0;
+
+//     // Pre-calculate all points for faster lookup
+//     const points = filteredData.map((item, index) => {
+//       const x = padding + (index / (filteredData.length - 1)) * graphWidth;
+//       const y = padding + ((maxNAV - item.nav) / navRange) * graphHeight;
+//       return { x, y, data: item, index };
+//     });
+
+//     // Create optimized lookup array for gesture handling
+//     const xPositions = points.map(p => p.x);
+
+//     const pathData = points.reduce((path, point, index) => {
+//       if (index === 0) {
+//         return `M${point.x},${point.y}`;
+//       }
+//       return `${path} L${point.x},${point.y}`;
+//     }, '');
+
+//     // Area path for area chart
+//     const areaPath = chartType === 'area' && points.length > 0 
+//       ? `${pathData} L${points[points.length - 1].x},${actualChartHeight - padding} L${points[0].x},${actualChartHeight - padding} Z`
+//       : pathData;
+
+//     return {
+//       padding,
+//       graphWidth,
+//       graphHeight,
+//       minNAV,
+//       maxNAV,
+//       navRange,
+//       currentNAV,
+//       previousNAV,
+//       change,
+//       changePercent,
+//       points,
+//       xPositions,
+//       pathData,
+//       areaPath
+//     };
+//   }, [filteredData, actualChartHeight, chartType]);
+
+//   // Ultra-fast point finding using binary search
+//   const findClosestDataPoint = useCallback((gestureX) => {
+//     if (!chartCalculations?.xPositions.length) return null;
+    
+//     const { xPositions, points } = chartCalculations;
+    
+//     // Binary search for closest x position
+//     let left = 0;
+//     let right = xPositions.length - 1;
+//     let closestIndex = 0;
+//     let minDistance = Math.abs(xPositions[0] - gestureX);
+    
+//     while (left <= right) {
+//       const mid = Math.floor((left + right) / 2);
+//       const distance = Math.abs(xPositions[mid] - gestureX);
+      
+//       if (distance < minDistance) {
+//         minDistance = distance;
+//         closestIndex = mid;
+//       }
+      
+//       if (xPositions[mid] < gestureX) {
+//         left = mid + 1;
+//       } else {
+//         right = mid - 1;
+//       }
+//     }
+    
+//     // Check adjacent points for better accuracy
+//     if (closestIndex > 0) {
+//       const leftDistance = Math.abs(xPositions[closestIndex - 1] - gestureX);
+//       if (leftDistance < minDistance) {
+//         closestIndex = closestIndex - 1;
+//       }
+//     }
+//     if (closestIndex < xPositions.length - 1) {
+//       const rightDistance = Math.abs(xPositions[closestIndex + 1] - gestureX);
+//       if (rightDistance < minDistance) {
+//         closestIndex = closestIndex + 1;
+//       }
+//     }
+    
+//     return points[closestIndex];
+//   }, [chartCalculations]);
+
+//   // Optimized gesture handler with minimal state updates
+//   const onGestureEvent = useCallback((event) => {
+//     const now = performance.now();
+//     const { x } = event.nativeEvent;
+    
+//     // Throttle to 60fps for smooth performance
+//     if (now - gestureState.current.lastUpdateTime < 16) {
+//       return;
+//     }
+    
+//     gestureState.current.lastUpdateTime = now;
+    
+//     const closestPoint = findClosestDataPoint(x);
+//     if (!closestPoint || closestPoint.index === gestureState.current.selectedIndex) {
+//       return;
+//     }
+    
+//     gestureState.current.selectedIndex = closestPoint.index;
+    
+//     // Direct state update without animation during drag
+//     setSelectedPoint(closestPoint);
+    
+//     if (onDataPointSelect) {
+//       onDataPointSelect(closestPoint.data, closestPoint.index);
+//     }
+//   }, [findClosestDataPoint, onDataPointSelect]);
+
+//   // Simplified state change handler
+//   const onHandlerStateChange = useCallback((event) => {
+//     const { state, x } = event.nativeEvent;
+    
+//     switch (state) {
+//       case State.BEGAN:
+//         gestureState.current.isDragging = true;
+//         const point = findClosestDataPoint(x);
+//         if (point) {
+//           gestureState.current.selectedIndex = point.index;
+//           setSelectedPoint(point);
+//           setTooltipVisible(true);
+          
+//           // Quick fade-in animation
+//           Animated.timing(tooltipOpacity, {
+//             toValue: 1,
+//             duration: 100,
+//             useNativeDriver: true,
+//           }).start();
+          
+//           if (onDataPointSelect) {
+//             onDataPointSelect(point.data, point.index);
+//           }
+//         }
+//         break;
+        
+//       case State.END:
+//       case State.CANCELLED:
+//       case State.FAILED:
+//         gestureState.current.isDragging = false;
+//         gestureState.current.selectedIndex = -1;
+        
+//         // Quick fade-out with delay
+//         setTimeout(() => {
+//           Animated.timing(tooltipOpacity, {
+//             toValue: 0,
+//             duration: 150,
+//             useNativeDriver: true,
+//           }).start(() => {
+//             setTooltipVisible(false);
+//             setSelectedPoint(null);
+//           });
+//         }, 600);
+//         break;
+//     }
+//   }, [findClosestDataPoint, onDataPointSelect, tooltipOpacity]);
+
+//   // Memoized button components
+//   const TimeRangeButton = React.memo(({ range, active, onPress }) => (
+//     <TouchableOpacity
+//       style={[
+//         styles.timeButton, 
+//         active && { ...styles.timeButtonActive, backgroundColor: primaryColor }
+//       ]}
+//       onPress={onPress}
+//     >
+//       <Text style={[
+//         styles.timeButtonText, 
+//         active && styles.timeButtonTextActive
+//       ]}>
+//         {range}
+//       </Text>
+//     </TouchableOpacity>
+//   ));
+
+//   const ChartTypeButton = React.memo(({ type, active, onPress, title }) => (
+//     <TouchableOpacity
+//       style={[
+//         styles.chartTypeButton, 
+//         active && { ...styles.chartTypeButtonActive, backgroundColor: primaryColor }
+//       ]}
+//       onPress={onPress}
+//     >
+//       <Text style={[
+//         styles.chartTypeButtonText, 
+//         active && styles.chartTypeButtonTextActive
+//       ]}>
+//         {title}
+//       </Text>
+//     </TouchableOpacity>
+//   ));
+
+//   if (!chartCalculations) {
+//     return (
+//       <View style={[styles.container, { backgroundColor }]}>
+//         <View style={styles.emptyContainer}>
+//           <Text style={styles.emptyText}>No data available</Text>
+//         </View>
+//       </View>
+//     );
+//   }
+
+//   const { points, pathData, areaPath, padding } = chartCalculations;
+
+//   return (
+//     <View style={[styles.container, { backgroundColor }]}>
+//       <View style={styles.chartContainer}>
+//         <PanGestureHandler
+//           onGestureEvent={onGestureEvent}
+//           onHandlerStateChange={onHandlerStateChange}
+//           minDist={0}
+//           activeOffsetX={[-2, 2]}
+//           activeOffsetY={[-50, 50]}
+//           shouldCancelWhenOutside={false}
+//           enableTrackpadTwoFingerGesture={false}
+//           maxPointers={1}
+//         >
+//           <View style={styles.chartTouchArea}>
+//             <Svg width={chartWidth} height={actualChartHeight}>
+//               <Defs>
+//                 <LinearGradient id="navGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+//                   <Stop offset="0%" stopColor={primaryColor} stopOpacity={0.3} />
+//                   <Stop offset="100%" stopColor={primaryColor} stopOpacity={0} />
+//                 </LinearGradient>
+//               </Defs>
+              
+//               {/* Optimized grid lines */}
+//               {Array.from({ length: 5 }, (_, i) => (
+//                 <Line
+//                   key={`grid-${i}`}
+//                   x1={padding}
+//                   y1={padding + (i * (actualChartHeight - padding * 2)) / 4}
+//                   x2={chartWidth - padding}
+//                   y2={padding + (i * (actualChartHeight - padding * 2)) / 4}
+//                   stroke="#E5E7EB"
+//                   strokeWidth={0.8}
+//                   strokeDasharray="3,3"
+//                 />
+//               ))}
+
+//               {/* Chart path */}
+//               <Path
+//                 d={chartType === 'area' ? areaPath : pathData}
+//                 fill={chartType === 'area' ? "url(#navGradient)" : "none"}
+//                 stroke={primaryColor}
+//                 strokeWidth={2}
+//                 strokeLinecap="round"
+//                 strokeLinejoin="round"
+//               />
+
+//               {/* Selected point indicator */}
+//               {selectedPoint && tooltipVisible && (
+//                 <>
+//                   <Circle
+//                     cx={selectedPoint.x}
+//                     cy={selectedPoint.y}
+//                     r={6}
+//                     fill={primaryColor}
+//                     stroke="#FFFFFF"
+//                     strokeWidth={2}
+//                   />
+//                   <Circle
+//                     cx={selectedPoint.x}
+//                     cy={selectedPoint.y}
+//                     r={10}
+//                     fill="none"
+//                     stroke={primaryColor}
+//                     strokeWidth={1.5}
+//                     opacity={0.4}
+//                   />
+                  
+//                   {/* Vertical line */}
+//                   <Line
+//                     x1={selectedPoint.x}
+//                     y1={padding}
+//                     x2={selectedPoint.x}
+//                     y2={actualChartHeight - padding}
+//                     stroke="#9CA3AF"
+//                     strokeWidth={1}
+//                     strokeDasharray="4,4"
+//                     opacity={0.6}
+//                   />
+//                 </>
+//               )}
+//             </Svg>
+//           </View>
+//         </PanGestureHandler>
+
+//         {/* Optimized tooltip */}
+//         {tooltipVisible && selectedPoint && (
+//           <Animated.View
+//             style={[
+//               styles.tooltip,
+//               {
+//                 left: Math.max(10, Math.min(selectedPoint.x - 70, chartWidth - 150)),
+//                 top: Math.max(10, selectedPoint.y - 80),
+//                 opacity: tooltipOpacity,
+//               },
+//             ]}
+//           >
+//             <View style={styles.tooltipContent}>
+//               <Text style={styles.tooltipDate}>{selectedPoint.data.formattedDate}</Text>
+//               <Text style={[styles.tooltipNAV, { color: primaryColor }]}>
+//                 {currency}{selectedPoint.data.nav.toFixed(2)}
+//               </Text>
+//             </View>
+//             <View style={[
+//               styles.tooltipPointer,
+//               {
+//                 left: Math.max(50, Math.min(70, selectedPoint.x - (Math.max(10, Math.min(selectedPoint.x - 70, chartWidth - 150))))),
+//               }
+//             ]} />
+//           </Animated.View>
+//         )}
+//       </View>
+      
+//       <View style={styles.timeRangeButtons}>
+//         {timeRanges.map((range) => (
+//           <TimeRangeButton
+//             key={range}
+//             range={range}
+//             active={timeRange === range}
+//             onPress={() => setTimeRange(range)}
+//           />
+//         ))}
+//       </View>
+//     </View>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     padding: 16,
+//   },
+//   chartContainer: {
+//     position: 'relative',
+//     marginBottom: 20,
+//   },
+//   chartTouchArea: {
+//     width: chartWidth,
+//     height: chartHeight,
+//   },
+//   tooltip: {
+//     position: 'absolute',
+//     backgroundColor: 'rgba(0, 0, 0, 0.9)',
+//     borderRadius: 8,
+//     paddingHorizontal: 12,
+//     paddingVertical: 8,
+//     minWidth: 140,
+//     zIndex: 1000,
+//     elevation: 8,
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 4 },
+//     shadowOpacity: 0.3,
+//     shadowRadius: 8,
+//   },
+//   tooltipContent: {
+//     alignItems: 'center',
+//   },
+//   tooltipDate: {
+//     color: '#FFFFFF',
+//     fontSize: 12,
+//     fontWeight: '500',
+//     marginBottom: 2,
+//   },
+//   tooltipNAV: {
+//     fontSize: 16,
+//     fontWeight: 'bold',
+//     color: '#FFFFFF',
+//   },
+//   tooltipPointer: {
+//     position: 'absolute',
+//     bottom: -6,
+//     width: 12,
+//     height: 12,
+//     backgroundColor: 'rgba(0, 0, 0, 0.9)',
+//     transform: [{ rotate: '45deg' }],
+//   },
+//   timeRangeButtons: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-around',
+//     backgroundColor: '#F3F4F6',
+//     borderRadius: 8,
+//     padding: 4,
+//     // marginBottom: 16,
+//   },
+//   timeButton: {
+//     paddingHorizontal: 12,
+//     paddingVertical: 8,
+//     borderRadius: 6,
+//     minWidth: 40,
+//     alignItems: 'center',
+//   },
+//   timeButtonActive: {
+//     backgroundColor: '#3B82F6',
+//   },
+//   timeButtonText: {
+//     fontSize: 12,
+//     fontWeight: '500',
+//     color: '#6B7280',
+//   },
+//   timeButtonTextActive: {
+//     color: '#FFFFFF',
+//   },
+//   chartTypeButton: {
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderRadius: 6,
+//     backgroundColor: '#F3F4F6',
+//     marginHorizontal: 4,
+//   },
+//   chartTypeButtonActive: {
+//     backgroundColor: '#3B82F6',
+//   },
+//   chartTypeButtonText: {
+//     fontSize: 12,
+//     fontWeight: '500',
+//     color: '#6B7280',
+//   },
+//   chartTypeButtonTextActive: {
+//     color: '#FFFFFF',
+//   },
+//   emptyContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     height: chartHeight,
+//   },
+//   emptyText: {
+//     fontSize: 16,
+//     color: '#6B7280',
+//     textAlign: 'center',
+//   },
+// });
+
+// export default HistoricalNavChart;

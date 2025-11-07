@@ -1,0 +1,31 @@
+export type StackParamList = {
+  Home: undefined;
+  Settings: undefined;
+  MarketWatch:  undefined;
+  SipScheme:undefined;
+  Profile: { userId: number };
+  Account: undefined;
+  MandateHistory: undefined;
+  BankMandate: undefined;
+  Invest:undefined;
+  Transaction:undefined;
+  SipCalculator:undefined;
+  ToolsAndCalc:undefined;
+  InvestmentPortfolio:undefined;
+  InvestmentList:undefined;
+  MandateProcess:undefined;
+  // RegiLogin:undefined;
+Registration:undefined;
+KycRegi:undefined;
+PaymentComponent:undefined;
+PanVerify:undefined;
+Portfolio:undefined;
+SipInterface:undefined;
+InsidePortfolio:undefined;
+ReportScreen:undefined;
+HoldingStatement:undefined;
+Biometric:undefined;
+BiometricLogin:undefined;
+ChangePassword:undefined;
+NFO:undefined;
+}

@@ -1,0 +1,1 @@
+{"version":3,"names":["React","Context","createContext","undefined","TabNameContext"],"sourceRoot":"../../src","sources":["Context.tsx"],"mappings":";;AAAA,OAAOA,KAAK,MAAM,OAAO;AAIzB,OAAO,MAAMC,OAAO,gBAAGD,KAAK,CAACE,aAAa,CACxCC,SACF,CAAC;AACD,OAAO,MAAMC,cAAc,gBAAGJ,KAAK,CAACE,aAAa,CAC/CC,SACF,CAAC","ignoreList":[]}

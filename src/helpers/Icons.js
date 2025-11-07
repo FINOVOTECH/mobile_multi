@@ -1,0 +1,16 @@
+export const splash_screen = require("../assets/images/logo.png");
+export const logo = require("../assets/images/logo.png");
+export const login_screen = require("../assets/images/loginMail.png");
+export const loginScreenLogo = require("../assets/images/login.png")
+export const OTP_ScreenLogo = require("../assets/images/otpScreen.png")
+export const navbar_Icon = require("../assets/images/product.png")
+export const highReturn = require("../assets/images/highReturn.png")
+export const sip100 = require("../assets/images/sip100.png")
+export const gold_fund = require("../assets/images/goldFund.png")
+export const largeCap = require("../assets/images/largeCap.png")
+export const midCap = require("../assets/images/midCap.png")
+export const smallCap = require("../assets/images/smallCap.png")
+export const quick_link = require("../assets/images/quickLink.png")
+export const mandate_loader = require("../assets/gif/mandateLoader.gif")
+export const no_active_sip = require("../assets/images/noActiveSip.png")
+export const back_button = require("../assets/Icons/back.svg")
