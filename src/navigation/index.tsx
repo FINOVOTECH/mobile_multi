@@ -165,7 +165,7 @@ const ExitNotification = ({ visible, onHide }) => {
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.notificationText}>Press back again to exit TaurusFund</Text>
+        <Text style={styles.notificationText}>Press back again to exit Jyoti MF</Text>
       </View>
     </Animated.View>
   );

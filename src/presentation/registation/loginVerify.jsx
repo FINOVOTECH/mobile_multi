@@ -302,7 +302,7 @@ const LoginVerify = ({
                 style={styles.logo}
                 resizeMode='contain'
               />
-              <Text style={styles.logoText}>TaurusFund</Text>
+              <Text style={styles.logoText}>Jyoti MF</Text>
             </View>
 
             {/* Title */}

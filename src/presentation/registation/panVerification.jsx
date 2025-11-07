@@ -279,7 +279,7 @@ const PanVerification = ({
                 style={styles.logo}
                 resizeMode='contain'
               />
-              <Text style={styles.logoText}>TaurusFund</Text>
+              <Text style={styles.logoText}>Jyoti MF</Text>
             </View>
 
             <View style={styles.titleContainer}>
