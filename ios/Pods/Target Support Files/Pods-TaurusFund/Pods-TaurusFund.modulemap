@@ -1,0 +1,6 @@
+module Pods_TaurusFund {
+  umbrella header "Pods-TaurusFund-umbrella.h"
+
+  export *
+  module * { export * }
+}
