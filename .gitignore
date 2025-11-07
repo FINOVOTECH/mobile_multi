@@ -1,0 +1,13 @@
+# React Native
+node_modules/
+android/.gradle/
+android/app/build/
+ios/build/
+ios/Pods/
+*.iml
+.gradle
+local.properties
+.env
+*.keystore
+*.apk
+*.aab
