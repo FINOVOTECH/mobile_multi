@@ -1,4 +1,4 @@
-export const baseUrl = "https://onekyc.finovo.tech:8015";
+export const baseUrl = "https://onekyc.finovo.tech:8027";
 // export const baseUrl = "http://192.168.100.40:8018";
 export const store_key_login_details = "token"
 

@@ -28,7 +28,7 @@ const QuickLinksSection = ({ onViewAll }) => {
     },
     {
       id: '3',
-      title: 'Transaction\nHistory',
+      title: 'Order\nStatus',
       icon: require('../../assets/images/transaction.png'),
       route: 'Transaction',
     },
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'start',
     width: '100%',
     paddingHorizontal: widthToDp(2),
   },

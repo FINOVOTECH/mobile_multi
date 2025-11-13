@@ -1,5 +1,5 @@
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
@@ -10,121 +10,151 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   BackHandler,
+  SafeAreaView
 } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
-import { apiGetService } from '../../../helpers/services';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { TabView, TabBar } from 'react-native-tab-view';
 import * as Config from '../../../helpers/Config';
-import { heightToDp, widthToDp } from '../../../helpers/Responsive';
 import SInfoSvg from '../../svgs';
+import moment from 'moment';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Transaction = ({ navigation }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [transactionData, setTransactionData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedItems, setExpandedItems] = useState(new Set());
+  const [page, setPage] = useState(1);
+  const [TOKEN, setTOKEN] = useState('');
+  const [hasMore, setHasMore] = useState(true);
+  const [tokenLoaded, setTokenLoaded] = useState(false);
 
-  const routes = [
-    { key: 'SIP', title: 'SIP' },
-    { key: 'LUMPSUM', title: 'Lumpsum' },
-    { key: 'SWP', title: 'SWP' },
-  ];
+  const [fromDate, setFromDate] = useState(new Date('2025-05-01'));
+  const [toDate, setToDate] = useState(new Date('2025-10-31'));
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker, setShowToPicker] = useState(false);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem('token');
+        if (storedToken) {
+          setTOKEN(storedToken);
+          setTokenLoaded(true);
+        }
+      } catch (err) {
+        console.error('Error fetching token:', err);
+      }
+    };
+    fetchToken();
+  }, []);
+
   useEffect(() => {
     const backAction = () => {
-      // BackHandler.exitApp();
       navigation.goBack();
       return true;
     };
-
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      backAction,
-    );
-
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
   }, []);
-  useEffect(() => {
-    FetchTransaction(routes[tabIndex].key);
-  }, [tabIndex]);
 
-  const FetchTransaction = async item => {
+  useEffect(() => {
+    if (tokenLoaded && TOKEN) {
+      FetchTransaction(1, true);
+    }
+  }, [fromDate, toDate, TOKEN, tokenLoaded]);
+
+  const FetchTransaction = async (pageNumber = 1, reset = false) => {
+    if (!TOKEN) return;
+    if (!hasMore && !reset) return;
+
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://onekyc.finovo.tech:8015/api/v1/admin/feature/history/transaction?transactionType=${item}`,
-      );
+      const from = moment(fromDate).format('DD/MM/YYYY');
+      const to = moment(toDate).format('DD/MM/YYYY');
+      const url = `${Config.baseUrl}/api/v1/mutualfund/orderstatus/me?fromDate=${from}&toDate=${to}&page=${pageNumber}&limit=20`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
       const data = await response.json();
-      console.log('Transaction data', data);
-      setTransactionData(data.results || []);
+      const results = data?.data || [];
+
+      if (reset) {
+        setTransactionData(results);
+      } else {
+        setTransactionData((prev) => [...prev, ...results]);
+      }
+
+      setHasMore(pageNumber < data?.totalPages);
+      setPage(pageNumber);
     } catch (error) {
-      console.error(`${error}||${error.message}`);
+      console.error('Transaction fetch error:', error.message);
       setTransactionData([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleExpanded = referenceNumber => {
-    setExpandedItems(prev => {
+  const toggleExpanded = (orderNo) => {
+    setExpandedItems((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(referenceNumber)) {
-        newSet.delete(referenceNumber);
-      } else {
-        newSet.add(referenceNumber);
-      }
+      if (newSet.has(orderNo)) newSet.delete(orderNo);
+      else newSet.add(orderNo);
       return newSet;
     });
   };
 
-  const renderTransactionItem = ({ item, index }) => {
-    const isExpanded = expandedItems.has(item?.referenceNumber);
+  const loadMoreData = useCallback(() => {
+    if (!loading && hasMore) {
+      FetchTransaction(page + 1, false);
+    }
+  }, [page, loading, hasMore]);
+
+  const renderTransactionItem = ({ item }) => {
+    const isExpanded = expandedItems.has(item?.orderNo);
     const statusColor =
-      item?.bseResponseFlag === 'FAILED' ? '#FF4444' : '#00AA00';
+      item?.orderStatus === 'INVALID' || item?.orderStatus === 'FAILED'
+        ? '#FF4444'
+        : '#00AA00';
     const statusBgColor =
-      item?.bseResponseFlag === 'FAILED' ? '#FFEEEE' : '#EEFFEE';
+      item?.orderStatus === 'INVALID' || item?.orderStatus === 'FAILED'
+        ? '#FFEEEE'
+        : '#EEFFEE';
 
     return (
       <View style={styles.accordionContainer}>
         <TouchableOpacity
           style={styles.accordionHeader}
-          onPress={() => toggleExpanded(item?.referenceNumber)}
-          activeOpacity={0.7}
-        >
+          onPress={() => toggleExpanded(item?.orderNo)}
+          activeOpacity={0.7}>
           <View style={styles.headerMainContent}>
             <View style={styles.headerTopRow}>
-              <Text style={styles.referenceNumber}>
-                #{item?.referenceNumber || 'N/A'}
-              </Text>
-              <View
-                style={[styles.statusBadge, { backgroundColor: statusBgColor }]}
-              >
+              <Text style={styles.referenceNumber}>#{item?.orderNo}</Text>
+              <View style={[styles.statusBadge, { backgroundColor: statusBgColor }]}>
                 <Text style={[styles.statusText, { color: statusColor }]}>
-                  {item?.bseResponseFlag || 'Unknown'}
+                  {item?.orderStatus}
                 </Text>
               </View>
             </View>
 
             <View style={styles.headerMiddleRow}>
               <View>
-                <Text style={styles.clientCode}>
-                  {item?.clientCode || 'N/A'}
-                </Text>
-                <Text style={styles.schemaCode}>
-                  {item?.schemaCode || 'N/A'}
-                </Text>
+                <Text style={styles.clientCode}>{item?.clientName}</Text>
+                <Text style={styles.schemaCode}>{item?.schemeName}</Text>
               </View>
-              <Text style={styles.orderValue}>₹{item?.orderValue || '0'}</Text>
+              <Text style={styles.orderValue}>₹{item?.amount}</Text>
             </View>
 
             <View style={styles.headerBottomRow}>
-              <Text style={styles.dateText}>
-                {item?.createdAt
-                  ? new Date(item.createdAt).toLocaleDateString()
-                  : 'N/A'}
-              </Text>
-              <Text style={styles.transactionType}>
-                {item?.transactionType}
-              </Text>
+              <Text style={styles.dateText}>{item?.date || 'N/A'}</Text>
+              <Text style={styles.transactionType}>{item?.buySellType}</Text>
             </View>
           </View>
 
@@ -140,130 +170,76 @@ const Transaction = ({ navigation }) => {
         {isExpanded && (
           <View style={styles.accordionContent}>
             <View style={styles.detailsSection}>
-              {/* <Text style={styles.detailsTitle}>Transaction Details</Text> */}
-
               <View style={styles.detailGrid}>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Order ID</Text>
-                  <Text style={styles.detailValue}>
-                    {item?.orderId || 'N/A'}
-                  </Text>
+                  <Text style={styles.detailLabel}>Client Code</Text>
+                  <Text style={styles.detailValue}>{item?.clientCode}</Text>
                 </View>
 
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Updated At</Text>
-                  <Text style={styles.detailValue}>
-                    {item?.updatedAt
-                      ? new Date(item.updatedAt).toLocaleString()
-                      : 'N/A'}
-                  </Text>
+                  <Text style={styles.detailLabel}>ISIN</Text>
+                  <Text style={styles.detailValue}>{item?.isin}</Text>
                 </View>
 
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Type</Text>
-                  <Text style={styles.detailValue}>
-                    {item?.buySellType || 'N/A'}
-                  </Text>
+                  <Text style={styles.detailLabel}>DP Folio</Text>
+                  <Text style={styles.detailValue}>{item?.dpFolioNo}</Text>
                 </View>
 
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Status</Text>
+                  <Text style={styles.detailLabel}>KYC Flag</Text>
+                  <Text style={styles.detailValue}>{item?.kycFlag}</Text>
+                </View>
+
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Remarks</Text>
+                  <Text style={styles.detailValue}>{item?.orderRemarks || '—'}</Text>
+                </View>
+
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Created At</Text>
                   <Text style={styles.detailValue}>
-                    {item?.orderStatus || 'N/A'}
+                    {moment(item?.createdAt).format('DD/MM/YYYY HH:mm')}
                   </Text>
                 </View>
               </View>
             </View>
-
-            {item?.transactionType === 'SIP' && (
-              <View style={styles.detailsSection}>
-                <Text style={styles.detailsTitle}>SIP Details</Text>
-
-                <View style={styles.detailGrid}>
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Start Date</Text>
-                    <Text style={styles.detailValue}>
-                      {item?.sipStartDate
-                        ? new Date(item.sipStartDate).toLocaleDateString()
-                        : 'N/A'}
-                    </Text>
-                  </View>
-
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Installments</Text>
-                    <Text style={styles.detailValue}>
-                      {item?.noOfInstallment || 'N/A'}
-                    </Text>
-                  </View>
-
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Mandate ID</Text>
-                    <Text style={styles.detailValue}>
-                      {item?.mandateId || 'N/A'}
-                    </Text>
-                  </View>
-
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Registration ID</Text>
-                    <Text style={styles.detailValue}>
-                      {item?.registrationId || 'N/A'}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {item?.bseRemarks && (
-              <View style={styles.remarksSection}>
-                <Text style={styles.remarksTitle}>Remarks</Text>
-                <Text style={styles.remarksText}>{item?.bseRemarks}</Text>
-              </View>
-            )}
           </View>
         )}
       </View>
     );
   };
 
-  const renderScene = ({ route }) => {
-    return (
-      <View style={styles.sceneContainer}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Config?.Colors?.primary} />
-          </View>
-        ) : (
-          <FlatList
-            data={transactionData}
-            renderItem={renderTransactionItem}
-            keyExtractor={(item, index) =>
-              `${item?.referenceNumber || index}-${index}`
-            }
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
+  const renderScene = () => (
+    <View style={styles.sceneContainer}>
+      {loading && transactionData.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Config?.Colors?.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={transactionData}
+          renderItem={renderTransactionItem}
+          keyExtractor={(item, index) => `${item?.orderNo || index}-${index}`}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          onEndReached={loadMoreData}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loading && transactionData.length > 0 ? (
+              <ActivityIndicator size="small" color={Config?.Colors?.primary} />
+            ) : null
+          }
+          ListEmptyComponent={
+            !loading && (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  No {route?.title} transactions found
-                </Text>
+                <Text style={styles.emptyText}>No transactions found</Text>
               </View>
-            }
-          />
-        )}
-      </View>
-    );
-  };
-
-  const renderTabBar = props => (
-    <TabBar
-      {...props}
-      indicatorStyle={styles.indicator}
-      style={styles.tabBar}
-      labelStyle={styles.tabLabel}
-      activeColor={Config?.Colors?.white}
-      inactiveColor={'rgba(255, 255, 255, 0.7)'}
-      tabStyle={styles.tabStyle}
-    />
+            )
+          }
+        />
+      )}
+    </View>
   );
 
   return (
@@ -274,21 +250,51 @@ const Transaction = ({ navigation }) => {
       <View style={styles.headerSection}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
+          style={styles.backButton}>
           <SInfoSvg.BackButton />
         </TouchableOpacity>
-        <Text style={styles.pageTitle}>Transaction History</Text>
+        <Text style={styles.pageTitle}>Order Status</Text>
       </View>
 
-      <TabView
-        navigationState={{ index: tabIndex, routes }}
-        renderScene={renderScene}
-        renderTabBar={renderTabBar}
-        onIndexChange={setTabIndex}
-        initialLayout={{ width: Dimensions.get('window').width }}
-        style={styles.tabView}
-      />
+      <View style={styles.dateFilterContainer}>
+        <TouchableOpacity onPress={() => setShowFromPicker(true)} style={styles.dateButton}>
+          <Text style={styles.dateTextBtn}>
+            From: {moment(fromDate).format('DD/MM/YYYY')}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setShowToPicker(true)} style={styles.dateButton}>
+          <Text style={styles.dateTextBtn}>
+            To: {moment(toDate).format('DD/MM/YYYY')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {showFromPicker && (
+        <DateTimePicker
+          value={fromDate}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowFromPicker(false);
+            if (selectedDate) setFromDate(selectedDate);
+          }}
+        />
+      )}
+
+      {showToPicker && (
+        <DateTimePicker
+          value={toDate}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowToPicker(false);
+            if (selectedDate) setToDate(selectedDate);
+          }}
+        />
+      )}
+
+      {renderScene()}
     </SafeAreaView>
   );
 };
@@ -296,207 +302,63 @@ const Transaction = ({ navigation }) => {
 export default Transaction;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Config?.Colors?.background,
-  },
-  androidStatusBar: {
-    height: StatusBar.currentHeight,
-    // backgroundColor: Config?.Colors?.primary,
-    backgroundColor: 'transparent',
-    // backgroundColor: "black",
-  },
+  container: { flex: 1, backgroundColor: Config?.Colors?.white },
+  androidStatusBar: { height: StatusBar.currentHeight, backgroundColor: 'transparent' },
   headerSection: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    // backgroundColor: Config?.Colors?.primary,
     position: 'relative',
   },
-  backButton: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 1,
+  backButton: { position: 'absolute', left: 16 },
+  pageTitle: { fontSize: 18, fontWeight: '600', color: Config?.Colors?.black },
+  dateFilterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    backgroundColor: '#f5f5f5',
   },
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Config?.Colors?.black,
+  dateButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
-  tabView: {
-    flex: 1,
-  },
-  tabBar: {
-    backgroundColor: Config?.Colors?.primary,
-    elevation: 0,
-    shadowOpacity: 0,
-    height: 48,
-  },
-  tabStyle: {
-    paddingVertical: 0,
-  },
-  indicator: {
-    backgroundColor: Config?.Colors?.white,
-    height: 3,
-  },
-  tabLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'none',
-    margin: 0,
-  },
-  sceneContainer: {
-    flex: 1,
-    backgroundColor: Config?.Colors?.background,
-  },
-  listContainer: {
-    padding: 12,
-  },
+  dateTextBtn: { fontSize: 14, color: '#333' },
+  listContainer: { padding: 12 },
   accordionContainer: {
-    backgroundColor: Config?.Colors?.white,
+    backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 12,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    overflow: 'hidden',
   },
-  accordionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: Config?.Colors?.white,
-  },
-  headerMainContent: {
-    flex: 1,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  referenceNumber: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  headerMiddleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  clientCode: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Config?.Colors?.textPrimary,
-    marginBottom: 2,
-  },
-  schemaCode: {
-    fontSize: 14,
-    color: '#666',
-  },
-  orderValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Config?.Colors?.textPrimary,
-  },
-  headerBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  transactionType: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Config?.Colors?.primary,
-    textTransform: 'capitalize',
-  },
-  expandIconContainer: {
-    marginLeft: 8,
-  },
-  accordionContent: {
-    padding: 16,
-    paddingTop: 0,
-    backgroundColor: '#FAFAFA',
-    borderTopWidth: 1,
-    borderTopColor: '#EEE',
-  },
-  detailsSection: {
-    marginBottom: 16,
-  },
-  detailsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Config?.Colors?.textPrimary,
-    marginBottom: 12,
-  },
-  detailGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  detailItem: {
-    width: '100%',
-    // marginBottom: 12,
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Config?.Colors?.textPrimary,
-  },
-  remarksSection: {
-    backgroundColor: '#FFF5F5',
-    borderRadius: 8,
-    padding: 12,
-  },
-  remarksTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF4444',
-    marginBottom: 4,
-  },
-  remarksText: {
-    fontSize: 13,
-    color: '#FF4444',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 100,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
+  accordionHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 16 },
+  headerMainContent: { flex: 1 },
+  headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  referenceNumber: { fontSize: 14, fontWeight: '500', color: '#666' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  statusText: { fontSize: 12, fontWeight: '600' },
+  headerMiddleRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  clientCode: { fontSize: 16, fontWeight: '600', color: Config?.Colors?.textPrimary },
+  schemaCode: { fontSize: 14, color: '#666' },
+  orderValue: { fontSize: 18, fontWeight: '700', color: Config?.Colors?.textPrimary },
+  headerBottomRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  dateText: { fontSize: 12, color: '#666' },
+  transactionType: { fontSize: 12, fontWeight: '600', color: Config?.Colors?.primary },
+  accordionContent: { padding: 16, backgroundColor: '#FAFAFA' },
+  detailItem: { marginBottom: 6 },
+  detailLabel: { fontSize: 12, color: '#666' },
+  detailValue: { fontSize: 14, fontWeight: '500', color: Config?.Colors?.textPrimary },
+  remarksSection: { backgroundColor: '#FFF5F5', borderRadius: 8, padding: 12 },
+  remarksTitle: { fontSize: 14, fontWeight: '600', color: '#FF4444' },
+  remarksText: { fontSize: 13, color: '#FF4444' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
+  emptyText: { fontSize: 16, color: '#666', textAlign: 'center' },
 });

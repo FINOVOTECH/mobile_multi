@@ -40,7 +40,7 @@ const Profile_Data = [
   },
   {
     id: 2,
-    name: 'Transaction History',
+    name: 'Order History',
     icon: SInfoSvg.Transaction,
     route: 'Transaction',
     color: '#FF9800',
