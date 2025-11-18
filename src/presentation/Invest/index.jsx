@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  SafeAreaView,
   TextInput,
   Platform,
   ScrollView,
@@ -28,6 +27,7 @@ import Rbutton from '../../components/Rbutton';
 import MandateAlert from '../../components/MandateAlert';
 import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../assets/Icons/vector.png';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -665,7 +665,7 @@ useEffect(() => {
           activeOpacity={0.7}
         >
           <View style={styles.backArrow}>
-            <SInfoSvg.BackButton />
+            <SInfoSvg.WhiteBackButton />
           </View>
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
@@ -903,7 +903,7 @@ useEffect(() => {
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
+      <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
       
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
   loadingContainer: {
@@ -977,13 +977,13 @@ const styles = StyleSheet.create({
   // Header Styles
   headerGradient: {
     backgroundColor: '#2B8DF6',
-    paddingBottom: heightToDp(2),
+    paddingVertical: heightToDp(2),
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: widthToDp(4),
-    paddingTop: heightToDp(1),
+    // paddingTop: heightToDp(1),
   },
   backButton: {
     marginRight: widthToDp(3),

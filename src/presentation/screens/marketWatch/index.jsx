@@ -4,7 +4,6 @@ import {
   View,
   StatusBar,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
   ScrollView,
   ActivityIndicator,
@@ -30,6 +29,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
 import ChartLoader from '../ChartLoader';
 import SInfoSvg from '../../svgs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
   const MarketWatch = ({ navigation }) => {
     const dispatch = useDispatch();
@@ -697,7 +697,7 @@ import SInfoSvg from '../../svgs';
           width: '100%',
           justifyContent: 'space-evenly',
           backgroundColor: 'transparent',
-          paddingVertical: heightToDp(2),
+          // paddingVertical: heightToDp(2),
         }}
       >
         <View style={{ width: '40%' }}>
@@ -742,7 +742,7 @@ import SInfoSvg from '../../svgs';
     return (
       <SafeAreaView style={styles.container}>
         {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-        <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
+        <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
 
         {/* Header with Gradient Background */}
         <LinearGradient
@@ -800,12 +800,12 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
   headerGradient: {
     backgroundColor: '#2B8DF6',
-    paddingBottom: heightToDp(1),
+    paddingVertical: heightToDp(2),
   },
   chartContainer: {
     position: 'relative',
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
   },
   fundInfo: {
     paddingHorizontal: widthToDp(2.5),
-    paddingTop: heightToDp(1),
+    // paddingTop: heightToDp(1),
   },
   fundName: {
     fontSize: widthToDp(4),
@@ -1059,7 +1059,7 @@ const styles = StyleSheet.create({
   },
 
   investButton: {
-    marginBottom: heightToDp(2),
+    // marginBottom: heightToDp(2),
   },
   investButtonText: {
     color: 'black',

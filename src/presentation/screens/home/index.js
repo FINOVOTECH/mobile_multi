@@ -529,13 +529,13 @@ export default function Home() {
             Trusted by many Brokers
           </Text>
         </View>
-{/*         
+        
         <TouchableOpacity style={simpleStyles.registerContainer} onPress={() => navigation?.navigate('Registration')}>
           <Text style={simpleStyles.registerText}>
             Don't have an account?
             <Text style={simpleStyles.registerLink}> Register Now</Text>
           </Text>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
         
       </View>
     </View>
@@ -790,7 +790,7 @@ const simpleStyles = StyleSheet.create({
   },
   registerContainer: {
     marginTop: heightToDp(2),
-    marginBottom: heightToDp(1),
+    marginBottom: heightToDp(6),
   },
   registerText: {
     textAlign: 'center',

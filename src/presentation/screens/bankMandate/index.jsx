@@ -11,7 +11,6 @@ import {
   BackHandler,
   Dimensions,
   StatusBar,
-  SafeAreaView,
   Modal,
   TouchableWithoutFeedback,
   Platform,
@@ -28,6 +27,7 @@ import { getData } from '../../../helpers/localStorage';
 import Rbutton from '../../../components/Rbutton';
 import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -415,7 +415,7 @@ const BankMandate = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" />
 
       <Header />
 
@@ -648,20 +648,20 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
 
   // Header Styles
   headerGradient: {
     backgroundColor: '#2B8DF6',
-    paddingBottom: heightToDp(2),
+    paddingVertical: heightToDp(2),
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: widthToDp(4),
-    paddingTop: heightToDp(1),
+    // paddingTop: heightToDp(1),
   },
   backButton: {
     marginRight: widthToDp(3),

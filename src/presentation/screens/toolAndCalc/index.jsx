@@ -73,7 +73,7 @@ const ToolsAndCalc = ({ navigation }) => {
         onBackPress={() => navigation?.goBack()} 
       /> */}
       <View style={{alignItems:"center",paddingVertical:heightToDp(2), flexDirection:"row", justifyContent:"center"}}>
-        <SInfoSvg.BackButton style={{position:"absolute", left:10}}/>
+        <SInfoSvg.BackButton onPress={() => navigation.goBack()} style={{position:"absolute", left:10}}/>
         <Text style={{ fontSize: 20, fontWeight: '600',color:"black" }}>
           Tools And Calculator
         </Text>
