@@ -25,22 +25,20 @@ import CustomSlider from '../CustomSlider';
 import { apiPostService } from '../../helpers/services';
 import { getData } from '../../helpers/localStorage';
 import Rbutton from '../Rbutton';
-import InvestedPorfolio from '../../hooks/investedPortfolio';
 
 const { height: screenHeight } = Dimensions.get('window');
 
 const SipInterface = ({ navigation }) => {
   const Data = useSelector(state => state.marketWatch.sipInterface);
-  // console.log('SIP INTERFACE', Data);
-  const { investmentData, loading, error, refetch } = InvestedPorfolio();
-    // console.log('SIP INTERFACE INSIDE', investmentData);
+  console.log('SIP INTERFACE', Data);
+  // console.log('SIP INTERFACE INSIDE', investmentData);
   const [isDarkTheme, setIsDarkTheme] = useState(false);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [customizeModalVisible, setCustomizeModalVisible] = useState(false);
   const [pauseModalVisible, setPauseModalVisible] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
-const steps = [3, 6, 9, 12];
-const [pauseDuration, setPauseDuration] = useState(steps[0]);
+  const steps = [3, 6, 9, 12];
+  const [pauseDuration, setPauseDuration] = useState(steps[0]);
   const [selectedCancelOption, setSelectedCancelOption] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [otherReason, setOtherReason] = useState('');
@@ -50,13 +48,13 @@ const [pauseDuration, setPauseDuration] = useState(steps[0]);
   const [otp, setOtp] = useState('');
   const [redemptionSlideAnim] = useState(new Animated.Value(screenHeight));
   const [redemptionForm, setRedemptionForm] = useState({
-  clientCode: "",
-  schemeCode: "",
-  folioNo: "",
-  allUnitsFlag: "N",
-  redemptionAmount: "",
-  redemptionUnits: ""
-});
+    clientCode: '',
+    schemeCode: '',
+    folioNo: '',
+    allUnitsFlag: 'N',
+    redemptionAmount: '',
+    redemptionUnits: '',
+  });
   const [stepUpModalVisible, setStepUpModalVisible] = useState(false);
   const [stepUpSlideAnim] = useState(new Animated.Value(screenHeight));
   const [stepUpForm, setStepUpForm] = useState({
@@ -98,40 +96,26 @@ const [pauseDuration, setPauseDuration] = useState(steps[0]);
     folioNo: '', // Required only for physical clients
     remarks: 'Client initiated switch order',
   });
-  const [matchedHolding, setMatchedHolding] = useState(null);
-  const [matchedData, setMatchedData] = useState(null);
 
-useEffect(() => {
-  if (investmentData?.holdings && Data?.ISIN) {
-    const found = investmentData.holdings.find(
-      (h) => h?.ISIN === Data?.ISIN
-    );
-    setMatchedHolding(found);
-    console.log("MATCHED HOLDIGNG", found)
-  }
-  if (investmentData?.holdings && Data?.ISIN) {
-    const found = investmentData.bseAllotments.find(
-      (h) => h?.ISIN === Data?.ISIN
-    );
-    setMatchedData(found);
-    console.log("MATCHED DATA", found)
-  }
-}, [investmentData, Data]);
-
-useEffect(()=>{
-  console.log("MATCHED DATA USEEFFECT", matchedData?.allottedUnit)
-  if(matchedData){
-    setRedemptionForm((prev)=>({
-   ...prev,
-  clientCode: "",
-  schemeCode: matchedData?.schemeCode || "",
-  folioNo: matchedData?.FolioNo || "",
-  allUnitsFlag: "N",
-  redemptionAmount: "",
-  redemptionUnits: matchedData?.allottedUnit 
-    }))
-  }
-},[])
+  useEffect(() => {
+    console.log('ALLTTED UNITS', Data?.allotmentData?.allottedUnit);
+    if (Data?.allotmentData) {
+      setRedemptionForm(prev => ({
+        ...prev,
+        clientCode: '',
+        schemeCode: Data?.allotmentData?.schemeCode || '',
+        folioNo: Data?.allotmentData?.folioNo || '',
+        allUnitsFlag: 'N',
+        redemptionAmount: '',
+        redemptionUnits: Data?.allotmentData?.allottedUnit || '',
+      }));
+      setSwitchForm(prev => ({
+        ...prev,
+        fromSchemeCd: Data?.allotmentData?.schemeCode || '',
+        folioNo: Data?.allotmentData?.folioNo || '',
+      }));
+    }
+  }, []);
 
   const openSwitchModal = () => {
     closeCustomizeModal();
@@ -215,19 +199,22 @@ useEffect(()=>{
   };
 
   const handlePauseSIP = async () => {
-    if (!matchedData?.SIPRegnNo) {
+    if (!Data?.allotmentData?.SIPRegnNo) {
       showResponseMessage('Error', 'SIP Registration Number not found', false);
       return;
     }
 
     setLoading(true);
-    console.log("VALUES",matchedData.SIPRegnNo)
+    console.log('VALUES', Data?.allotmentData?.SIPRegnNo);
+    console.log('PAUSE RES', {
+      sipRegistrationNumber: Data?.allotmentData?.SIPRegnNo,
+      pauseInstNumber: String(pauseDuration),
+    });
     try {
-      const response = await apiPostService('/api/v1/order/pause/sip/entry', {
-        sipRegistrationNumber: matchedData.SIPRegnNo,
+      const response = await apiPostService('/api/v1/pause/sip/entry', {
+        sipRegistrationNumber: Data?.allotmentData?.SIPRegnNo,
         pauseInstNumber: String(pauseDuration),
       });
-console.log("PAUSE RES", response)
       const isSuccess = response?.status === 200 || response?.status === 201;
 
       if (isSuccess) {
@@ -274,23 +261,27 @@ console.log("PAUSE RES", response)
       return;
     }
 
-    if (!matchedData?.SIPRegnNo) {
+    if (!Data?.allotmentData?.SIPRegnNo) {
       showResponseMessage('Error', 'SIP Registration Number not found', false);
       return;
     }
-
     setLoading(true);
     try {
       const clientCode = await getData('clientCode');
       const cancelReasonIndex = cancelOptions.findIndex(
         option => option === selectedCancelOption,
       );
+      console.log('CANCEL RES', {
+        xsipRegistrationID: Data?.allotmentData?.SIPRegnNo,
+        remarks: '',
+        ceaseBseCode: String(cancelReasonIndex + 1).padStart(2, '0'),
+      });
 
       const response = await apiPostService(
-        '/api/v1/order/cancellation/sip/entry',
+        '/api/v1/cancellation/sip/entry',
         {
-          xsipRegistrationID: matchedData.SIPRegnNo,
-          remarks: "",
+          xsipRegistrationID: Data?.allotmentData?.SIPRegnNo,
+          remarks: '',
           ceaseBseCode: String(cancelReasonIndex + 1).padStart(2, '0'),
         },
         {
@@ -340,10 +331,8 @@ console.log("PAUSE RES", response)
       setRedemptionModalVisible(false);
       setShowOtpInput(false);
       setOtp('');
-     
     });
   };
-
 
   const handleSwitchSIP = async () => {
     // ✅ Validate required fields
@@ -358,12 +347,8 @@ console.log("PAUSE RES", response)
 
     setLoading(true);
     try {
-      // ✅ Get clientCode from local storage
-      const clientCode = await getData('clientCode');
-
-      // ✅ Prepare payload based on API structure
       const payload = {
-        fromSchemeCd: Data.schemeCode,
+        fromSchemeCd: Data?.allotmentData?.schemeCode || '',
         toSchemeCd: switchForm.toSchemeCd,
         switchAmount: switchForm.switchAmount,
         allUnitsFlag: switchForm.allUnitsFlag,
@@ -371,15 +356,13 @@ console.log("PAUSE RES", response)
         folioNo: switchForm.folioNo, // required only for Physical clients
         remarks: switchForm.remarks || 'Client initiated switch order',
       };
-
+      console.log('🛰️ Switch SIP Payload:', payload);
       // ✅ Call API using existing service
       const response = await apiPostService(
         '/api/v1/mutualfund/switch-order',
         payload,
         {
           headers: {
-            Authorization: authToken, // make sure you have this token available
-            clientCode,
             'Content-Type': 'application/json',
           },
         },
@@ -411,67 +394,67 @@ console.log("PAUSE RES", response)
       setLoading(false);
     }
   };
-// ✅ Redemption API Function
-const handleRedemptionSubmit = async () => {
-  if (!redemptionForm.redemptionUnits) {
-    showResponseMessage('Error', 'Please enter redemption units', false);
-    return;
-  }
+  // ✅ Redemption API Function
+  const handleRedemptionSubmit = async () => {
+    if (!redemptionForm.redemptionUnits) {
+      showResponseMessage('Error', 'Please enter redemption units', false);
+      return;
+    }
 
-  setLoading(true);
-  try {
-    const clientCode = await getData('clientCode');
+    setLoading(true);
+    try {
+      const clientCode = await getData('clientCode');
 
-    const payload = {
-      clientCode: matchedData?.clientCode ,
-      schemeCode: matchedData?.schemeCode,
-      folioNo: matchedData?.FolioNo ,
-      allUnitsFlag: 'N',
-      redemptionAmount: '',
-      redemptionUnits: redemptionForm.redemptionUnits,
-    };
+      const payload = {
+        clientCode: clientCode,
+        schemeCode: Data?.allotmentData?.schemeCode,
+        folioNo: Data?.allotmentData?.folioNo,
+        allUnitsFlag: 'N',
+        redemptionAmount: '',
+        redemptionUnits: redemptionForm.redemptionUnits,
+      };
 
-    console.log('🛰️ Redemption Payload:', payload);
+      console.log('🛰️ Redemption Payload:', payload);
 
-    const response = await apiPostService(
-      '/api/v1/order/redemption/entry',
-      payload,
-      {
-        headers: { clientCode },
-      },
-    );
-
-    const isSuccess = response?.status === 200 || response?.status === 201;
-
-    if (isSuccess) {
-      showResponseMessage(
-        'Success',
-        response?.data?.message ||
-          `Redemption of ${payload.redemptionUnits} units submitted successfully!`,
+      const response = await apiPostService(
+        '/api/v1/redemption/entry',
+        payload,
+        {
+          headers: { clientCode },
+        },
       );
-      closeRedemptionModal();
-      setRedemptionForm({
-        redemptionUnits: '',
-      });
-    } else {
+
+      const isSuccess = response?.status === 200 || response?.status === 201;
+
+      if (isSuccess) {
+        showResponseMessage(
+          'Success',
+          response?.data?.message ||
+            `Redemption of ${payload.redemptionUnits} units submitted successfully!`,
+        );
+        closeRedemptionModal();
+        setRedemptionForm({
+          redemptionUnits: '',
+        });
+      } else {
+        showResponseMessage(
+          'Error',
+          response?.data?.message || 'Failed to submit redemption request.',
+          false,
+        );
+      }
+    } catch (error) {
+      console.error('❌ Redemption Error:', error);
       showResponseMessage(
         'Error',
-        response?.data?.message || 'Failed to submit redemption request.',
+        error?.response?.data?.message ||
+          'Network error. Please check your connection and try again.',
         false,
       );
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('❌ Redemption Error:', error);
-    showResponseMessage(
-      'Error',
-      error?.response?.data?.message ||
-        'Network error. Please check your connection and try again.',
-      false,
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const openStepUpModal = () => {
     closeCustomizeModal();
@@ -502,7 +485,7 @@ const handleRedemptionSubmit = async () => {
   };
 
   const handleStepUpSIP = async () => {
-    if (!matchedData?.schemeCode) {
+    if (!Data?.allotmentData?.schemeCode) {
       showResponseMessage('Error', 'Scheme Code not found', false);
       return;
     }
@@ -533,11 +516,17 @@ const handleRedemptionSubmit = async () => {
     }
 
     setLoading(true);
+    console.log('STEP UP VALUES', {
+      schemaCode: Data?.allotmentData?.schemeCode,
+      sipOrderId: Data?.allotmentData?.SIPRegnNo || '12345', // Use actual SIP ID or fallback
+      duration: stepUpForm.duration,
+      sipInstallmentAmount: stepUpForm.sipInstallmentAmount,
+    });
     try {
       const clientCode = await getData('clientCode');
       const requestBody = {
-        schemaCode: matchedData?.schemeCode,
-        sipOrderId: matchedData?.SIPRegnNo || '12345', // Use actual SIP ID or fallback
+        schemaCode: Data?.allotmentData?.schemeCode,
+        sipOrderId: Data?.allotmentData?.orderNo || '12345', // Use actual SIP ID or fallback
         duration: stepUpForm.duration,
         sipInstallmentAmount: stepUpForm.sipInstallmentAmount,
       };
@@ -552,7 +541,7 @@ const handleRedemptionSubmit = async () => {
       }
 
       const response = await apiPostService(
-        '/api/v1/order/stepup/sip/entry',
+        '/api/v1/stepup/sip/entry',
         requestBody,
         {
           headers: { clientCode },
@@ -705,6 +694,67 @@ const handleRedemptionSubmit = async () => {
       </Text>
     </TouchableOpacity>
   );
+// ========== CUSTOMIZE OPTION CONDITIONAL LOGIC ==========
+
+const sipStatus = Data?.sip?.status;
+const allottedUnits = parseFloat(Data?.allotmentData?.allottedUnit || 0);
+
+let customizeOptions = [];
+
+if (sipStatus === 'cancelled' && allottedUnits > 0) {
+  // Case 1 → SIP Cancelled + has units → Only Redemption
+  customizeOptions = [
+    {
+      icon: '💰',
+      title: 'SIP Redemption',
+      description: 'Redeem units from your SIP investment',
+      onPress: openRedemptionModal,
+      color: '#2196F3',
+    },
+  ];
+} else if (sipStatus === 'cancelled' && allottedUnits <= 0) {
+  // Case 2 → SIP Cancelled + 0 units → Show info
+  customizeOptions = 'NO_UNITS';
+} else {
+  // Case 3 → SIP Active → Show all options normally
+  customizeOptions = [
+    {
+      icon: '⏸️',
+      title: 'Pause SIP',
+      description: 'Temporarily pause your SIP for 1–10 months',
+      onPress: openPauseModal,
+      color: '#FFA500',
+    },
+    {
+      icon: '❌',
+      title: 'Cancel SIP',
+      description: 'Permanently cancel your SIP investment',
+      onPress: openCancelModal,
+      color: '#FF4444',
+    },
+    {
+      icon: '📈',
+      title: 'Step-up SIP',
+      description: 'Increase your SIP amount periodically',
+      onPress: openStepUpModal,
+      color: '#4CAF50',
+    },
+    {
+      icon: '💰',
+      title: 'SIP Redemption',
+      description: 'Redeem units from your SIP investment',
+      onPress: openRedemptionModal,
+      color: '#2196F3',
+    },
+    {
+      icon: '🔄',
+      title: 'Switch SIP',
+      description: 'Switch your SIP to another scheme',
+      onPress: openSwitchModal,
+      color: '#9C27B0',
+    },
+  ];
+}
 
   const renderModal = (visible, animValue, onClose, title, children) => (
     <Modal
@@ -772,7 +822,9 @@ const handleRedemptionSubmit = async () => {
           <View style={styles.fundIconWrapper}>
             <View style={styles.fundIcon}>
               <Image
-                source={{ uri: Data?.amcLogoUrl }}
+                source={{
+                  uri: 'https://cdn5.vectorstock.com/i/1000x1000/44/19/mutual-fund-vector-7404419.jpg',
+                }}
                 style={{ width: 40, height: 40, borderRadius: 25 }}
                 resizeMode="contain"
               />
@@ -780,10 +832,34 @@ const handleRedemptionSubmit = async () => {
           </View>
           <View style={styles.fundDetails}>
             <Text style={styles.fundName}>
-              {Data?.schemeName || 'Scheme Name Not Available'}
+              {Data?.allotmentData?.schemeName || 'Scheme Name Not Available'}
             </Text>
             <Text style={styles.monthlyText}>
-              {matchedData?.schemeCode || 'Scheme Code Not Available'}
+              {Data?.allotmentData?.schemeCode || 'Scheme Code Not Available'}
+            </Text>
+            <Text
+              style={{
+                backgroundColor:
+                  Data?.sip?.status === 'cancelled' ? '#FEE2E2' : '#D1FAE5',
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                borderRadius: 20,
+                fontSize: 14,
+                color:
+                  Data?.sip?.status === 'active'
+                    ? '#065F46'
+                    : Data?.sip?.status === 'cancelled'
+                    ? '#991B1B'
+                    : '#333',
+                overflow: 'hidden',
+                alignSelf: 'flex-end',
+              }}
+            >
+              {Data?.sip?.status === 'active'
+                ? 'Active'
+                : Data?.sip?.status === 'cancelled'
+                ? 'Cancelled'
+                : 'Unknown'}
             </Text>
           </View>
         </View>
@@ -792,18 +868,20 @@ const handleRedemptionSubmit = async () => {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>SIP Invested Value</Text>
             <Text style={styles.summaryValue}>
-              {formatCurrency(matchedHolding?.currentValue || 0)}
+              {formatCurrency(Data?.allotmentData?.currentValue || 0)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Current NAV</Text>
             <Text style={styles.summaryValue}>
-              ₹{matchedHolding?.currentNAV || 'N/A'}
+              ₹ {Data?.allotmentData?.currentNav || 'N/A'}
             </Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total Units</Text>
-            <Text style={styles.summaryValue}>{matchedHolding?.displayUnits || 'N/A'}</Text>
+            <Text style={styles.summaryValue}>
+              {Data?.allotmentData?.allottedUnit || 'N/A'}
+            </Text>
           </View>
 
           {showMoreDetails && (
@@ -811,33 +889,33 @@ const handleRedemptionSubmit = async () => {
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Folio Number</Text>
                 <Text style={styles.summaryValue}>
-                  {matchedHolding?.folioNo || 'N/A'}
+                  {Data?.allotmentData?.folioNo || 'N/A'}
                 </Text>
               </View>
-              {Data?.schemeName.includes("ETF") && (
+              {Data?.allotmentData?.schemeName.includes('ETF') && (
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Current Market Price</Text>
                   <Text style={styles.summaryValue}>
-                    ₹{matchedHolding?.currentValue || 'N/A'}
+                    ₹{Data?.allotmentData?.currentValue || 'N/A'}
                   </Text>
                 </View>
               )}
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>NAV Date</Text>
                 <Text style={styles.summaryValue}>
-                  {matchedHolding?.currentNAV}
+                  {Data?.allotmentData?.currentNav}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Registration Number</Text>
                 <Text style={styles.summaryValue}>
-                  {matchedData?.SIPRegnNo || 'N/A'}
+                  {Data?.allotmentData?.SIPRegnNo || 'N/A'}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Registration Date</Text>
                 <Text style={styles.summaryValue}>
-                  {matchedData?.SIPRegnDate || 'N/A'}
+                  {formatDate(Data?.allotmentData?.wbr2Details?.date) || 'N/A'}
                 </Text>
               </View>
             </>
@@ -859,8 +937,6 @@ const handleRedemptionSubmit = async () => {
             />
           </TouchableOpacity>
         </View>
-
-    
       </ScrollView>
 
       <View style={styles.buttonContainer}>
@@ -891,7 +967,7 @@ const handleRedemptionSubmit = async () => {
                 style={styles.formInput}
                 placeholder="Enter current SIP amount (e.g., 2000)"
                 placeholderTextColor={isDarkTheme ? '#888888' : '#999999'}
-                value={matchedHolding?.allotedAmount}
+                value={stepUpForm.sipInstallmentAmount}
                 onChangeText={value =>
                   updateStepUpForm('sipInstallmentAmount', value)
                 }
@@ -1080,88 +1156,63 @@ const handleRedemptionSubmit = async () => {
         </View>,
       )}
 
-      {renderModal(
-        customizeModalVisible,
-        slideAnim,
-        closeCustomizeModal,
-        'Customize Your SIP',
-        <View style={styles.modalContent}>
-          <Text style={styles.customizeSubtitle}>
-            Choose an option to manage your SIP investment
-          </Text>
+     {renderModal(
+  customizeModalVisible,
+  slideAnim,
+  closeCustomizeModal,
+  'Customize Your SIP',
+  <View style={styles.modalContent}>
+    <Text style={styles.customizeSubtitle}>
+      Choose an option to manage your SIP investment
+    </Text>
 
-          {[
-            {
-              icon: '⏸️',
-              title: 'Pause SIP',
-              description: 'Temporarily pause your SIP for 1-10 months',
-              onPress: openPauseModal,
-              color: '#FFA500',
-            },
-            {
-              icon: '❌',
-              title: 'Cancel SIP',
-              description: 'Permanently cancel your SIP investment',
-              onPress: openCancelModal,
-              color: '#FF4444',
-            },
-            {
-              icon: '📈',
-              title: 'Step-up SIP',
-              description: 'Increase your SIP amount periodically',
-              onPress: openStepUpModal,
-              color: '#4CAF50',
-            },
-            {
-              icon: '💰',
-              title: 'SIP Redemption',
-              description: 'Redeem units from your SIP investment',
-              onPress: openRedemptionModal,
-              color: '#2196F3',
-            },
-            {
-              icon: '🔄',
-              title: 'Switch SIP',
-              description: 'Switch your SIP to another mutual fund scheme',
-              onPress: openSwitchModal,
-              color: '#9C27B0',
-            },
-          ].map((option, index) => (
-            <TouchableOpacity
-              key={index}
+    {customizeOptions === 'NO_UNITS' ? (
+      <View style={{ padding: 20, alignItems: 'center' }}>
+        <Text style={{ fontSize: 16, color: '#666', textAlign: 'center' }}>
+          You don’t have units to redeem.
+        </Text>
+      </View>
+    ) : (
+      customizeOptions.map((option, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[
+            styles.customizeOption,
+            { borderLeftColor: option.color },
+          ]}
+          onPress={option.onPress}
+        >
+          <View style={styles.optionContent}>
+            <View
               style={[
-                styles.customizeOption,
-                { borderLeftColor: option.color },
+                styles.optionIcon,
+                { backgroundColor: `${option.color}20` },
               ]}
-              onPress={option.onPress}
             >
-              <View style={styles.optionContent}>
-                <View
-                  style={[
-                    styles.optionIcon,
-                    { backgroundColor: `${option.color}20` },
-                  ]}
-                >
-                  <Text
-                    style={[styles.optionIconText, { color: option.color }]}
-                  >
-                    {option.icon}
-                  </Text>
-                </View>
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>{option.title}</Text>
-                  <Text style={styles.optionDescription}>
-                    {option.description}
-                  </Text>
-                </View>
-                <View style={styles.optionArrowContainer}>
-                  <Text style={styles.optionArrow}>›</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>,
-      )}
+              <Text
+                style={[styles.optionIconText, { color: option.color }]}
+              >
+                {option.icon}
+              </Text>
+            </View>
+
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionTitle}>{option.title}</Text>
+              <Text style={styles.optionDescription}>
+                {option.description}
+              </Text>
+            </View>
+
+            <View style={styles.optionArrowContainer}>
+              <Text style={styles.optionArrow}>›</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      ))
+    )}
+  </View>
+)}
+
 
       {renderModal(
         pauseModalVisible,
@@ -1174,19 +1225,19 @@ const handleRedemptionSubmit = async () => {
             {pauseDuration > 1 ? 's' : ''})
           </Text>
           <View style={styles.sliderContainer}>
-           <CustomSlider
-  value={steps.indexOf(pauseDuration)}
-  minimumValue={0}
-  maximumValue={steps.length - 1}
-  step={1}
-  onValueChange={index => setPauseDuration(steps[index])}
-  style={styles.slider}
-  thumbStyle={styles.thumbStyle}
-  trackStyle={styles.trackStyle}
-  minimumTrackTintColor="#1768BF"
-  maximumTrackTintColor="#d3d3d3"
-  thumbTintColor={Config.Colors.primary}
-/>
+            <CustomSlider
+              value={steps.indexOf(pauseDuration)}
+              minimumValue={0}
+              maximumValue={steps.length - 1}
+              step={1}
+              onValueChange={index => setPauseDuration(steps[index])}
+              style={styles.slider}
+              thumbStyle={styles.thumbStyle}
+              trackStyle={styles.trackStyle}
+              minimumTrackTintColor="#1768BF"
+              maximumTrackTintColor="#d3d3d3"
+              thumbTintColor={Config.Colors.primary}
+            />
             <View style={styles.sliderLabels}>
               <Text style={styles.sliderLabelText}>0</Text>
               <Text style={styles.sliderLabelText}>12</Text>
@@ -1270,59 +1321,59 @@ const handleRedemptionSubmit = async () => {
         </View>,
       )}
 
-     {renderModal(
-  redemptionModalVisible,
-  redemptionSlideAnim,
-  closeRedemptionModal,
-  'SIP Redemption',
-  <View style={styles.modalContent}>
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Text style={styles.redemptionLabel}>
-        Redeem units from your SIP investment
-      </Text>
+      {renderModal(
+        redemptionModalVisible,
+        redemptionSlideAnim,
+        closeRedemptionModal,
+        'SIP Redemption',
+        <View style={styles.modalContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.redemptionLabel}>
+              Redeem units from your SIP investment
+            </Text>
 
-      {/* Scheme Code (Read-only) */}
-      <View style={styles.formGroup}>
-        <Text style={styles.formLabel}>Scheme Code</Text>
-        <TextInput
-          style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-          value={matchedData?.schemeCode || 'N/A'}
-          editable={false}
-        />
-      </View>
+            {/* Scheme Code (Read-only) */}
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Scheme Code</Text>
+              <TextInput
+                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
+                value={Data?.allotmentData?.schemeCode || 'N/A'}
+                editable={false}
+              />
+            </View>
 
-      {/* Client Code (Read-only) */}
-      <View style={styles.formGroup}>
-        <Text style={styles.formLabel}>Client Code</Text>
-        <TextInput
-          style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-          value={'SM099'}
-          editable={false}
-        />
-      </View>
+            {/* Client Code (Read-only) */}
+            {/* <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Client Code</Text>
+              <TextInput
+                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
+                value={'SM099'}
+                editable={false}
+              />
+            </View> */}
 
-      {/* Folio Number (Read-only) */}
-      <View style={styles.formGroup}>
-        <Text style={styles.formLabel}>Folio Number</Text>
-        <TextInput
-          style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-          value={matchedHolding?.folioNo || 'N/A'}
-          editable={false}
-        />
-      </View>
+            {/* Folio Number (Read-only) */}
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Folio Number</Text>
+              <TextInput
+                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
+                value={Data?.allotmentData?.folioNo || 'N/A'}
+                editable={false}
+              />
+            </View>
 
-      {/* All Units Flag (Read-only) */}
-      <View style={styles.formGroup}>
-        <Text style={styles.formLabel}>All Units Flag</Text>
-        <TextInput
-          style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-          value={'N'}
-          editable={false}
-        />
-      </View>
+            {/* All Units Flag (Read-only) */}
+            {/* <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>All Units Flag</Text>
+              <TextInput
+                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
+                value={'N'}
+                editable={false}
+              />
+            </View> */}
 
-      {/* Redemption Amount (Read-only) */}
-      {/* <View style={styles.formGroup}>
+            {/* Redemption Amount (Read-only) */}
+            {/* <View style={styles.formGroup}>
         <Text style={styles.formLabel}>Redemption Amount</Text>
         <TextInput
           style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
@@ -1331,36 +1382,77 @@ const handleRedemptionSubmit = async () => {
         />
       </View> */}
 
-      {/* Redemption Units (Editable) */}
-      <View style={styles.formGroup}>
-        <Text style={styles.formLabel}>Redemption Units *</Text>
-        <TextInput
-          style={styles.formInput}
-          placeholder="Enter units to redeem (e.g., 2)"
-          placeholderTextColor={isDarkTheme ? '#888888' : '#999999'}
-          value={redemptionForm.redemptionUnits}
-          onChangeText={(value) =>
-            setRedemptionForm((prev) => ({
-              ...prev,
-              redemptionUnits: value,
-            }))
-          }
-          keyboardType="numeric"
-        />
-      </View>
+            {/* Redemption Units (Editable) */}
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>
+                Redemption Units * (alloted Units:{' '}
+                {Data?.allotmentData?.allottedUnit || 0})
+              </Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="Enter units to redeem (e.g., 2.5)"
+                placeholderTextColor={isDarkTheme ? '#888888' : '#999999'}
+                value={String(redemptionForm.redemptionUnits)}
+                keyboardType="numeric"
+                onChangeText={value => {
+                  const maxUnits = parseFloat(
+                    Data?.allotmentData?.allottedUnit || 0,
+                  );
 
-      {/* Submit Button */}
-      <Rbutton
-        title="Submit Redemption"
-        loader={loader}
-        onPress={handleRedemptionSubmit}
-        style={styles.submitButton}
-        textStyle={styles.submitButtonText}
-        disabled={loader || !redemptionForm.redemptionUnits}
-      />
-    </ScrollView>
-  </View>,
-)}
+                  // Allow empty input
+                  if (value === '') {
+                    setRedemptionForm(prev => ({
+                      ...prev,
+                      redemptionUnits: '',
+                    }));
+                    return;
+                  }
+
+                  // Allow only digits and dot
+                  const regex = /^[0-9]*\.?[0-9]*$/;
+                  if (!regex.test(value)) {
+                    return; // ignore invalid characters
+                  }
+
+                  // If value ends with ".", allow it (user is typing decimal)
+                  if (value.endsWith('.')) {
+                    setRedemptionForm(prev => ({
+                      ...prev,
+                      redemptionUnits: value,
+                    }));
+                    return;
+                  }
+
+                  let num = parseFloat(value);
+
+                  if (isNaN(num)) num = '';
+
+                  // Prevent negative
+                  if (num < 0) num = 0;
+
+                  // Prevent more than allotted units
+                  if (num > maxUnits) num = maxUnits;
+
+                  setRedemptionForm(prev => ({
+                    ...prev,
+                    redemptionUnits: num.toString(),
+                  }));
+                }}
+              />
+            </View>
+
+            {/* Submit Button */}
+            <Rbutton
+              title="Submit Redemption"
+              loader={loader}
+              onPress={handleRedemptionSubmit}
+              style={styles.submitButton}
+              textStyle={styles.submitButtonText}
+              disabled={loader || !redemptionForm.redemptionUnits}
+            />
+          </ScrollView>
+        </View>,
+      )}
       {renderModal(
         switchModalVisible,
         switchSlideAnim,

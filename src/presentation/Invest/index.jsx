@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
+  SafeAreaView,
   TextInput,
   Platform,
   ScrollView,
@@ -27,7 +28,6 @@ import Rbutton from '../../components/Rbutton';
 import MandateAlert from '../../components/MandateAlert';
 import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../assets/Icons/vector.png';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -308,15 +308,15 @@ useEffect(() => {
         paymentMethod: paymentMethod,
       };
     }
+      console.log("Payload before API call:",payload);
 
     try {
       const Token = await getData(Config.store_key_login_details);
       console.log("Token", Token);
       const endpoint = investmentType === 'SIP'
-        ? '/api/v1/order/purchase/sip/entry'
-        : '/api/v1/order/purchase/order/entry';
+        ? '/api/v1/purchase/sip/entry'
+        : '/api/v1/purchase/order/entry';
 
-      console.log("Payload before API call:", JSON.stringify(payload), endpoint);
 
       const response = await fetch(`${Config.baseUrl}${endpoint}`, {
         method: 'POST',
@@ -903,7 +903,7 @@ useEffect(() => {
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
+      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
       
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    // height: StatusBar.currentHeight,
+    height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
   loadingContainer: {
@@ -977,13 +977,13 @@ const styles = StyleSheet.create({
   // Header Styles
   headerGradient: {
     backgroundColor: '#2B8DF6',
-    paddingVertical: heightToDp(2),
+    paddingBottom: heightToDp(2),
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: widthToDp(4),
-    // paddingTop: heightToDp(1),
+    paddingTop: heightToDp(1),
   },
   backButton: {
     marginRight: widthToDp(3),

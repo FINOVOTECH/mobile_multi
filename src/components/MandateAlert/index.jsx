@@ -50,7 +50,7 @@ const MandateAlert = ({
     if (visible) {
       Animated.parallel([
         Animated.timing(slideAnim, {
-          toValue: screenHeight * 0.5, 
+          toValue: screenHeight * 0.6, 
           duration: 300,
           useNativeDriver: true,
         }),
@@ -91,7 +91,7 @@ const MandateAlert = ({
       statusBarTranslucent
       onRequestClose={showCancelButton ? onClose : undefined}
     >
-      <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="dark-content" />
+      <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
       
       {/* Overlay */}
       <Animated.View 
@@ -132,7 +132,7 @@ const MandateAlert = ({
                   onPress={onClose}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <Text style={{ fontSize: widthToDp(4),color:'#ffffff'}}>✕</Text>
+                    <Text style={{ fontSize: widthToDp(4),}}>✕</Text>
                   {/* <Icon name="close" size={24} color="#666" /> */}
                 </TouchableOpacity>
               )}

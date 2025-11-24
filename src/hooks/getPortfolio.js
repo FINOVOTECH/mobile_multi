@@ -9,9 +9,9 @@ const useGetPortfolioData = () => {
   const fetchPortfolioData = async () => {
     try {
       setLoading(true);
-      const response = await apiGetService('/api/v1/order/allotement/order/units');
+      const response = await apiGetService('/api/v1/allotement/order/units');
       console.log('Portfolio Data Response:', response.data);
-      setPortfolioData(response?.data);
+      setPortfolioData(response?.data?.portfolioSummary || []);
     } catch (err) {
       console.log('Error fetching portfolio data:', err.response || err.message);
       setError(err);

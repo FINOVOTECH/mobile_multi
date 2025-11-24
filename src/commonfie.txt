@@ -372,7 +372,7 @@ const LumpsumInvestment = ({ navigation, styles, Config, SInfoSvg }) => {
     };
 
     try {
-      const response = await fetch(`${Config.baseUrl}/api/v1/order/purchase/order/entry`, {
+      const response = await fetch(`${Config.baseUrl}/api/v1/purchase/order/entry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -624,7 +624,7 @@ const SipInvestment = ({ navigation, styles, Config, SInfoSvg }) => {
     };
 
     try {
-      const response = await fetch(`${Config.baseUrl}/api/v1/order/purchase/sip/entry`, {
+      const response = await fetch(`${Config.baseUrl}/api/v1/purchase/sip/entry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -963,7 +963,7 @@ const LumpsumInvestment = ({ navigation }) => {
       setIsLoading(true);
       console.log("Lumpsum Payload:", JSON.stringify(payload));
       
-      const response = await fetch(`${Config.baseUrl}/api/v1/order/purchase/order/entry`, {
+      const response = await fetch(`${Config.baseUrl}/api/v1/purchase/order/entry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1345,7 +1345,7 @@ const SipInvestment = ({ navigation }) => {
       setIsLoading(true);
       console.log("SIP Payload:", JSON.stringify(payload));
       
-      const response = await fetch(`${Config.baseUrl}/api/v1/order/purchase/sip/entry`, {
+      const response = await fetch(`${Config.baseUrl}/api/v1/purchase/sip/entry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

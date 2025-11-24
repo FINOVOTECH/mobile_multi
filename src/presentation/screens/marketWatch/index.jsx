@@ -4,12 +4,14 @@ import {
   View,
   StatusBar,
   TouchableOpacity,
+  SafeAreaView,
   Platform,
   ScrollView,
   ActivityIndicator,
   Modal,
   Image,
   BackHandler,
+  Animated,
 } from 'react-native';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -29,783 +31,695 @@ import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
 import ChartLoader from '../ChartLoader';
 import SInfoSvg from '../../svgs';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-  const MarketWatch = ({ navigation }) => {
-    const dispatch = useDispatch();
-    const Data = useSelector(state => state?.marketWatch?.marketData) || {};
-    console.log('data===>>', Data);
-    const [filteredData, setFilteredData] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [cagr, setCagr] = useState(null);
-    const [currentNav, setCurrentNav] = useState(null);
-    const [dayChange, setDayChange] = useState(null);
-    const [todayNavData, setTodayNavData] = useState(null);
-    const [summaryData, setSummaryData] = useState(null);
-    const [summaryLoading, setSummaryLoading] = useState(false);
+const MarketWatch = ({ navigation }) => {
+  const [fadeAnim] = useState(new Animated.Value(0.3));
+  const dispatch = useDispatch();
+  const Data = useSelector(state => state?.marketWatch?.marketData) || {};
+  console.log('data===>>', Data);
+  const [filteredData, setFilteredData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [cagr, setCagr] = useState(null);
+  const [currentNav, setCurrentNav] = useState(null);
+  const [dayChange, setDayChange] = useState(null);
+  const [todayNavData, setTodayNavData] = useState(null);
+  const [summaryData, setSummaryData] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
-    // Variant selection states
-    const [selectedVariant, setSelectedVariant] = useState(0);
-    const [showVariantDropdown, setShowVariantDropdown] = useState(false);
+  // Get schemeISIN for chart
+  const schemeISIN = useMemo(() => {
+    return Data?.schemeISIN;
+  }, [Data?.schemeISIN]);
 
-    // Check if variants exist and have history
-    const hasVariants = useMemo(() => {
-      return Data?.variants && Data.variants.length > 0;
-    }, [Data?.variants]);
-
-    // Get the effective history ID
-    const getEffectiveHistoryId = useCallback(() => {
-      if (hasVariants && currentVariant?.history) {
-        return currentVariant.history;
-      } else if (Data?.schemeISIN) {
-        return Data.schemeISIN;
-      }
-      return null;
-    }, [hasVariants, currentVariant?.history, Data?.schemeISIN]);
-
-    const effectiveHistoryId = getEffectiveHistoryId();
-
-    useEffect(() => {
-      const backAction = () => {
-        navigation.goBack();
-        return true;
-      };
-
-      const backHandler = BackHandler.addEventListener(
-        'hardwareBackPress',
-        backAction,
+  useEffect(() => {
+    if (loading) {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(fadeAnim, {
+            toValue: 0.7,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fadeAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
       );
+      animation.start();
 
-      return () => backHandler.remove();
-    }, []);
+      return () => animation.stop();
+    }
+  }, [loading, fadeAnim]);
 
-    const currentVariant = useMemo(() => {
-      if (hasVariants) {
-        const selected_variant = Data.variants[selectedVariant] || {};
-        console.log('selected_variant_===>', selected_variant);
-        dispatch(setInvestment(selected_variant));
-        return selected_variant;
-      }
-      // Return a fallback object when no variants
-      return {
-        description: Data?.schemeName || 'Scheme',
-        history: Data?.schemeISIN,
-        schemeCode: Data?.schemeCode,
-      };
-    }, [hasVariants, Data?.variants, selectedVariant, Data?.schemeName, Data?.schemeISIN, Data?.schemeCode]);
+  const animatedLineStyle = {
+    opacity: fadeAnim,
+  };
 
-    const displayData = useMemo(() => {
-      return {
-        schemeName: Data?.schemeName || '',
-        schemeType: Data?.schemeType || '',
-        description: currentVariant?.description || Data?.description || '',
-        variants: hasVariants ? Data.variants : [], // Empty array if no variants
-      };
-    }, [
-      Data?.schemeName,
-      Data?.schemeType,
-      Data?.description,
-      currentVariant?.description,
-      Data?.variants,
-      hasVariants,
-    ]);
+  useEffect(() => {
+    const backAction = () => {
+      navigation.goBack();
+      return true;
+    };
 
-    const getCurrentNavForVariant = useMemo(() => {
-      if (!todayNavData || !effectiveHistoryId) return null;
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
 
-      const navItem = todayNavData?.find(
-        item => item?.history === effectiveHistoryId,
-      );
-      return navItem?.price || null;
-    }, [todayNavData, effectiveHistoryId]);
+    return () => backHandler.remove();
+  }, []);
 
-    const fetchSummary = useCallback(async () => {
-      try {
-        setSummaryLoading(true);
-        let isinList = [];
+  const displayData = useMemo(() => {
+    return {
+      schemeName: Data?.schemeName || '',
+      schemeType: Data?.schemeType || '',
+      schemeCode: Data?.schemeCode || '',
+      amcLogo: Data?.s3Url || Data?.amcLogo || '',
+    };
+  }, [
+    Data?.schemeName,
+    Data?.schemeType,
+    Data?.schemeCode,
+    Data?.s3Url,
+    Data?.amcLogo,
+  ]);
 
-        if (hasVariants) {
-          isinList = Data?.variants?.map(variant => variant?.history).filter(Boolean) || [];
-        } else if (Data?.schemeISIN) {
-          isinList = [Data.schemeISIN];
-        }
+  const getCurrentNav = useMemo(() => {
+    if (!todayNavData || !schemeISIN) return null;
 
-        if (!isinList.length) {
-          setSummaryLoading(false);
-          return;
-        }
+    const navItem = todayNavData?.find(item => item?.history === schemeISIN);
+    return navItem?.price || null;
+  }, [todayNavData, schemeISIN]);
 
-        const token = getData(Config.store_key_login_details);
-        const client = getData(Config.clientCode);
-        const data = await fetch(
-          `${Config.baseUrl}/api/v2/historical/data/fetch/scheme/details`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: token,
-              clientCode: client,
-            },
-            body: JSON.stringify({ isinList: isinList }),
-          },
-        );
-        const response = await data.json();
-        console.log('Summary Data ', response, isinList);
+  const fetchSummary = useCallback(async () => {
+    try {
+      setSummaryLoading(true);
 
-        setSummaryData(response?.data?.[0]);
-      } catch (error) {
-        console.error('Failed to fetch Summary Data ', error);
-      } finally {
+      if (!schemeISIN) {
         setSummaryLoading(false);
-      }
-    }, [hasVariants, Data?.variants, Data?.schemeISIN]);
-
-    const fetchTodayNavData = useCallback(async () => {
-      let isinList = [];
-
-      if (hasVariants) {
-        isinList = Data?.variants?.map(variant => variant?.history).filter(Boolean) || [];
-      } else if (Data?.schemeISIN) {
-        isinList = [Data.schemeISIN];
+        return;
       }
 
-      if (!isinList.length) return;
-
-      try {
-        const token = getData(Config.store_key_login_details);
-        const client = getData(Config.clientCode);
-        const data = await fetch(
-          `${Config.baseUrl}/api/v2/historical/data/fetch/current/today-nav`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: token,
-              clientCode: client,
-            },
-            body: JSON.stringify({ navISINList: isinList }),
+      const token = getData(Config.store_key_login_details);
+      const client = getData(Config.clientCode);
+      const data = await fetch(
+        `${Config.baseUrl}/api/v2/historical/data/fetch/scheme/details`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token,
+            clientCode: client,
           },
-        );
-        const response = await data.json();
-        console.log('NAV DATA', response);
-
-        if (response?.success && response?.data) {
-          setTodayNavData(response?.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch today NAV data:', error);
-      }
-    }, [hasVariants, Data?.variants, Data?.schemeISIN]);
-
-    const fetchHistoricalData = useCallback(async () => {
-      if (!effectiveHistoryId) {
-        setError('No history data available');
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await apiGetService(
-          '/api/v2/historical/data/fetch/update/history',
-          { history: effectiveHistoryId },
-        );
-
-        if (response?.data?.history && Array.isArray(response?.data?.history)) {
-          setFilteredData(response?.data?.history);
-          console.log('Historical Data', response?.data);
-          // Calculate current NAV and day change
-          const latestData = response?.data?.history?.[0];
-          if (latestData) {
-            setCurrentNav(latestData?.nav);
-            setCagr(response?.data?.navCalculation);
-            const previousData = response?.data?.history?.[1];
-            if (previousData) {
-              const change =
-                ((latestData?.nav - previousData?.nav) / previousData?.nav) * 100;
-              setDayChange(change);
-            }
-          }
-        } else {
-          setError('Invalid data format received');
-        }
-      } catch (e) {
-        console.error('Failed to fetch historical data:', e);
-        setError('Failed to fetch historical data');
-      } finally {
-        setLoading(false);
-      }
-    }, [effectiveHistoryId]);
-
-    const filterData = useCallback(fullData => {
-      if (!fullData || !Array.isArray(fullData)) {
-        return;
-      }
-
-      const sortedData = [...fullData].sort(
-        (a, b) => new Date(a?.date) - new Date(b?.date),
+          body: JSON.stringify({ isinList: [schemeISIN] }),
+        },
       );
-      const chartData = sortedData.map(item => ({
-        time: item?.date,
-        value: parseFloat(item?.nav || item?.value || 0),
-      }));
-    }, []);
+      const response = await data.json();
+      console.log('Summary Data ', response, [schemeISIN]);
 
-    const handleVariantChange = useCallback(index => {
-      setSelectedVariant(index);
-      setShowVariantDropdown(false);
-      // Reset states when variant changes
-      setFilteredData([]);
-      setCurrentNav(null);
-      setDayChange(null);
+      setSummaryData(response?.data?.[0]);
+    } catch (error) {
+      console.error('Failed to fetch Summary Data ', error);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [schemeISIN]);
+
+  const fetchTodayNavData = useCallback(async () => {
+    if (!schemeISIN) return;
+
+    try {
+      const token = getData(Config.store_key_login_details);
+      const client = getData(Config.clientCode);
+      const data = await fetch(
+        `${Config.baseUrl}/api/v2/historical/data/fetch/current/today-nav`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token,
+            clientCode: client,
+          },
+          body: JSON.stringify({ navISINList: [schemeISIN] }),
+        },
+      );
+      const response = await data.json();
+      console.log('NAV DATA', response);
+
+      if (response?.success && response?.data) {
+        setTodayNavData(response?.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch today NAV data:', error);
+    }
+  }, [schemeISIN]);
+
+  const fetchHistoricalData = useCallback(async () => {
+    if (!schemeISIN) {
+      setError('No scheme ISIN available');
+      return;
+    }
+    try {
+      setLoading(true);
       setError(null);
-    }, []);
+      const response = await apiGetService(
+        `/api/v1/mutualfund/internal/fetch/update/history?history=${schemeISIN}`,
+      );
 
-    const formatDate = dateString => {
-      const date = new Date(dateString);
-      const options = {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      };
-      return date.toLocaleDateString('en-GB', options);
-    };
-
-    const renderFundInfo = () => (
-      <View style={styles.fundInfo}>
-        <View
-          style={{
-            flexDirection: 'column',
-            justifyContent: 'start',
-            marginBottom: heightToDp(2),
-            alignItems: 'flex-start',
-          }}
-        >
-          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: 'white',
-                borderRadius: 8,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <Image
-                source={{ uri: Data?.s3Url }}
-                style={{ width: 40, height: 40 }}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.fundName}>{displayData?.schemeName}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 1, alignItems: 'start' }}>
-            <Text style={styles.fundSubtitle}>{displayData?.schemeType}</Text>
-            {/* <Text style={styles.fundSubtitle}>{displayData?.description}</Text> */}
-          </View>
-        </View>
-
-        {/* Only show variant dropdown if variants exist */}
-        {hasVariants && (
-          <View style={styles.dropdownContainer}>
-            <TouchableOpacity
-              style={styles.planSelector}
-              onPress={() => setShowVariantDropdown(!showVariantDropdown)}
-            >
-              <Text style={styles.planText}>
-                {currentVariant?.description || 'Select Plan'}
-              </Text>
-              {showVariantDropdown ? (
-                ''
-              ) : (
-                <SInfoSvg.DownArrow width={widthToDp(6)} height={heightToDp(3)} />
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <Modal
-          visible={showVariantDropdown}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowVariantDropdown(false)}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowVariantDropdown(false)}
-          >
-            <View style={styles.modalContent}>
-              <View style={styles.dropdownModal}>
-                <View style={styles.dropdownHeader}>
-                  <Text style={styles.dropdownTitle}>Select Plan</Text>
-                </View>
-
-                <ScrollView
-                  style={styles.dropdownScrollView}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {displayData?.variants?.map((variant, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.dropdownModalItem,
-                        selectedVariant === index &&
-                        styles.selectedDropdownModalItem,
-                        index === displayData?.variants?.length - 1 &&
-                        styles.lastDropdownModalItem,
-                      ]}
-                      onPress={() => handleVariantChange(index)}
-                    >
-                      <Text
-                        style={[
-                          styles.dropdownModalItemText,
-                          selectedVariant === index &&
-                          styles.selectedDropdownModalItemText,
-                        ]}
-                      >
-                        {variant?.description}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      </View>
-    );
-
-    const renderChart = () => (
-      <View style={styles.chartSection}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ChartLoader />
-          </View>
-        ) : error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={fetchHistoricalData}
-            >
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : filteredData?.length > 0 ? (
-          <HistoricalNavChart
-            data={filteredData}
-            chartHeight={200}
-            primaryColor="#FFFFFF" // White chart lines
-            backgroundColor="transparent" // Transparent background
-            currency="₹"
-            initialTimeRange="1M"
-            showTimeRanges={false}
-            onDataPointSelect={(point, index) => {
-              // console.log('Selected:', point.nav, point.formattedDate);
-            }}
-          />
-        ) : (
-          <View style={styles.noDataContainer}>
-            <Text style={styles.noDataText}>No chart data available</Text>
-          </View>
-        )}
-      </View>
-    );
-
-    const renderFundDetails = () => {
-      // Check if we have data to show
-      const hasFundDetails = hasVariants
-        ? (currentVariant?.frequency || currentVariant?.sipMinimumInstallmentAmount)
-        : (Data?.schemeCode || effectiveHistoryId);
-
-      if (!hasFundDetails) {
-        return null;
+      if (response?.data?.history && Array.isArray(response?.data?.history)) {
+        setFilteredData(response?.data?.history);
+        console.log('Historical Data', response?.data);
+        const latestData = response?.data?.history?.[0];
+        if (latestData) {
+          setCurrentNav(latestData?.nav);
+          setCagr(response?.data?.navCalculation);
+          const previousData = response?.data?.history?.[1];
+          if (previousData) {
+            const change =
+              ((latestData?.nav - previousData?.nav) / previousData?.nav) * 100;
+            setDayChange(change);
+          }
+        }
+      } else {
+        setError('Invalid data format received');
       }
+    } catch (e) {
+      console.error('Failed to fetch historical data:', e);
+      setError('Failed to fetch historical data');
+    } finally {
+      setLoading(false);
+    }
+  }, [schemeISIN]);
 
-      const currentNavValue = getCurrentNavForVariant;
-      const navItem = todayNavData?.find(
-        item => item?.history === effectiveHistoryId
-      );
-      const navDate = navItem?.date;
+  const filterData = useCallback(fullData => {
+    if (!fullData || !Array.isArray(fullData)) {
+      return;
+    }
 
-      return (
-        <View style={styles.sectionBox}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Fund Details</Text>
+    const sortedData = [...fullData].sort(
+      (a, b) => new Date(a?.date) - new Date(b?.date),
+    );
+    const chartData = sortedData.map(item => ({
+      time: item?.date,
+      value: parseFloat(item?.nav || item?.value || 0),
+    }));
+  }, []);
+
+  const formatDate = dateString => {
+    const date = new Date(dateString);
+    const options = {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    };
+    return date.toLocaleDateString('en-GB', options);
+  };
+
+  const renderFundInfo = () => (
+    <View style={styles.fundInfo}>
+      <View
+        style={{
+          flexDirection: 'column',
+          justifyContent: 'start',
+          marginBottom: heightToDp(2),
+          alignItems: 'flex-start',
+        }}
+      >
+        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              backgroundColor: 'white',
+              borderRadius: 8,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Image
+              source={{ uri: displayData?.amcLogo }}
+              style={{ width: 40, height: 40 }}
+              resizeMode="contain"
+            />
           </View>
-          <View style={styles.fundDetailsCard}>
-            {/* Basic Fund Information */}
-            <View style={styles.fundDetailsRow}>
-              <View style={styles.fundDetailItem}>
-                <Text style={styles.fundDetailLabel}>NAV :</Text>
-                {navDate && (
-                  <Text style={styles.fundDetailValue}>
-                    ₹{' '}
-                    {currentNavValue
-                      ? parseFloat(currentNavValue).toFixed(2)
-                      : '0.00'}
-                  </Text>
-                )}
+          <Text style={styles.fundName}>{displayData?.schemeName}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 1, alignItems: 'start' }}>
+          <Text style={styles.fundSubtitle}>{displayData?.schemeType}</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderChart = () => (
+    <View style={styles.chartSection}>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <View style={styles.skeletonContainer}>
+            <View style={styles.skeletonHeader}>
+              <View style={styles.skeletonNav}>
+                <View
+                  style={[styles.skeletonLine, { width: '40%', height: 24 }]}
+                />
               </View>
-              <View style={styles.fundDetailItem}>
-                <Text style={styles.fundDetailLabel}>Scheme Code</Text>
-                <View style={styles.ratingContainer}>
-                  <Text
-                    style={{ ...styles.ratingValue, color: Config.Colors.green }}
-                  >
-                    {currentVariant?.schemeCode || Data?.schemeCode || 'N/A'}
-                  </Text>
-                </View>
+              <View style={styles.skeletonChange}>
+                <View
+                  style={[styles.skeletonLine, { width: '30%', height: 20 }]}
+                />
               </View>
             </View>
 
-            {/* Only show variant-specific details if variants exist */}
-            {hasVariants && currentVariant?.frequency && (() => {
-              const renderedSet = new Set();
-              return currentVariant?.frequency?.map((freq, index) => {
-                const amount =
-                  currentVariant?.sipMinimumInstallmentAmount?.[index];
-                const number =
-                  currentVariant?.sipMinimumInstallmentNumbers?.[index];
-                const uniqueKey = `${freq}-${amount}-${number}`;
+            <View style={styles.skeletonChart}>
+              {/* <View style={styles.skeletonChartLine}>
+                <Animated.View
+                  style={[
+                    styles.skeletonLine,
+                    styles.animatedLine,
+                    animatedLineStyle,
+                  ]}
+                />
+                <Text style={styles.loadingText}>Loading Chart Data...</Text>
+              </View> */}
+              <ChartLoader />
+            </View>
 
-                if (renderedSet.has(uniqueKey)) return null;
-                renderedSet.add(uniqueKey);
-
-                return (
-                  <View key={index} style={styles.fundDetailsRow}>
-                    <View style={styles.fundDetailItem}>
-                      <Text style={styles.fundDetailLabel}>{freq} SIP</Text>
-                      <Text style={styles.fundDetailValue}>
-                        ₹ {amount || '0.00'}
-                      </Text>
-                    </View>
-                    {number !== undefined && (
-                      <View style={styles.fundDetailItem}>
-                        <Text style={styles.fundDetailLabel}>
-                          Min Installments
-                        </Text>
-                        <Text style={styles.fundDetailValue}>
-                          {number || '0'}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                );
-              });
-            })()}
-
-            {/* Pause Information - Only for variants */}
-            {hasVariants && currentVariant?.pauseFlag === 'Y' && (
-              <View style={styles.fundDetailsRow}>
-                <View style={styles.fundDetailItem}>
-                  <Text style={styles.fundDetailLabel}>Pause Available</Text>
-                  <Text style={styles.fundDetailValue}>
-                    {currentVariant?.pauseMinimumInstallments}-
-                    {currentVariant?.pauseMaximumInstallments} installments
-                  </Text>
-                </View>
-                <View style={styles.fundDetailItem}>
-                  {/* Empty view for consistent spacing */}
-                </View>
-              </View>
-            )}
+            {/* Skeleton Time Range Selector */}
+            <View style={styles.skeletonTimeRanges}>
+              <View style={[styles.skeletonTimeRange, { width: '25%' }]} />
+              <View style={[styles.skeletonTimeRange, { width: '25%' }]} />
+              <View style={[styles.skeletonTimeRange, { width: '25%' }]} />
+              <View style={[styles.skeletonTimeRange, { width: '25%' }]} />
+              <View style={[styles.skeletonTimeRange, { width: '25%' }]} />
+            </View>
           </View>
         </View>
-      );
-    };
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={fetchHistoricalData}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : filteredData?.length > 0 ? (
+        <HistoricalNavChart
+          data={filteredData}
+          chartHeight={200}
+          primaryColor="#FFFFFF" // White chart lines
+          backgroundColor="transparent" // Transparent background
+          currency="₹"
+          initialTimeRange="1M"
+          showTimeRanges={false}
+          onDataPointSelect={(point, index) => {
+            // console.log('Selected:', point.nav, point.formattedDate);
+          }}
+        />
+      ) : (
+        <View style={styles.noDataContainer}>
+          <Text style={styles.noDataText}>No chart data available</Text>
+        </View>
+      )}
+    </View>
+  );
 
-    const renderOverviewDetails = () => {
-      if (!summaryData) return null;
+  const renderFundDetails = () => {
+    const currentNavValue = getCurrentNav;
+    const navItem = todayNavData?.find(item => item?.history === schemeISIN);
+    // const navDate = navItem?.date;
 
-      return (
-        <View style={styles.sectionBox}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Fund Overview</Text>
-          </View>
-          <View style={styles.overviewCard}>
-            {summaryData?.exitLoad && (
-              <View style={styles.detailSection}>
-                <Text style={styles.detailLabel}>Exit Load</Text>
-                <Text style={styles.detailValue}>{summaryData?.exitLoad}</Text>
-              </View>
-            )}
-
-            {summaryData?.annualExpense && (
-              <View style={styles.detailSection}>
-                <Text style={styles.detailLabel}>Expense Ratio</Text>
-                <Text style={styles.detailValue}>
-                  {summaryData?.annualExpense}
+    return (
+      <View style={styles.sectionBox}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Fund Details</Text>
+        </View>
+        <View style={styles.fundDetailsCard}>
+          {/* Basic Fund Information */}
+          <View style={styles.fundDetailsRow}>
+            <View style={styles.fundDetailItem}>
+              <Text style={styles.fundDetailLabel}>NAV :</Text>
+                <Text style={styles.fundDetailValue}>
+                  ₹{' '}
+                 
+                    {Data?.mostRecentNAV} 
+                </Text>
+            </View>
+            <View style={styles.fundDetailItem}>
+              <Text style={styles.fundDetailLabel}>Scheme Code</Text>
+              <View style={styles.ratingContainer}>
+                <Text
+                  style={{ ...styles.ratingValue, color: Config.Colors.green }}
+                >
+                  {displayData?.schemeCode || 'N/A'}
                 </Text>
               </View>
-            )}
+            </View>
+          </View>
+
+          {/* SIP Information */}
+          {Data?.sipFlag === 'Y' && (
+            <View style={styles.fundDetailsRow}>
+              <View style={styles.fundDetailItem}>
+                <Text style={styles.fundDetailLabel}>SIP Available</Text>
+                <Text style={styles.fundDetailValue}>
+                  Min: ₹{Data?.sipMinimumInstallmentAmount || '100.00'}
+                </Text>
+              </View>
+              <View style={styles.fundDetailItem}>
+                <Text style={styles.fundDetailLabel}>Frequencies</Text>
+                <Text style={styles.fundDetailValue}>
+                  {Data?.sipFrequency?.join(', ') || 'Monthly'}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Minimum Investment */}
+          <View style={styles.fundDetailsRow}>
+            <View style={styles.fundDetailItem}>
+              <Text style={styles.fundDetailLabel}>Min Investment</Text>
+              <Text style={styles.fundDetailValue}>
+                ₹{Data?.minimumPurchaseAmount || '100.000'}
+              </Text>
+            </View>
+            {/* <View style={styles.fundDetailItem}>
+              <Text style={styles.fundDetailLabel}>Exit Load</Text>
+              <Text style={styles.fundDetailValue}>
+                {Data?.exitLoadFlag === 'Y' ? `${Data?.exitLoad}%` : 'None'}
+              </Text>
+            </View> */}
           </View>
         </View>
-      );
-    };
+      </View>
+    );
+  };
 
-    const renderSummaryContent = () => {
-      if (!summaryData) {
-        return (
-          <View style={styles.sectionBox}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Fund Summary</Text>
-            </View>
-            <View style={styles.noDataContainer}>
-              <Text style={styles.noDataText}>No summary data available</Text>
-            </View>
-          </View>
-        );
-      }
+  const renderOverviewDetails = () => {
+    if (!summaryData) return null;
 
+    return (
+      <View style={styles.sectionBox}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Fund Overview</Text>
+        </View>
+        <View style={styles.overviewCard}>
+          {summaryData?.exitLoad && (
+            <View style={styles.detailSection}>
+              <Text style={styles.detailLabel}>Exit Load</Text>
+              <Text style={styles.detailValue}>{summaryData?.exitLoad}</Text>
+            </View>
+          )}
+
+          {summaryData?.annualExpense && (
+            <View style={styles.detailSection}>
+              <Text style={styles.detailLabel}>Expense Ratio</Text>
+              <Text style={styles.detailValue}>
+                {summaryData?.annualExpense}
+              </Text>
+            </View>
+          )}
+
+          {Data?.lockInPeriodFlag === 'Y' && Data?.lockInPeriod && (
+            <View style={styles.detailSection}>
+              <Text style={styles.detailLabel}>Lock-in Period</Text>
+              <Text style={styles.detailValue}>{Data?.lockInPeriod} days</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const renderSummaryContent = () => {
+    if (!summaryData) {
       return (
         <View style={styles.sectionBox}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Fund Summary</Text>
           </View>
-          <View style={styles.summaryContainer}>
-            {summaryData?.objectiveOfScheme && (
-              <View style={styles.summaryCard}>
-                <Text style={styles.objectiveText}>
-                  {summaryData?.objectiveOfScheme}
-                </Text>
-              </View>
-            )}
-            {summaryData?.statedAssetAllocation && (
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryCardTitle}>Investment Philosophy</Text>
-                <Text style={styles.summaryCardContent}>
-                  {summaryData?.statedAssetAllocation}
-                </Text>
-              </View>
-            )}
+          <View style={styles.noDataContainer}>
+            <Text style={styles.noDataText}>No summary data available</Text>
           </View>
         </View>
       );
-    };
+    }
 
-    const renderFundManagerContent = () => {
-      if (!summaryData?.fundManagers || summaryData.fundManagers.length === 0) {
-        return (
-          <View style={styles.sectionBox}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Fund Managers</Text>
-            </View>
-            <View style={styles.noDataContainer}>
-              <Text style={styles.noDataText}>
-                No fund manager data available
+    return (
+      <View style={styles.sectionBox}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Fund Summary</Text>
+        </View>
+        <View style={styles.summaryContainer}>
+          {summaryData?.objectiveOfScheme && (
+            <View style={styles.summaryCard}>
+              <Text style={styles.objectiveText}>
+                {summaryData?.objectiveOfScheme}
               </Text>
             </View>
-          </View>
-        );
-      }
+          )}
+          {summaryData?.statedAssetAllocation && (
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryCardTitle}>Investment Philosophy</Text>
+              <Text style={styles.summaryCardContent}>
+                {summaryData?.statedAssetAllocation}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
 
+  const renderFundManagerContent = () => {
+    if (!summaryData?.fundManagers || summaryData.fundManagers.length === 0) {
       return (
         <View style={styles.sectionBox}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Fund Managers</Text>
           </View>
-          <View style={styles.fundManagerContainer}>
-            {summaryData.fundManagers.map((manager, index) => (
-              <View key={index} style={styles.managerCard}>
-                <View style={styles.avatarContainer}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                      {manager.name
-                        .split(' ')
-                        .map(word => word.charAt(0))
-                        .join('')
-                        .substring(0, 2)}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.managerInfo}>
-                  <Text style={styles.managerName}>
-                    {manager.name.replace('Mr. ', '').replace('Mr ', '')}
-                  </Text>
-                  <Text style={styles.managerRole}>{manager.type}</Text>
-                  <Text style={styles.managerRole}>{manager.fromDate}</Text>
-                </View>
-              </View>
-            ))}
+          <View style={styles.noDataContainer}>
+            <Text style={styles.noDataText}>
+              No fund manager data available
+            </Text>
           </View>
         </View>
       );
-    };
+    }
 
-    const renderReturnsContent = () => {
-      if (!cagr) {
-        return (
-          <View style={styles.sectionBox}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Returns</Text>
-            </View>
-            <View style={styles.noDataContainer}>
-              <Text style={styles.noDataText}>No returns data available</Text>
-            </View>
-          </View>
-        );
-      }
+    return (
+      <View style={styles.sectionBox}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Fund Managers</Text>
+        </View>
+        <View style={styles.fundManagerContainer}>
+          {summaryData.fundManagers.map((manager, index) => (
+            <View key={index} style={styles.managerCard}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>
+                    {manager.name
+                      .split(' ')
+                      .map(word => word.charAt(0))
+                      .join('')
+                      .substring(0, 2)}
+                  </Text>
+                </View>
+              </View>
 
+              <View style={styles.managerInfo}>
+                <Text style={styles.managerName}>
+                  {manager.name.replace('Mr. ', '').replace('Mr ', '')}
+                </Text>
+                <Text style={styles.managerRole}>{manager.type}</Text>
+                <Text style={styles.managerRole}>{manager.fromDate}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderReturnsContent = () => {
+    // Use CAGR data if available, otherwise use direct NAV data from response
+    const returnsData =Data || cagr;
+
+    if (!returnsData) {
       return (
         <View style={styles.sectionBox}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Returns</Text>
           </View>
-          <View style={styles.returnsCard}>
-            <View style={styles.returnsGrid}>
-              {[
-                { label: '7 Days', value: cagr?.nav7d || '0' },
-                { label: '1 Month', value: cagr?.nav1m || '0' },
-                { label: '3 Months', value: cagr?.nav3m || '0' },
-                { label: '6 Months', value: cagr?.nav6m || '0' },
-                { label: '1 Year', value: cagr?.nav1y || '0' },
-                { label: '3 Years', value: cagr?.nav3y || '0' },
-              ].map((item, index) => (
-                <View key={index} style={styles.returnItem}>
-                  <Text style={styles.returnLabel}>{item.label || '0'}</Text>
-                  <Text
-                    style={[
-                      styles.returnValue,
-                      {
-                        color:
-                          parseFloat(item.value) >= 0
-                            ? Config.Colors.green
-                            : Config.Colors.red,
-                      },
-                    ]}
-                  >
-                    {parseFloat(item.value).toFixed(2)}%
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            <ReturnCalculator cagrData={cagr} />
+          <View style={styles.noDataContainer}>
+            <Text style={styles.noDataText}>No returns data available</Text>
           </View>
         </View>
       );
-    };
+    }
 
-    const renderInvestButton = () => (
-      <View
-        style={{
-          flexDirection: 'row',
-          width: '100%',
-          justifyContent: 'space-evenly',
-          backgroundColor: 'transparent',
-          // paddingVertical: heightToDp(2),
-        }}
-      >
-        <View style={{ width: '40%' }}>
-          <Rbutton
-            title="Lumpsum"
-            onPress={() => {
-              navigation.navigate('Invest');
-              dispatch(setInvestType('LUMPSUM'));
-            }}
-            style={styles.investButton}
-            textStyle={styles.investButtonText}
-          />
+    return (
+      <View style={styles.sectionBox}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Returns</Text>
         </View>
+        <View style={styles.returnsCard}>
+          <View style={styles.returnsGrid}>
+            {[
+              { label: '7 Days', value: returnsData?.nav7d || '0' },
+              { label: '1 Month', value: returnsData?.nav1m || '0' },
+              { label: '3 Months', value: returnsData?.nav3m || '0' },
+              { label: '6 Months', value: returnsData?.nav6m || '0' },
+              { label: '1 Year', value: returnsData?.nav1y || '0' },
+              { label: '3 Years', value: returnsData?.nav3y || '0' },
+            ].map((item, index) => (
+              <View key={index} style={styles.returnItem}>
+                <Text style={styles.returnLabel}>{item.label || '0'}</Text>
+                <Text
+                  style={[
+                    styles.returnValue,
+                    {
+                      color:
+                        parseFloat(item.value) >= 0
+                          ? Config.Colors.green
+                          : Config.Colors.red,
+                    },
+                  ]}
+                >
+                  {parseFloat(item.value).toFixed(2)}%
+                </Text>
+              </View>
+            ))}
+          </View>
 
-        <View style={{ width: '40%' }}>
-          <Rbutton
-            title="Start SIP"
-            onPress={() => {
-              navigation.navigate('Invest');
-              dispatch(setInvestType('SIP'));
-            }}
-            style={styles.investButton}
-            textStyle={styles.investButtonText}
-          />
+          <ReturnCalculator cagrData={returnsData} />
         </View>
       </View>
     );
-
-    useEffect(() => {
-      if (effectiveHistoryId) {
-        fetchHistoricalData();
-      } else {
-        setError('No history data available');
-      }
-    }, [effectiveHistoryId, fetchHistoricalData]);
-
-    useEffect(() => {
-      fetchTodayNavData();
-      fetchSummary();
-    }, [fetchTodayNavData, fetchSummary]);
-
-    return (
-      <SafeAreaView style={styles.container}>
-        {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-        <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
-
-        {/* Header with Gradient Background */}
-        <LinearGradient
-          colors={['#2B8DF6', '#2B8DF6']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <Image
-            source={bgVector}
-            style={[StyleSheet.absoluteFillObject, { opacity: 0.1 }]}
-            resizeMode="cover"
-          />
-          {renderFundInfo()}
-
-          {/* Chart Container with Shadow */}
-          <View style={styles.chartContainer}>
-            {renderChart()}
-
-            {/* Top Shadow Overlay */}
-            <LinearGradient
-              colors={['rgba(43, 141, 246, 0.8)', 'transparent']}
-              style={styles.topShadow}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-            />
-          </View>
-        </LinearGradient>
-
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {renderFundDetails()}
-
-          {renderOverviewDetails()}
-
-          {renderReturnsContent()}
-
-          {renderSummaryContent()}
-
-          {renderFundManagerContent()}
-
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-
-        {renderInvestButton()}
-      </SafeAreaView>
-    );
   };
+
+  const renderInvestButton = () => (
+    <View
+      style={{
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-evenly',
+        backgroundColor: 'transparent',
+        paddingVertical: heightToDp(2),
+      }}
+    >
+      <View style={{ width: '40%' }}>
+        <Rbutton
+          title="Lumpsum"
+          onPress={() => {
+            navigation.navigate('Invest');
+            dispatch(setInvestType('LUMPSUM'));
+            dispatch(setInvestment(Data));
+          }}
+          style={styles.investButton}
+          textStyle={styles.investButtonText}
+        />
+      </View>
+
+      <View style={{ width: '40%' }}>
+        <Rbutton
+          title="Start SIP"
+          onPress={() => {
+            navigation.navigate('Invest');
+            dispatch(setInvestType('SIP'));
+            dispatch(setInvestment(Data));
+          }}
+          style={styles.investButton}
+          textStyle={styles.investButtonText}
+        />
+      </View>
+    </View>
+  );
+
+  useEffect(() => {
+    if (schemeISIN) {
+      fetchHistoricalData();
+    } else {
+      setError('No scheme ISIN available');
+    }
+  }, [schemeISIN, fetchHistoricalData]);
+
+  useEffect(() => {
+    fetchTodayNavData();
+    fetchSummary();
+  }, [fetchTodayNavData, fetchSummary]);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
+      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
+
+      {/* Header with Gradient Background */}
+      <LinearGradient
+        colors={['#2B8DF6', '#2B8DF6']}
+        style={styles.headerGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <Image
+          source={bgVector}
+          style={[StyleSheet.absoluteFillObject, { opacity: 0.1 }]}
+          resizeMode="cover"
+        />
+        {renderFundInfo()}
+
+        {/* Chart Container with Shadow */}
+        <View style={styles.chartContainer}>
+          {renderChart()}
+
+          {/* Top Shadow Overlay */}
+          <LinearGradient
+            colors={['rgba(43, 141, 246, 0.8)', 'transparent']}
+            style={styles.topShadow}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+        </View>
+      </LinearGradient>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {renderFundDetails()}
+
+        {renderOverviewDetails()}
+
+        {renderReturnsContent()}
+        {/* 
+        {renderSummaryContent()}
+
+        {renderFundManagerContent()} */}
+
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+
+      {renderInvestButton()}
+    </SafeAreaView>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    // height: StatusBar.currentHeight,
+    height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
   headerGradient: {
     backgroundColor: '#2B8DF6',
-    paddingVertical: heightToDp(2),
+    paddingBottom: heightToDp(1),
   },
   chartContainer: {
     position: 'relative',
@@ -836,7 +750,7 @@ const styles = StyleSheet.create({
   },
   fundInfo: {
     paddingHorizontal: widthToDp(2.5),
-    // paddingTop: heightToDp(1),
+    paddingTop: heightToDp(1),
   },
   fundName: {
     fontSize: widthToDp(4),
@@ -854,93 +768,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginTop: heightToDp(0.5),
   },
-  dropdownContainer: {
-    position: 'relative',
-  },
-  planSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: widthToDp(4),
-    paddingVertical: heightToDp(1.2),
-    borderRadius: widthToDp(2),
-    alignSelf: 'flex-start',
-  },
-  planText: {
-    fontSize: widthToDp(3),
-    fontWeight: '600',
-    color: '#333',
-    marginRight: widthToDp(2),
-    flex: 1,
-  },
-
-  // Modal Overlay Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: widthToDp(90),
-    maxHeight: heightToDp(60),
-    backgroundColor: 'transparent',
-  },
-  dropdownModal: {
-    backgroundColor: 'white',
-    borderRadius: widthToDp(3),
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-    maxHeight: heightToDp(50),
-  },
-  dropdownHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: widthToDp(4),
-    paddingVertical: heightToDp(2),
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  dropdownTitle: {
-    fontSize: widthToDp(4.5),
-    fontWeight: '600',
-    color: '#333',
-  },
-  dropdownScrollView: {
-    maxHeight: heightToDp(40),
-  },
-  dropdownModalItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: widthToDp(4),
-    paddingVertical: heightToDp(2),
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  lastDropdownModalItem: {
-    borderBottomWidth: 0,
-  },
-  selectedDropdownModalItem: {
-    backgroundColor: '#F0F8FF',
-  },
-  dropdownModalItemText: {
-    fontSize: widthToDp(3.8),
-    color: '#333',
-    flex: 1,
-  },
-  selectedDropdownModalItemText: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-
   chartSection: {
     backgroundColor: 'transparent',
     borderRadius: widthToDp(4),
@@ -1057,9 +884,93 @@ const styles = StyleSheet.create({
     color: '#333333',
     fontWeight: '600',
   },
+  skeletonContainer: {
+    flex: 1,
+    padding: widthToDp(4),
+    backgroundColor: 'transparent',
+  },
+  skeletonHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: heightToDp(2),
+  },
+  skeletonNav: {
+    alignItems: 'flex-start',
+  },
+  skeletonChange: {
+    alignItems: 'flex-end',
+  },
+  skeletonChart: {
+    height: heightToDp(20),
+    backgroundColor: 'rgba(255, 255, 255, 0.42)',
+    borderRadius: widthToDp(2),
+    marginBottom: heightToDp(2),
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  skeletonGrid: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  skeletonGridLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  skeletonChartLine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  skeletonLine: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: widthToDp(1),
+  },
+  animatedLine: {
+    width: '90%',
+    height: 3,
+    borderRadius: widthToDp(0.5),
+    marginBottom: heightToDp(1), // Add space between line and text
+  },
+
+  // Loading text style
+  loadingText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: widthToDp(3.5),
+    fontWeight: '500',
+    marginTop: heightToDp(1),
+  },
+
+  // If you want to add animation to the loading text
+  loadingTextAnimated: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: widthToDp(3.5),
+    fontWeight: '500',
+    marginTop: heightToDp(1),
+  },
+  skeletonTimeRanges: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  skeletonTimeRange: {
+    height: heightToDp(3),
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: widthToDp(1),
+  },
 
   investButton: {
-    // marginBottom: heightToDp(2),
+    marginBottom: heightToDp(2),
   },
   investButtonText: {
     color: 'black',

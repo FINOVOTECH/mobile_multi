@@ -43,8 +43,8 @@ export default function Profile({}) {
   const [mandateData, setMandateData] = useState(null);
   const [showMandateAlert, setShowMandateAlert] = useState(false);
   const { portfolioData } = useGetPortfolioData();
-  const Return = portfolioData?.totals?.totalGainLoss > 0;
-  console.log('values:::', portfolioData?.totals?.totalCurrentValue);
+  const Return = portfolioData?.overall?.gainAmount > 0;
+  console.log('values:::', portfolioData?.overall?.gainAmount);
   const scrollY = useRef(new Animated.Value(0)).current;
   const stickyThreshold = 140;
 
@@ -172,7 +172,7 @@ export default function Profile({}) {
                     PORTFOLIO BALANCE
                   </Text>
                   <Text style={styles.stickyPortfolioAmount}>
-                    ₹{portfolioData?.totals?.totalCurrentValue || '0'}
+                    ₹{portfolioData?.overall?.currentValue || '0'}
                   </Text>
                 </View>
               </View>
@@ -221,7 +221,7 @@ export default function Profile({}) {
                     </Text>
                     <Text style={styles.portfolioBalanceAmount}>
                       ₹
-                      {portfolioData?.totals?.totalCurrentValue?.toLocaleString() ||
+                      {portfolioData?.overall?.currentValue ||
                         '0'}
                     </Text>
                   </View>
@@ -241,7 +241,7 @@ export default function Profile({}) {
                         <Text style={styles.metricLabel}>Invested</Text>
                         <Text style={styles.metricValue}>
                           ₹{' '}
-                          {portfolioData?.totals?.totalCurrentValue?.toLocaleString() ||
+                          {portfolioData?.overall?.invested||
                             '00'}
                         </Text>
                       </View>
@@ -258,8 +258,8 @@ export default function Profile({}) {
                         >
                           {Return ? '+' : '-'} ₹
                           {Math.abs(
-                            (portfolioData?.totals?.totalCurrentValue || 0) -
-                              (portfolioData?.totals?.totalInvested || 0),
+                            (portfolioData?.overall?.currentValue || 0) -
+                              (portfolioData?.overall?.invested || 0),
                           )?.toFixed(2) || '0.00'}
                         </Text>
                       </View>
@@ -275,7 +275,7 @@ export default function Profile({}) {
                           ]}
                         >
                           {Return ? '+' : '-'}
-                          {portfolioData?.totals?.totalReturnPercent || '0'}%
+                          {portfolioData?.overall?.gainPercent || '0'}%
                         </Text>
                       </View>
                     </View>

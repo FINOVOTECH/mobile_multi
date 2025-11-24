@@ -542,18 +542,18 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   disabledButton: {
-    backgroundColor: '#000000',
+    backgroundColor: '#cccccc',
     elevation: 0,
     shadowOpacity: 0,
   },
   nextButtonText: {
     textAlign: "center",
     fontSize: widthToDp(5),
-    color: "black",
+    color: "white",
     fontWeight: '600',
   },
   disabledButtonText: {
-    color: '#000000',
+    color: '#999999',
   },
   ////
 

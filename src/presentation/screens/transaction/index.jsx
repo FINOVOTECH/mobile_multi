@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   BackHandler,
-  SafeAreaView
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { TabView, TabBar } from 'react-native-tab-view';
@@ -18,6 +17,7 @@ import * as Config from '../../../helpers/Config';
 import SInfoSvg from '../../svgs';
 import moment from 'moment';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Transaction = ({ navigation }) => {
   const [tabIndex, setTabIndex] = useState(0);

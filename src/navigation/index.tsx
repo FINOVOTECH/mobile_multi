@@ -262,12 +262,12 @@ function BottomTabNavigator() {
             />
           ),
           tabBarStyle: {
-            // height: '8%',
+            height: widthToDp(18),
             backgroundColor: '#2B8DF6',
-            // position: 'absolute',
+            position: 'absolute',
             shadowOffset: {
               width: 6,
-              height: 15,
+              height: 14,
             },
             shadowOpacity: 0.25,
             shadowRadius: 12,
@@ -277,7 +277,7 @@ function BottomTabNavigator() {
             fontFamily: Config.fontFamilys.Poppins_SemiBold,
             justifyContent: 'center',
             alignItems: 'center',
-            marginBottom: 4,
+            marginBottom: 9,
           },
           tabBarShowLabel: true,
           tabBarIcon: ({ focused, color, size }) => {

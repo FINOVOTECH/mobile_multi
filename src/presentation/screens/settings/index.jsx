@@ -40,7 +40,7 @@ const Profile_Data = [
   },
   {
     id: 2,
-    name: 'Order History',
+    name: 'Order Status',
     icon: SInfoSvg.Transaction,
     route: 'Transaction',
     color: '#FF9800',
@@ -215,7 +215,7 @@ export default function Setting({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
+      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
       
       <Header />
 

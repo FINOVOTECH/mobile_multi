@@ -159,7 +159,7 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
     console.log("Payment payload:", payload);
     console.log("Token", Token);
     try {
-      const response = await fetch(`${baseUrl}/api/v1/order/payment`, {
+      const response = await fetch(`${baseUrl}/api/v1/payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -488,7 +488,7 @@ const PaymentResponseModal = ({ response, onClose }) => {
       animationType="slide"
       onRequestClose={handleCancelPayment}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#4f46e5" />
+      <StatusBar barStyle="light-content" backgroundColor="#4f46e5" />
       <View style={styles.mainContainer}>
         {/* Enhanced Header with Gradient Effect */}
         <View style={styles.header}>

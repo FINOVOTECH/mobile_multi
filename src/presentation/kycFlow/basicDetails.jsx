@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
         gap: widthToDp(2),
     },
     logo: {
-        // borderRadius: widthToDp(10),
+        borderRadius: widthToDp(10),
         width: widthToDp(12),
         height: heightToDp(5.5),
     },

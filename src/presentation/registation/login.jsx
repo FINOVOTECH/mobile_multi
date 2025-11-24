@@ -104,7 +104,7 @@ const RegiLogin = ({
       console.log("Login DATA:::", data);
 
       if (response.ok) {
-        console.log("OTP PAGE",response);
+        console.log("OTP PAGE");
         setStatus("loginVerify");
         console.log("OTP DONE");
       } else {

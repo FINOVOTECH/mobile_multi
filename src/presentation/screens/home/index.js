@@ -506,7 +506,7 @@ export default function Home() {
 
       <View style={simpleStyles.footer}>
         <Text style={simpleStyles.policyText}>
-          By proceeding, you agree with Taurus's{' '}
+          By proceeding, you agree with Jyoti MF's{' '}
           <Text style={simpleStyles.policyLink}>
             terms and conditions
           </Text>{' '}
@@ -790,7 +790,7 @@ const simpleStyles = StyleSheet.create({
   },
   registerContainer: {
     marginTop: heightToDp(2),
-    marginBottom: heightToDp(6),
+    marginBottom: heightToDp(1),
   },
   registerText: {
     textAlign: 'center',

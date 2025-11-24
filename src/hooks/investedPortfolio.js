@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { apiGetService } from '../helpers/services'; 
+import { useState, useCallback } from 'react';
+import { apiGetService } from '../helpers/services';
+import { useFocusEffect } from '@react-navigation/native';
 
 const InvestedPorfolio = () => {
   const [investmentData, setInvestmentData] = useState(null);
@@ -9,20 +10,23 @@ const InvestedPorfolio = () => {
   const fetchPortfolioData = async () => {
     try {
       setLoading(true);
-      const response = await apiGetService('/api/v1/order/allotement/order/units');
-      console.log('Portfolio INvested Response:', response?.data);
+      const response = await apiGetService('/api/v1/allotement/order/units');
+      console.log('Portfolio Response:', response?.data);
       setInvestmentData(response?.data || []);
     } catch (err) {
-      console.log('Error fetching portfolio data:', err.response || err.message);
+      console.log('Error fetching portfolio:', err);
       setError(err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchPortfolioData();
-  }, []);
+  // 🔥 REFRESH EVERY TIME BOTTOM TAB IS FOCUSED
+  useFocusEffect(
+    useCallback(() => {
+      fetchPortfolioData();
+    }, [])
+  );
 
   return { investmentData, loading, error, refetch: fetchPortfolioData };
 };

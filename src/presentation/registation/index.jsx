@@ -13,7 +13,7 @@ const Registration = () => {
     const User = useSelector(state=>state.login.regi)
     const userId = useSelector(state=>state.login.regiId)
     console.log("User", User)
-    const [status, setStatus] = useState(User||"");
+    const [status, setStatus] = useState(User||"BANK_ADDED");
     // const [email, setEmail] = useState('suryanshsharma414@gmail.com');
     // const [mobile, setMobile] = useState('8791971522');
     const [email, setEmail] = useState('');

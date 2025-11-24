@@ -25,7 +25,7 @@ const BasicDetails = ({
     const [pepStatus, setPepStatus] = useState('No');
     const [showNomineeQuestion, setShowNomineeQuestion] = useState(false);
     const [clientType, setClientType] = useState('PHYSICAL');
-    const [firstDPId, setFirstDPId] = useState('IN302050');
+    const [firstDPId, setFirstDPId] = useState('');
     const [secondDPId, setSecondDPId] = useState('');
     const clientTypeOptions = ['PHYSICAL', 'DEMATE'];
 
@@ -60,7 +60,7 @@ const BasicDetails = ({
 
         if (clientType === 'DEMATE') {
             return basicValid &&
-                /^IN302050$/.test(firstDPId) &&
+                /^\d{8}$/.test(firstDPId) &&
                 /^\d{8}$/.test(secondDPId);
         }
 
@@ -268,25 +268,24 @@ const BasicDetails = ({
 
                             {clientType === 'DEMATE' && (
                                 <>
-                                    {/* <View style={styles.inputContainer}>
+                                    <View style={styles.inputContainer}>
                                         <Text style={styles.label}>First DP ID *</Text>
                                         <TextInput
                                             style={styles.input}
                                             placeholder="Enter First DP ID (8 digits)"
                                             keyboardType="numeric"
                                             maxLength={8}
-                                            value={'IN302050'}
+                                            value={firstDPId}
                                             onChangeText={setFirstDPId}
                                             placeholderTextColor="#999"
-                                            readOnly={true}
                                         />
-                                    </View> */}
+                                    </View>
 
                                     <View style={styles.inputContainer}>
-                                        <Text style={styles.label}>Enter DP ID *</Text>
+                                        <Text style={styles.label}>Second DP ID *</Text>
                                         <TextInput
                                             style={styles.input}
-                                            placeholder="Enter DP ID (8 digits)"
+                                            placeholder="Enter Second DP ID (8 digits)"
                                             keyboardType="numeric"
                                             maxLength={8}
                                             value={secondDPId}
@@ -407,7 +406,7 @@ const styles = StyleSheet.create({
         gap: widthToDp(2),
     },
     logo: {
-        // borderRadius: widthToDp(10),
+        borderRadius: widthToDp(10),
         width: widthToDp(12),
         height: heightToDp(5.5),
     },

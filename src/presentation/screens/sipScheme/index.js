@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
+
 import {
   View,
   Text,
@@ -26,7 +33,7 @@ import SInfoSvg from '../../svgs';
 const { width: screenWidth } = Dimensions.get('window');
 
 // API configuration
-const API_BASE_URL = `${Config.baseUrl}/api/v1/mutualfund/variants`;
+const API_BASE_URL = `${Config.baseUrl}/api/v1/mutualfund/filter/universal`;
 const LIMIT = 50;
 
 const tabs = [
@@ -44,7 +51,6 @@ const tabs = [
 
 const routes = tabs.map(tab => ({ key: tab.key, title: tab.title }));
 
-
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -61,26 +67,40 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
-
-const fetchMutualFundsFromApi = async (search = '', page = 1, limit = LIMIT) => {
+/**
+ * Fetch wrapper for mutual funds.
+ * Accepts `options` object which may include `signal` for abort.
+ */
+const fetchMutualFundsFromApi = async (
+  search = '',
+  page = 1,
+  limit = LIMIT,
+  options = {},
+) => {
   const encoded = encodeURIComponent(search);
-  const url = `${API_BASE_URL}?search=${encoded}&page=${page}&limit=${limit}`;
+  const url = `${API_BASE_URL}?q=${encoded}&page=${page}&limit=${limit}`;
   console.log('Fetching URL:', url);
 
-  const response = await fetch(url, {
+  const fetchOptions = {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
-  });
+    // spread options so caller can pass signal etc.
+    ...options,
+  };
+
+  const response = await fetch(url, fetchOptions);
 
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     throw new Error(`HTTP ${response.status} ${text}`);
   }
-  return response.json();
-};
 
+  const responseData = await response.json();
+  console.log('API Response:', responseData);
+  return responseData;
+};
 
 const FundCard = React.memo(({ dispatch, navigation, fund, index }) => {
   const isEven = index % 2 === 0;
@@ -96,7 +116,11 @@ const FundCard = React.memo(({ dispatch, navigation, fund, index }) => {
       }}
       style={[
         styles.fundCard,
-        { borderLeftColor: isEven ? Config.Colors.primary : Config.Colors.secondary }
+        {
+          borderLeftColor: isEven
+            ? Config.Colors.primary
+            : Config.Colors.secondary,
+        },
       ]}
     >
       <View style={styles.fundHeader}>
@@ -106,122 +130,145 @@ const FundCard = React.memo(({ dispatch, navigation, fund, index }) => {
               source={{
                 uri:
                   fund.s3Url ||
+                  fund.amcLogo ||
                   'https://cdn5.vectorstock.com/i/1000x1000/44/19/mutual-fund-vector-7404419.jpg',
               }}
               style={[
                 styles.fundImage,
-                { width: imageSize, height: imageSize, borderRadius, marginRight },
+                {
+                  width: imageSize,
+                  height: imageSize,
+                  borderRadius,
+                  marginRight,
+                },
               ]}
               resizeMode="contain"
             />
             <View style={styles.fundTextContainer}>
               <Text style={styles.fundName} numberOfLines={2}>
-                {fund.schemeName || 'N/A'}
+                {fund.schemeName || fund.variantFamilyName}
               </Text>
               <Text style={styles.amcName} numberOfLines={1}>
-                {fund.amcName || '-'}
+                {fund.amcCode || 'N/A'}
               </Text>
             </View>
           </View>
         </View>
-        <View style={styles.schemeTypeContainer}>
+        {/* <View style={styles.schemeTypeContainer}>
           <Text style={styles.schemeType}>{fund.schemeType || 'N/A'}</Text>
-        </View>
+        </View> */}
       </View>
     </TouchableOpacity>
   );
 });
 
-
-const TabContent = React.memo(({
-  tabKey,
-  dispatch,
-  navigation,
-  data,
-  isLoading,
-  isLoadingMore,
-  onEndReached,
-  error,
-  searchQuery,
-}) => {
-  const renderFundItem = useCallback(({ item, index }) => (
-    <FundCard
-      key={`${item.amcCode || 'unknown'}-${item.schemeName || 'unknown'}-${index}`}
-      index={index}
-      dispatch={dispatch}
-      navigation={navigation}
-      fund={item}
-    />
-  ), [dispatch, navigation]);
-
-  const getItemLayout = useCallback((_, index) => ({
-    length: 120,
-    offset: 120 * index,
-    index,
-  }), []);
-
-  const keyExtractor = useCallback((item, index) => `${item.amcCode || 'unknown'}-${item.schemeName || 'unknown'}-${index}`, []);
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <HandAnimation />
-      </View>
+const TabContent = React.memo(
+  ({
+    tabKey,
+    dispatch,
+    navigation,
+    data,
+    isLoading,
+    isLoadingMore,
+    onEndReached,
+    error,
+    searchQuery,
+  }) => {
+    const renderFundItem = useCallback(
+      ({ item, index }) => (
+        <FundCard
+          key={`${item.amcCode || 'unknown'}-${
+            item.schemeName || 'unknown'
+          }-${index}`}
+          index={index}
+          dispatch={dispatch}
+          navigation={navigation}
+          fund={item}
+        />
+      ),
+      [dispatch, navigation],
     );
-  }
 
-  if (error && (!data || data.length === 0)) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Error Loading Data</Text>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
+    const getItemLayout = useCallback(
+      (_, index) => ({
+        length: 120,
+        offset: 120 * index,
+        index,
+      }),
+      [],
     );
-  }
 
-  if (searchQuery && data.length === 0 && !isLoading) {
-    return (
-      <View style={styles.noResultsContainer}>
-        <Text style={styles.noResultsTitle}>No schemes found</Text>
-        <Text style={styles.noResultsText}>Try adjusting your search term "{searchQuery}"</Text>
-      </View>
+    const keyExtractor = useCallback(
+      (item, index) =>
+        `${item.amcCode || 'unknown'}-${item.schemeName || 'unknown'}-${index}`,
+      [],
     );
-  }
 
-  if (!data || data.length === 0) {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <HandAnimation />
+        </View>
+      );
+    }
+
+    if (error && (!data || data.length === 0)) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Error Loading Data</Text>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+
+    if (searchQuery && data.length === 0 && !isLoading) {
+      return (
+        <View style={styles.noResultsContainer}>
+          <Text style={styles.noResultsTitle}>No schemes found</Text>
+          <Text style={styles.noResultsText}>
+            Try adjusting your search term "{searchQuery}"
+          </Text>
+        </View>
+      );
+    }
+
+    if (!data || data.length === 0) {
+      return (
+        <View style={styles.noResultsContainer}>
+          <Text style={styles.noResultsTitle}>No schemes available</Text>
+          <Text style={styles.noResultsText}>
+            No mutual fund schemes found for this category.
+          </Text>
+        </View>
+      );
+    }
+
     return (
-      <View style={styles.noResultsContainer}>
-        <Text style={styles.noResultsTitle}>No schemes available</Text>
-        <Text style={styles.noResultsText}>No mutual fund schemes found for this category.</Text>
-      </View>
+      <FlatList
+        data={data}
+        renderItem={renderFundItem}
+        keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.fundList}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={8}
+        windowSize={10}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          isLoadingMore ? (
+            <View style={styles.loadingMoreContainer}>
+              <HandAnimation />
+            </View>
+          ) : null
+        }
+      />
     );
-  }
-
-  return (
-    <FlatList
-      data={data}
-      renderItem={renderFundItem}
-      keyExtractor={keyExtractor}
-      getItemLayout={getItemLayout}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.fundList}
-      removeClippedSubviews={true}
-      maxToRenderPerBatch={10}
-      updateCellsBatchingPeriod={50}
-      initialNumToRender={8}
-      windowSize={10}
-      onEndReached={onEndReached}
-      onEndReachedThreshold={0.4}
-      ListFooterComponent={
-        isLoadingMore ? (
-          <View style={styles.loadingMoreContainer}>
-            <HandAnimation />
-          </View>
-        ) : null
-      }
-    />
-  );
-});
+  },
+);
 
 // --- Main SipScheme component ---
 const SipScheme = React.memo(({ navigation }) => {
@@ -250,7 +297,7 @@ const SipScheme = React.memo(({ navigation }) => {
   const lastSearchRef = useRef('');
   const abortControllerRef = useRef(null);
 
-  const getTabPriorityByIndex = useCallback((index) => {
+  const getTabPriorityByIndex = useCallback(index => {
     const t = tabs[index];
     return t ? t.priority : 'All';
   }, []);
@@ -264,21 +311,25 @@ const SipScheme = React.memo(({ navigation }) => {
   }, [loadFundValue]);
 
   // build the search param used for API calls:
-  // if user typed something (non-empty and not equal to the All placeholder), use user input
-  // otherwise use the tab priority (or "All")
-  const buildSearchParam = useCallback((tabIndexArg, userInput) => {
-    const input = (userInput ?? '').trim();
-    if (input !== '' && input.toLowerCase() !== 'all') {
-      return input;
-    }
-    const priority = getTabPriorityByIndex(tabIndexArg);
-    return priority || 'All';
-  }, [getTabPriorityByIndex]);
+  // - if user typed something (non-empty and not equal to the All placeholder), use user input + " " + tabIndex
+  // - otherwise use the tab priority + " " + tabIndex
+  const buildSearchParam = useCallback(
+    (tabIndexArg, userInput) => {
+      const input = (userInput ?? '').trim();
+      const priority = getTabPriorityByIndex(tabIndexArg) || 'All';
+      const suffix = String(tabIndexArg ?? 0); // ensure we always append the tab index as a string
 
-  // core loader: page 1 => reset, page >1 => append
+      if (input !== '' && input.toLowerCase() !== 'all') {
+        return `${input} ${suffix}`.trim();
+      }
+
+      return `${priority} ${suffix}`.trim();
+    },
+    [getTabPriorityByIndex],
+  );
+
   const loadPage = useCallback(async (searchParam, pageToLoad = 1) => {
     try {
-      // cancel previous if any
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -296,12 +347,42 @@ const SipScheme = React.memo(({ navigation }) => {
         signal: abortControllerRef.current.signal,
       });
 
-      // The API response shape expected:
-      // { data: [...], meta: { total, page, limit } } or similar
-      const fetched = (resp && resp.data) ? resp.data : [];
+      // Defensive: ensure resp is an object
+      const respData = resp || {};
+      const items = Array.isArray(respData.data) ? respData.data : [];
 
-      // Determine if there's more (infer from length)
-      const more = fetched.length === LIMIT;
+      // Support both old 'families -> variants' format and new flat 'data' format
+      let fetched = [];
+
+      if (items.length > 0 && items[0] && items[0].variants) {
+        // OLD format: families with variants[]
+        fetched = items.flatMap(fam => {
+          const variants = fam.variants || [];
+          return variants.map(v => ({
+            ...v,
+            variantFamilyName: fam.variantFamilyName,
+            amcCode: fam.amcCode,
+            amcLogo: fam.amcLogo || fam.s3Url,
+            familyId: fam._id,
+          }));
+        });
+      } else {
+        // NEW format: flat list of schemes in resp.data
+        fetched = items.map(it => ({
+          ...it,
+          // keep existing properties if present, otherwise try sensible fallbacks
+          variantFamilyName: it.variantFamilyName || it.schemeName || '',
+          amcCode: it.amcCode || it.amc || 'N/A',
+          amcLogo: it.amcLogo || it.s3Url || it.logo || null,
+          familyId: it.familyId || it._id || null,
+        }));
+      }
+
+      // Prefer server-provided pagination flag if available
+      const more =
+        typeof respData.hasNextPage === 'boolean'
+          ? Boolean(respData.hasNextPage)
+          : fetched.length === LIMIT;
 
       if (pageToLoad === 1) {
         setData(fetched);
@@ -309,16 +390,13 @@ const SipScheme = React.memo(({ navigation }) => {
         setData(prev => [...prev, ...fetched]);
       }
 
-      setPage(pageToLoad);
+      // Use server page if provided, otherwise local pageToLoad
+      setPage(typeof respData.page === 'number' ? respData.page : pageToLoad);
       setHasMore(more);
       lastSearchRef.current = searchParam;
     } catch (err) {
-      if (err.name === 'AbortError') {
-        // aborted - ignore
-        return;
-      }
-      console.error('Fetch error', err);
-      setError(err.message || 'Failed to load mutual funds');
+      if (err && err.name === 'AbortError') return;
+      setError(err?.message || 'Failed to load mutual funds');
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -340,18 +418,15 @@ const SipScheme = React.memo(({ navigation }) => {
     };
   }, [getInitialTabIndex, buildSearchParam, loadPage]);
 
-  // when tab changes: reset page and fetch using tab priority unless user has typed something
+  // when tab changes: reset page and fetch using tab priority (with appended index or user input + index)
   useEffect(() => {
-    // compute effective search param: if user typed and not empty, keep that user search
     const effectiveSearch = buildSearchParam(tabIndex, debouncedSearchQuery);
-    // if effectiveSearch changed relative to lastSearchRef or tab change implies reset -> load page 1
     loadPage(effectiveSearch, 1);
-  }, [tabIndex]); // intentionally not including debouncedSearchQuery here (see next effect)
+  }, [tabIndex]); // intentionally not including debouncedSearchQuery here
 
-  // when debounced user search changes: we must call API with user input and then filter by tab priority
+  // when debounced user search changes: call API with user input + tabIndex
   useEffect(() => {
     const effectiveSearch = buildSearchParam(tabIndex, debouncedSearchQuery);
-    // Reset & load page 1 for the new search
     loadPage(effectiveSearch, 1);
   }, [debouncedSearchQuery, tabIndex, buildSearchParam, loadPage]);
 
@@ -363,25 +438,37 @@ const SipScheme = React.memo(({ navigation }) => {
     const nextPage = page + 1;
     const effectiveSearch = buildSearchParam(tabIndex, debouncedSearchQuery);
     loadPage(effectiveSearch, nextPage);
-  }, [isLoadingMore, isLoading, hasMore, page, tabIndex, debouncedSearchQuery, buildSearchParam, loadPage]);
+  }, [
+    isLoadingMore,
+    isLoading,
+    hasMore,
+    page,
+    tabIndex,
+    debouncedSearchQuery,
+    buildSearchParam,
+    loadPage,
+  ]);
 
   // local filter to enforce the tab priority on the returned server results.
   // This ensures the UI always respects the tab even if server search is broader.
   const filteredData = useCallback(() => {
     const currentPriority = getTabPriorityByIndex(tabIndex);
+
     if (!data || data.length === 0) return [];
+
+    // All tab → return all schemes
     if (!currentPriority || currentPriority === 'All') return data;
 
-    // The server may return mixed items; filter client-side by matching priority/category/schemeName similar to your previous logic
-    return data.filter(fund =>
-      fund.priority === currentPriority ||
-      (fund.category && fund.category.toString().toUpperCase() === currentPriority.toString().toUpperCase()) ||
-      (fund.schemeName && fund.schemeName.toUpperCase().includes(currentPriority.toString().toUpperCase()))
+    // Filter schemes based on schemeName or variantFamilyName
+    return data.filter(
+      fund =>
+        fund.schemeName?.toUpperCase().includes(currentPriority) ||
+        fund.variantFamilyName?.toUpperCase().includes(currentPriority),
     );
   }, [data, tabIndex, getTabPriorityByIndex]);
 
   // handlers for UI search input
-  const handleSearchChange = useCallback((text) => {
+  const handleSearchChange = useCallback(text => {
     setSearchQuery(text);
   }, []);
 
@@ -390,39 +477,59 @@ const SipScheme = React.memo(({ navigation }) => {
   }, []);
 
   // render scene for TabView
-  const renderScene = useCallback(({ route }) => {
-    return (
-      <TabContent
-        tabKey={route.key}
-        dispatch={dispatch}
-        navigation={navigation}
-        data={filteredData()}
-        isLoading={isLoading}
-        isLoadingMore={isLoadingMore}
-        onEndReached={handleLoadMore}
-        error={error}
-        searchQuery={searchQuery}
-      />
-    );
-  }, [dispatch, navigation, filteredData, isLoading, isLoadingMore, handleLoadMore, error, searchQuery]);
+  const renderScene = useCallback(
+    ({ route }) => {
+      return (
+        <TabContent
+          tabKey={route.key}
+          dispatch={dispatch}
+          navigation={navigation}
+          data={filteredData()}
+          isLoading={isLoading}
+          isLoadingMore={isLoadingMore}
+          onEndReached={handleLoadMore}
+          error={error}
+          searchQuery={searchQuery}
+        />
+      );
+    },
+    [
+      dispatch,
+      navigation,
+      filteredData,
+      isLoading,
+      isLoadingMore,
+      handleLoadMore,
+      error,
+      searchQuery,
+    ],
+  );
 
-  const renderTabBar = useCallback((props) => (
-    <TabBar
-      {...props}
-      scrollEnabled={true}
-      indicatorStyle={styles.tabIndicator}
-      style={styles.tabBarStyle}
-      tabStyle={styles.tab}
-      labelStyle={styles.tabLabel}
-      activeColor={Config.Colors.white}
-      inactiveColor={Config.Colors.lightGray}
-      renderLabel={({ route, focused }) => (
-        <Text style={[styles.tabText, focused ? styles.activeTabText : styles.inactiveTabText]}>
-          {route.title}
-        </Text>
-      )}
-    />
-  ), []);
+  const renderTabBar = useCallback(
+    props => (
+      <TabBar
+        {...props}
+        scrollEnabled={true}
+        indicatorStyle={styles.tabIndicator}
+        style={styles.tabBarStyle}
+        tabStyle={styles.tab}
+        labelStyle={styles.tabLabel}
+        activeColor={Config.Colors.white}
+        inactiveColor={Config.Colors.lightGray}
+        renderLabel={({ route, focused }) => (
+          <Text
+            style={[
+              styles.tabText,
+              focused ? styles.activeTabText : styles.inactiveTabText,
+            ]}
+          >
+            {route.title}
+          </Text>
+        )}
+      />
+    ),
+    [],
+  );
 
   if (!isReady) {
     return (
@@ -439,7 +546,7 @@ const SipScheme = React.memo(({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
+      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
 
       <View style={styles.header}>
         <View style={styles.searchContainer}>
@@ -454,7 +561,11 @@ const SipScheme = React.memo(({ navigation }) => {
             autoCapitalize="none"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity style={styles.clearButton} onPress={clearSearch} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={clearSearch}
+              activeOpacity={0.7}
+            >
               <Text style={styles.clearButtonText}>✕</Text>
             </TouchableOpacity>
           )}
@@ -465,7 +576,7 @@ const SipScheme = React.memo(({ navigation }) => {
         navigationState={{ index: tabIndex, routes }}
         renderScene={renderScene}
         renderTabBar={renderTabBar}
-        onIndexChange={(idx) => setTabIndex(idx)}
+        onIndexChange={idx => setTabIndex(idx)}
         initialLayout={{ width: screenWidth }}
         style={styles.tabView}
         lazy={true}
@@ -528,16 +639,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#2B8DF6',
     elevation: 0,
     shadowOpacity: 0,
-    padding:4,
-
+    padding: 4,
   },
   tabIndicator: {
     backgroundColor: '#ffffff',
     borderWidth: 0,
     borderRadius: 4,
     height: 5,
-
-
   },
   tab: {
     width: 'auto',
@@ -547,7 +655,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textTransform: 'none',
-    
   },
   tabText: {
     fontSize: 14,
@@ -569,7 +676,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: widthToDp(3) || 12,
     marginBottom: 12,
-    width: "auto",
+    width: 'auto',
     borderLeftWidth: 3,
     shadowColor: '#000',
     shadowOffset: {

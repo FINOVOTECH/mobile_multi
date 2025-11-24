@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'start',
+    alignItems: 'center',
     width: '100%',
     paddingHorizontal: widthToDp(2),
   },
