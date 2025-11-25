@@ -5,6 +5,7 @@ import { combineReducers } from '@reduxjs/toolkit';
 import loginReducer from "./slices/loginSlice";
 import marketReducer from "./slices/marketSlice";
 import mfDataReducer from './slices/mfDataSlice';
+import PassReducer from './slices/passSlice'
 
 const persistConfig = {
   key: 'root',
@@ -15,7 +16,8 @@ const persistConfig = {
 const rootReducer = combineReducers({
   login: loginReducer,
   marketWatch: marketReducer,
-  mfData: mfDataReducer 
+  mfData: mfDataReducer ,
+  hassPass:PassReducer
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

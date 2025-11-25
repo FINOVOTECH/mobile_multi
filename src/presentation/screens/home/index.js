@@ -33,6 +33,7 @@ import * as Icons from "../../../helpers/Icons";
 import ReactNativeBiometrics from "react-native-biometrics";
 import BiometricLogin from "../BiometricLogin";
 import Rbutton from "../../../components/Rbutton";
+import { setPass } from "../../../store/slices/passSlice";
 
 export default function Home() {
   const otpInputRefs = useRef([]);
@@ -50,6 +51,7 @@ export default function Home() {
   const [validationErrors, setValidationErrors] = useState({});
   const [resendTimer, setResendTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
+  const [res, setRes] = useState()
 
   useEffect(() => {
     if (DATA.enabled === true) {
@@ -256,12 +258,17 @@ export default function Home() {
         "/api/v1/user/onboard/login/send",
         payload
       );
-
+      // const data = response.json()
       if (response?.status === 200) {
+        dispatch(setPass(response))
+        // const data = response.json()
+        // console.log(response?.data?.hasPassword,"======================");
+        
         setIsOtpSent(true);
         setOtp(["", "", "", ""]);
         setResendTimer(30);
         setCanResend(false);
+
         setTimeout(() => {
           otpInputRefs.current[0]?.focus();
         }, 500);

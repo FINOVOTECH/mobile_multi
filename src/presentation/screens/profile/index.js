@@ -40,16 +40,12 @@ export default function Profile({}) {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const Alert = useSelector(state => state.marketWatch.mandateAlert);
-  const loginData = useSelector(state => state?.login?.loginData);
+  const loginData = useSelector(state => state?.hassPass?.hassPass);
   
-  // Check if password is set - based on your Redux structure
   const hasPassword = useSelector(state => {
-    // Check multiple possible locations where password might be stored
-    return state?.login?.pin || 
-           state?.login?.loginData?.pin || 
-           state?.login?.loginData?.user?.hasPassword ||
-           state?.pass?.passData?.hasPassword;
+    return  state?.hassPass?.hassPass?.data?.hasPassword;
   });
+  
 
   const [isLoading, setIsLoading] = useState(true);
   const [mandateData, setMandateData] = useState(null);
