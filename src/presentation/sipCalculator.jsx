@@ -140,7 +140,7 @@ const SIPCalculator = () => {
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
+      <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
       
       <Header />
 

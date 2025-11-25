@@ -488,7 +488,7 @@ const PaymentResponseModal = ({ response, onClose }) => {
       animationType="slide"
       onRequestClose={handleCancelPayment}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#4f46e5" />
+      <StatusBar barStyle="dark-content" backgroundColor="#4f46e5" />
       <View style={styles.mainContainer}>
         {/* Enhanced Header with Gradient Effect */}
         <View style={styles.header}>

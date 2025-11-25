@@ -68,7 +68,7 @@ const HoldingsReportScreen = () => {
       const clientCode = await getData('token')
       setIsGenerating(true);
 
-      const response = await axios.get('https://onekyc.finovo.tech:8015/api/v1/pdf/xirr-Report', {
+      const response = await axios.get('https://onekyc.finovo.tech:8039/api/v1/pdf/xirr-Report', {
         responseType: 'arraybuffer', 
         headers: {
           Accept: 'application/pdf',

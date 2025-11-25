@@ -249,22 +249,32 @@ const LoginVerify = ({
       if (data.status === "SUCCESS") {
         if (data?.passwordResetToken) {
           showPinModalWithAnimation();
-          setPinVerify(data.registrationId);
-          setPinToken(data.passwordResetToken)
+          setPinVerify(data?.registrationId);
+          setPinToken(data?.passwordResetToken)
         } else {
-          setPinVerify(data.registrationId);
+          setPinVerify(data?.registrationId);
           Alert.alert('Success', 'OTP verified successfully', [
             {
               text: 'OK',
               onPress: () => {
                 // showPinModalWithAnimation();
-                setStatus(data.nextStep || "PAN_VERIFICATION")
+                setStatus(data?.nextStep || "PAN_VERIFICATION")
               }
             }
           ]);
         }
       } else {
-        Alert.alert('Error', data.message || 'OTP verification failed');
+        Alert.alert('Error', data?.message || 'OTP verification failed',[
+          {
+              text: 'OK',
+              onPress: () => {
+                // showPinModalWithAnimation();
+                setStatus(data?.nextStep || "")
+              }
+            }
+        ]
+
+        );
       }
     } catch (error) {
       console.log("OTP Verification Error:", error);

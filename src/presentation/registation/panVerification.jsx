@@ -279,7 +279,7 @@ const PanVerification = ({
                 style={styles.logo}
                 resizeMode='contain'
               />
-              <Text style={styles.logoText}>Jyoti MF</Text>
+              <Text style={styles.logoText}>TaurusFund</Text>
             </View>
 
             <View style={styles.titleContainer}>
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   nextButtonText: {
     textAlign: "center",
     fontSize: widthToDp(5),
-    color: "white",
+    color: "black",
     fontWeight: '600',
   },
   disabledButtonText: {

@@ -91,7 +91,7 @@ const MandateAlert = ({
       statusBarTranslucent
       onRequestClose={showCancelButton ? onClose : undefined}
     >
-      <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
+      <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="dark-content" />
       
       {/* Overlay */}
       <Animated.View 

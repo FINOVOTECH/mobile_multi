@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   Animated,
   Image,
   TouchableOpacity,
@@ -31,6 +30,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
 import HandAnimation from '../../../components/handAnimation';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SetPasswordModal from '../../../components/setPassModal';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -39,12 +41,26 @@ export default function Profile({}) {
   const dispatch = useDispatch();
   const Alert = useSelector(state => state.marketWatch.mandateAlert);
   const loginData = useSelector(state => state?.login?.loginData);
+  
+  // Check if password is set - based on your Redux structure
+  const hasPassword = useSelector(state => {
+    // Check multiple possible locations where password might be stored
+    return state?.login?.pin || 
+           state?.login?.loginData?.pin || 
+           state?.login?.loginData?.user?.hasPassword ||
+           state?.pass?.passData?.hasPassword;
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [mandateData, setMandateData] = useState(null);
   const [showMandateAlert, setShowMandateAlert] = useState(false);
+  const [showSetPasswordModal, setShowSetPasswordModal] = useState(false);
   const { portfolioData } = useGetPortfolioData();
-  const Return = portfolioData?.overall?.gainAmount > 0;
-  console.log('values:::', portfolioData?.overall?.gainAmount);
+  const Return = portfolioData?.totals?.totalGainLoss > 0;
+  
+  console.log('Password status:', hasPassword);
+  console.log('Login data structure:', loginData);
+
   const scrollY = useRef(new Animated.Value(0)).current;
   const stickyThreshold = 140;
 
@@ -73,7 +89,7 @@ export default function Profile({}) {
   });
 
   useEffect(() => {
-    fetchingMandate();
+    checkPasswordAndMandate();
   }, []);
 
   useEffect(() => {
@@ -89,7 +105,6 @@ export default function Profile({}) {
   }, []);
 
   const fetchingMandate = async () => {
-    setIsLoading(true);
     try {
       const rawToken = await getData(Config.store_key_login_details);
       const clientCode = await getData(Config.clientCode);
@@ -121,8 +136,6 @@ export default function Profile({}) {
       console.error('Error fetching mandate history:', error);
       setMandateData(null);
       setShowMandateAlert(false);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -131,15 +144,57 @@ export default function Profile({}) {
     dispatch(setMandateAlert(true));
   };
 
+  const handlePasswordSetSuccess = () => {
+    // After password is set successfully, check for mandate
+    fetchingMandate();
+  };
+
+  const handleClosePasswordModal = () => {
+    setShowSetPasswordModal(false);
+    // Even if user closes without setting password, check mandate
+    fetchingMandate();
+  };
+
   const handleCreateMandate = () => {
     dispatch(setMandateAlert(true));
     navigation.navigate('BankMandate');
   };
 
+  const checkPasswordAndMandate = async () => {
+    setIsLoading(true);
+    try {
+      console.log('Checking password status:', hasPassword);
+      
+      // If password is not set, show the modal
+      if (!hasPassword) {
+        console.log('Password not set, showing modal');
+        setShowSetPasswordModal(true);
+      } else {
+        console.log('Password is set, checking mandate');
+        // If password is set, check for mandate
+        await fetchingMandate();
+      }
+    } catch (error) {
+      console.error('Error in checkPasswordAndMandate:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add this useEffect to monitor changes in hasPassword
+  useEffect(() => {
+    console.log('hasPassword changed:', hasPassword);
+    if (hasPassword && showSetPasswordModal) {
+      // If password gets set while modal is open, close the modal
+      setShowSetPasswordModal(false);
+      fetchingMandate();
+    }
+  }, [hasPassword]);
+
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
+      <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
 
       {isLoading ? (
         <HandAnimation />
@@ -160,8 +215,8 @@ export default function Profile({}) {
             >
               <View style={styles.stickyHeaderContent}>
                 <View style={styles.stickyLeftSection}>
-                  <TouchableOpacity   onPress={() => navigation.navigate('Settings')}>
-                  <Image source={Icons.logo} style={styles.stickyLogo} />
+                  <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+                    <Image source={Icons.logo} style={styles.stickyLogo} />
                   </TouchableOpacity>
                   <Text style={styles.stickyGreeting} numberOfLines={1}>
                     Hello {loginData?.user?.primaryHolderFirstName}!
@@ -172,7 +227,7 @@ export default function Profile({}) {
                     PORTFOLIO BALANCE
                   </Text>
                   <Text style={styles.stickyPortfolioAmount}>
-                    ₹{portfolioData?.overall?.currentValue || '0'}
+                    ₹{portfolioData?.totals?.totalCurrentValue || '0'}
                   </Text>
                 </View>
               </View>
@@ -221,7 +276,7 @@ export default function Profile({}) {
                     </Text>
                     <Text style={styles.portfolioBalanceAmount}>
                       ₹
-                      {portfolioData?.overall?.currentValue ||
+                      {portfolioData?.totals?.totalCurrentValue?.toLocaleString() ||
                         '0'}
                     </Text>
                   </View>
@@ -241,7 +296,7 @@ export default function Profile({}) {
                         <Text style={styles.metricLabel}>Invested</Text>
                         <Text style={styles.metricValue}>
                           ₹{' '}
-                          {portfolioData?.overall?.invested||
+                          {portfolioData?.totals?.totalCurrentValue?.toLocaleString() ||
                             '00'}
                         </Text>
                       </View>
@@ -258,8 +313,8 @@ export default function Profile({}) {
                         >
                           {Return ? '+' : '-'} ₹
                           {Math.abs(
-                            (portfolioData?.overall?.currentValue || 0) -
-                              (portfolioData?.overall?.invested || 0),
+                            (portfolioData?.totals?.totalCurrentValue || 0) -
+                              (portfolioData?.totals?.totalInvested || 0),
                           )?.toFixed(2) || '0.00'}
                         </Text>
                       </View>
@@ -275,7 +330,7 @@ export default function Profile({}) {
                           ]}
                         >
                           {Return ? '+' : '-'}
-                          {portfolioData?.overall?.gainPercent || '0'}%
+                          {portfolioData?.totals?.totalReturnPercent || '0'}%
                         </Text>
                       </View>
                     </View>
@@ -317,12 +372,20 @@ export default function Profile({}) {
             showCancelButton={true}
             onCreateMandate={handleCreateMandate}
           />
+          
+          {/* Show SetPasswordModal only if password is not set */}
+          <SetPasswordModal
+            visible={showSetPasswordModal && !hasPassword}
+            onClose={handleClosePasswordModal}
+            onSuccess={handlePasswordSetSuccess}
+          />
         </SafeAreaView>
       )}
     </SafeAreaView>
   );
 }
 
+// Your styles remain the same...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -331,11 +394,9 @@ const styles = StyleSheet.create({
   },
   safeArea: { flex: 1, position: 'relative' },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
-
-  // Sticky Header Styles
   stickyHeader: {
     position: 'absolute',
     top: 0,

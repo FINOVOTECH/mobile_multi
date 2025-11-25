@@ -108,7 +108,7 @@ const BankMandate = ({ navigation }) => {
       const Token = await getData(Config.store_key_login_details);
       console.log('Token', Token);
       const response = await fetch(
-        'https://onekyc.finovo.tech:8015/api/client/registration/create/e-nach/mandate-url',
+        'https://onekyc.finovo.tech:8039/api/client/registration/create/e-nach/mandate-url',
         {
           method: 'POST',
           headers: {
@@ -203,7 +203,7 @@ const BankMandate = ({ navigation }) => {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const response = await axios.post(
-        'https://onekyc.finovo.tech:8015/api/client/registration/mandate/amount',
+        'https://onekyc.finovo.tech:8039/api/client/registration/mandate/amount',
         {
           accountNumber: selectedBank?.accountNumber || '',
           ifscCode: selectedBank?.ifscCode || '',
@@ -415,7 +415,7 @@ const BankMandate = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="light-content" backgroundColor="#2B8DF6" />
+      <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
 
       <Header />
 
