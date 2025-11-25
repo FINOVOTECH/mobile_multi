@@ -4,7 +4,6 @@ import {
   View,
   StatusBar,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
   ScrollView,
   ActivityIndicator,
@@ -31,6 +30,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
 import ChartLoader from '../ChartLoader';
 import SInfoSvg from '../../svgs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MarketWatch = ({ navigation }) => {
   const [fadeAnim] = useState(new Animated.Value(0.3));
@@ -249,6 +249,18 @@ const MarketWatch = ({ navigation }) => {
         }}
       >
         <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              // backgroundColor: 'white',
+              // borderRadius: 8,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <SInfoSvg.WhiteBackButton onPress={() => navigation.goBack()}/>
+          </View>
           <View
             style={{
               width: 40,
@@ -714,7 +726,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
   headerGradient: {
@@ -970,11 +982,11 @@ const styles = StyleSheet.create({
   },
 
   investButton: {
-    marginBottom: heightToDp(2),
+    marginBottom: heightToDp(1),
   },
   investButtonText: {
     color: 'black',
-    fontSize: widthToDp(4.5),
+    fontSize: widthToDp(4),
     fontWeight: '600',
   },
 

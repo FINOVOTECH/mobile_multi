@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   BackHandler,
@@ -21,6 +20,7 @@ import SInfoSvg from '../../svgs';
 import { setBiometricEnabled, setBiometricPin } from '../../../store/slices/loginSlice';
 import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Profile data array with proper icons
 const Profile_Data = [
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
 

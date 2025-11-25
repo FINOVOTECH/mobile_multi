@@ -50,7 +50,7 @@ const MandateAlert = ({
     if (visible) {
       Animated.parallel([
         Animated.timing(slideAnim, {
-          toValue: screenHeight * 0.6, 
+          toValue: screenHeight * 0.5, 
           duration: 300,
           useNativeDriver: true,
         }),

@@ -402,7 +402,7 @@ const InvestmentList = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F7FB' },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#FFFFFF',
   },
   navbar: {

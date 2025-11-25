@@ -263,7 +263,7 @@ function BottomTabNavigator() {
             />
           ),
           tabBarStyle: {
-            height: widthToDp(18),
+            // height: widthToDp(24),
             backgroundColor: '#2B8DF6',
             position: 'absolute',
             shadowOffset: {
@@ -292,8 +292,8 @@ function BottomTabNavigator() {
               borderTopWidth: focused ? 3 : 0, 
               borderTopColor: focused ? Config.Colors.white : 'transparent', 
               borderRadius: 2, 
-              width: widthToDp(12), 
-              height: widthToDp(12),
+              width: widthToDp(10), 
+              height: widthToDp(10),
             };
 
             if (route.name === ScreenName.Profile) {

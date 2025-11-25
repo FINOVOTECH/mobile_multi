@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
   positiveReturns: { color: '#4CD964' },
   negativeReturns: { color: '#FF3B30' },
   scrollView: { flex: 1, backgroundColor: Config.Colors.white },
-  scrollViewContent: { flexGrow: 1 },
+  // scrollViewContent: { flexGrow: 1 },
   footer: {
     justifyContent: 'center',
     alignItems: 'center',

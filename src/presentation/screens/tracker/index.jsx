@@ -7,7 +7,6 @@ import {
   Image,
   ScrollView,
   StatusBar,
-  SafeAreaView,
   Platform,
   ActivityIndicator,
 } from "react-native";
@@ -20,6 +19,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { selectMfData, selectMfDataLoading, selectMfDataError } from "../../../store/slices/mfDataSlice";
 import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Tracker = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
 

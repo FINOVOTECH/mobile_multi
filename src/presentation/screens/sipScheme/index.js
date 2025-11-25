@@ -13,7 +13,6 @@ import {
   FlatList,
   TextInput,
   ActivityIndicator,
-  SafeAreaView,
   StyleSheet,
   StatusBar,
   Platform,
@@ -28,6 +27,7 @@ import { widthToDp, heightToDp } from '../../../helpers/Responsive';
 import * as Config from '../../../helpers/Config';
 import HandAnimation from '../../../components/handAnimation';
 import SInfoSvg from '../../svgs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Get screen width for TabView initial layout
 const { width: screenWidth } = Dimensions.get('window');
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight || 0,
+    // height: StatusBar.currentHeight || 0,
     backgroundColor: '#2B8DF6',
   },
   header: {
