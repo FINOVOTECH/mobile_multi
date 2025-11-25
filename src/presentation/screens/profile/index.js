@@ -40,13 +40,15 @@ export default function Profile({}) {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const Alert = useSelector(state => state.marketWatch.mandateAlert);
-  const loginData = useSelector(state => state?.hassPass?.hassPass);
+const loginData = useSelector(state => state?.login?.loginData);
   
   const hasPassword = useSelector(state => {
     return  state?.hassPass?.hassPass?.data?.hasPassword;
   });
   
 
+
+  
   const [isLoading, setIsLoading] = useState(true);
   const [mandateData, setMandateData] = useState(null);
   const [showMandateAlert, setShowMandateAlert] = useState(false);
