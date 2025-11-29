@@ -22,6 +22,8 @@ const Biometric = ({ navigation }) => {
   const dispatch = useDispatch();
   const isBiometricEnabled = useSelector((state) => state.login.enabled);
   const savedPin = useSelector((state) => state.login.pin);
+  console.log(isBiometricEnabled,savedPin,"pin------------");
+  
 
   const [password, setPassword] = useState(savedPin || "");
   const [fadeAnim] = useState(new Animated.Value(0));

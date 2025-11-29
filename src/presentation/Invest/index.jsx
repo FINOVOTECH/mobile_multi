@@ -44,6 +44,10 @@ const Invest = ({ navigation }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const scrollViewRef = useRef(null);
   const amountInputRef = useRef(null);
+const [selectedFrequency, setSelectedFrequency] = useState(null);
+const [selectedEndDate, setSelectedEndDate] = useState(null);
+const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
 
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [selectedMandate, setSelectedMandate] = useState(null);
@@ -124,24 +128,36 @@ const Invest = ({ navigation }) => {
   };
 
 useEffect(() => {
-  if (InvestData) {
-    // ✅ If sipMinimumInstallmentAmount exists, use it directly
-    if (InvestData.sipMinimumInstallmentAmount?.length > 0) {
-      const minAmount = parseFloat(InvestData.sipMinimumInstallmentAmount[0]) || 0;
-      setMinimumAmount(minAmount);
-      setSelectedAmount(minAmount);
-      setCustomAmount('');
-    } else {
-      // fallback if array missing
-      setMinimumAmount(100);
-      setSelectedAmount(100);
-    }
+  if (InvestData?.allSipOptions?.length > 0 && investmentType === "SIP") {
+
+    // pick first frequency as default
+    const firstFreq = InvestData.allSipOptions[0];
+
+    setSelectedFrequency(firstFreq.freq);
+    setMinimumAmount(firstFreq.amount);
+    setSelectedAmount(firstFreq.amount);
+    setCustomAmount("");
   }
-}, [InvestData]);
+
+  // existing fallback for Lumpsum or missing data
+  else if (InvestData?.sipMinimumInstallmentAmount?.length > 0) {
+    const minAmount = parseFloat(InvestData.sipMinimumInstallmentAmount[0]) || 0;
+    setMinimumAmount(minAmount);
+    setSelectedAmount(minAmount);
+  }
+}, [InvestData, investmentType]);
+
 
   const validateForm = () => {
     const newErrors = {};
     const amount = getCurrentAmount();
+if (investmentType === "SIP" && selectedFrequency === "DAILY") {
+  if (!selectedEndDate) {
+    newErrors.endDate = "Please select an end date";
+  } else if (selectedEndDate <= selectedDate) {
+    newErrors.endDate = "End date must be AFTER start date";
+  }
+}
 
     if (amount === 0) {
       newErrors.amount = 'Please enter an amount';
@@ -289,7 +305,7 @@ useEffect(() => {
       payload = {
         amount: amount.toString(),
         buyType: "FRESH",
-        schemaCode: InvestData?.schemeCode,
+        schemaCode: InvestData?.primarySchemeCode,
         mandateId: paymentMethod === 'MANDATE' ? selectedMandate?.mandateId : "",
         paymentMethod: paymentMethod,
       };
@@ -298,12 +314,15 @@ useEffect(() => {
 
       payload = {
         installmentAmount: amount.toString(),
-        frequencyType: 'MONTHLY',
+          frequencyType: selectedFrequency || "MONTHLY",
         noOfInstallment: 300,
         mandateId: selectedMandate?.mandateId,
         firstOrderToday: paymentMethod === 'UPI' ? true : false,
         startDate: startDate,
-        schemaCode: InvestData?.schemeCode,
+          endDate: selectedFrequency === "DAILY"
+    ? selectedEndDate?.toLocaleDateString("en-GB")
+    : null,
+        schemaCode: InvestData?.primarySchemeCode,
         buyType: "FRESH",
         paymentMethod: paymentMethod,
       };
@@ -922,6 +941,66 @@ useEffect(() => {
           >
             <AmountSection />
             <QuickAmountSection />
+            {investmentType === "SIP" && (
+  <View style={styles.sectionBox}>
+    <Text style={styles.sectionTitle}>SIP Frequency</Text>
+
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+      {InvestData?.allSipOptions?.map(({ freq, amount }) => (
+        <TouchableOpacity
+          key={freq}
+          style={[
+            styles.freqButton,
+            selectedFrequency === freq && styles.freqButtonSelected,
+          ]}
+         onPress={() => {
+  setSelectedFrequency(freq);
+  setMinimumAmount(amount);
+  setSelectedAmount(amount);
+  setCustomAmount("");
+
+  if (freq !== "DAILY") {
+    setSelectedEndDate(null); 
+  }
+}}
+
+        >
+          <Text
+            style={[
+              styles.freqButtonText,
+              selectedFrequency === freq && styles.freqButtonTextSelected,
+            ]}
+          >
+            {freq}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  </View>
+)}
+{investmentType === "SIP" && selectedFrequency === "DAILY" && (
+  <View style={styles.sectionBox}>
+    <Text style={styles.sectionTitle}>SIP End Date</Text>
+
+    <TouchableOpacity
+      style={[styles.scheduleButton, errors.endDate && styles.errorInput]}
+      onPress={() => setShowEndDatePicker(true)}
+    >
+      <Text style={styles.scheduleIcon}>📅</Text>
+      <Text style={styles.scheduleText}>
+        {selectedEndDate
+          ? selectedEndDate.toLocaleDateString("en-GB")
+          : "Select End Date"}
+      </Text>
+      <Text style={styles.scheduleArrow}>⌄</Text>
+    </TouchableOpacity>
+
+    {errors.endDate && (
+      <Text style={styles.errorText}>{errors.endDate}</Text>
+    )}
+  </View>
+)}
+
             <PaymentMethodSection />
             {!(investmentType === 'LUMPSUM' && paymentMethod === 'UPI') && (
               <MandateSelection />
@@ -945,6 +1024,36 @@ useEffect(() => {
           </View>
 
           <DatePickerComponent />
+          {/* END DATE PICKER for DAILY SIP */}
+{showEndDatePicker && (
+  <DateTimePicker
+    value={selectedEndDate || new Date()}
+    mode="date"
+    display="default"
+    minimumDate={selectedDate || new Date()} // cannot end before start date
+    maximumDate={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)} // 1 year max
+    onChange={(event, date) => {
+      setShowEndDatePicker(false);
+
+      if (date) {
+        const day = date.getDate();
+
+        // Disable 29,30,31 just like SIP start date
+        if (day > 28) {
+          const nextMonth = new Date(date);
+          nextMonth.setMonth(date.getMonth() + 1);
+          nextMonth.setDate(1);
+          setSelectedEndDate(nextMonth);
+        } else {
+          setSelectedEndDate(date);
+        }
+
+        setErrors(prev => ({ ...prev, endDate: "" }));
+      }
+    }}
+  />
+)}
+
           <ResponseModal />
           <MandateAlert
             visible={showMandateAlert}
@@ -1139,6 +1248,27 @@ const styles = StyleSheet.create({
     color: Config.Colors.primary,
     fontWeight: '600',
   },
+freqButton: {
+  paddingVertical: 10,
+  paddingHorizontal: 16,
+  borderRadius: 10,
+  borderWidth: 1,
+  borderColor: "#d0d0d0",
+  backgroundColor: "#fafafa",
+},
+freqButtonSelected: {
+  backgroundColor: Config.Colors.primary,
+  borderColor: Config.Colors.primary,
+},
+freqButtonText: {
+  fontSize: 14,
+  color: "#333",
+  fontWeight: "500",
+},
+freqButtonTextSelected: {
+  color: "#fff",
+  fontWeight: "600",
+},
 
   // Mandate Selection Styles
   mandateSelector: {

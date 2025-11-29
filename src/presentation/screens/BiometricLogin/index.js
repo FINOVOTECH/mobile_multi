@@ -93,22 +93,16 @@ console.log("DATA",DATA?.enabled , DATA.pin )
 
   const verifyWithServer = async () => {
     try {
-      const response = await fetch(
-        `${Config.baseUrl}/api/v1/user/function/verify/refresh`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            refreshToken: `${LoginData.refreshToken}`,
-          },
-        }
-      );
+           const payload = {
+             referenceId: LoginData?.user?.clientCode.trim(),
+             password: DATA.pin
+           };
+     
+           const response = await apiPostService('/api/v1/user/onboard/login-pwd/verify', payload);
 
-      const result = await response.json();
-
-      if (response.ok && result?.accessToken) {
+       if (response?.status === 200 && response?.data?.accessToken) {
         await storeData(Config.store_key_login_details, result.accessToken);
-        await storeData(Config.clientCode, LoginData?.user?.clientCode);
+        // await storeData(Config.clientCode, LoginData?.user?.clientCode);
         navigation.reset({
           index: 0,
           routes: [{ name: "Profile" }],
@@ -260,7 +254,7 @@ console.log("DATA",DATA?.enabled , DATA.pin )
       );
       // const data = response.json()
       if (response?.status === 200) {
-        dispatch(setPass(response?.data));
+        dispatch(setPass(response));
         // const data = response.json()
         // console.log(response?.data?.hasPassword,"======================");
         

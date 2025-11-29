@@ -43,7 +43,7 @@ export default function Profile({}) {
 const loginData = useSelector(state => state?.login?.loginData);
   
   const hasPassword = useSelector(state => {
-    return  state?.hassPass?.hassPass?.data?.hasPassword;
+    return  state?.hassPass?.hassPass?.hasPassword;
   });
   
 

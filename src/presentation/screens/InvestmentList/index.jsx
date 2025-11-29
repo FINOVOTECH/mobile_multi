@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  SafeAreaView,
   Platform,
   BackHandler,
   LayoutAnimation,
@@ -19,6 +18,7 @@ import { setSipInterface } from '../../../store/slices/marketSlice';
 import Loader from '../../../components/handAnimation';
 import * as Config from '../../../helpers/Config';
 import { heightToDp } from '../../../helpers/Responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 

@@ -66,13 +66,13 @@ const Profile_Data = [
     route: 'ChangePassword',
     color: '#795548',
   },
-  // {
-  //   id: 6,
-  //   name: 'Biometric Settings',
-  //   icon: SInfoSvg.BiometricIcon,
-  //   route: 'Biometric',
-  //   color: '#00BCD4',
-  // },
+  {
+    id: 6,
+    name: 'Biometric Settings',
+    icon: SInfoSvg.BiometricIcon,
+    route: 'Biometric',
+    color: '#00BCD4',
+  },
 ];
 
 export default function Setting({ navigation }) {
@@ -256,10 +256,15 @@ export default function Setting({ navigation }) {
               </View>
             </View>
           </View>
+             <View style={styles.profileList}>
+            {Profile_Data.map((item, index) => (
+              <ProfileItem key={item.id} item={item} index={index} />
+            ))}
+          </View>
         </Animated.View>
 
         {/* Profile Options Section */}
-        <Animated.View 
+        {/* <Animated.View 
           style={[
             styles.section,
             {
@@ -270,13 +275,13 @@ export default function Setting({ navigation }) {
             },
           ]}
         >
-          <Text style={styles.sectionTitle}>Account Settings</Text>
-          <View style={styles.profileList}>
+          {/* <Text style={styles.sectionTitle}>Account Settings</Text> */}
+          {/* <View style={styles.profileList}>
             {Profile_Data.map((item, index) => (
               <ProfileItem key={item.id} item={item} index={index} />
             ))}
-          </View>
-        </Animated.View>
+          </View> */}
+        {/* </Animated.View> */} 
 
         {/* Logout Button */}
         <Animated.View 
@@ -369,7 +374,8 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: widthToDp(3),
+    borderTopRightRadius: widthToDp(3),
+    borderTopLeftRadius: widthToDp(3),
     padding: widthToDp(4),
     shadowColor: '#000',
     shadowOffset: {
@@ -427,7 +433,7 @@ const styles = StyleSheet.create({
 
   // Profile Options Section
   section: {
-    marginBottom: heightToDp(3),
+    marginBottom: heightToDp(2),
   },
   sectionTitle: {
     fontSize: widthToDp(4.2),
@@ -438,11 +444,12 @@ const styles = StyleSheet.create({
   },
   profileList: {
     backgroundColor: '#FFFFFF',
-    borderRadius: widthToDp(3),
+    borderBottomLeftRadius: widthToDp(3),
+    borderBottomRightRadius: widthToDp(3),
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -450,13 +457,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   profileItem: {
-    borderBottomWidth: 1,
+    // borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
   profileItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: heightToDp(2),
+    paddingVertical: heightToDp(1),
     paddingHorizontal: widthToDp(4),
   },
   iconContainer: {

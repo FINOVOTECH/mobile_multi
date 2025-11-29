@@ -11,7 +11,6 @@ import {
   BackHandler,
   Dimensions,
   StatusBar,
-  SafeAreaView,
   Modal,
   TouchableWithoutFeedback,
   Platform,
@@ -28,6 +27,7 @@ import { getData } from '../../../helpers/localStorage';
 import Rbutton from '../../../components/Rbutton';
 import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
 

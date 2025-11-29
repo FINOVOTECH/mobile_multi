@@ -65,10 +65,10 @@ const BiometricLogin = () => {
 
   // Verify PIN with API
   const verifyPin = async (pinToVerify) => {
-    if(PIN !== pinToVerify) {
-      setPin
-      return Alert.alert('Invalid PIN', 'Please try again');
-    }
+    // if(PIN !== pinToVerify) {
+    //   setPin
+    //   return Alert.alert('Invalid PIN', 'Please try again');
+    // }
     try {
       setIsLoading(true);
       const response = await fetch(`${baseUrl}/api/v1/user/function/verify/refresh`, {
