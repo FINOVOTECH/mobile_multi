@@ -468,6 +468,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     paddingHorizontal: widthToDp(4),
+    paddingVertical:widthToDp(2)
   },
   headerTopRow: {
     flexDirection: 'row',
