@@ -11,7 +11,7 @@ import SInfoSvg from "../../svgs";
 
 const goals = [
   {
-    label: "Own home",
+    label: "Buy House",
     icon: SInfoSvg.Home,
     badge: "Long-term",
     description: "Plan and build a corpus for your dream home.",

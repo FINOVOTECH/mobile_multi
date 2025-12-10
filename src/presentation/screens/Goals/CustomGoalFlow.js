@@ -98,6 +98,8 @@ const CustomGoalFlow = ({ onGoBack }) => {
       const json = await response.json();
 
       if (response.ok) {
+        console.log(json,"custom");
+        
         setSimulationResult(json.data);
       } else {
         alert(json.message || "Something went wrong");
@@ -109,7 +111,6 @@ const CustomGoalFlow = ({ onGoBack }) => {
     }
   };
 
-  // ---------- STATES RENDERING ----------
 
   if (loading) return <LoadingScreen />;
 

@@ -33,7 +33,7 @@ const GoalManager = () => {
     case "Education":
       return <EducationGoalFlow onGoBack={resetGoal} />;
 
-    case "Own home":
+    case "Buy House":
       return <HomeGoalFlow onGoBack={resetGoal} />;
 
     case "Retirement":
