@@ -1,9 +1,6 @@
-// GoalManager.js
 import React, { useState, useEffect } from "react";
 import { View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// Screens
 import GoalSelection from "./GoalSelection";
 import EducationGoalFlow from "./EducationGoalFlow";
 import HomeGoalFlow from "./HomeGoalFlow";
@@ -14,7 +11,6 @@ import CustomGoalFlow from "./CustomGoalFlow";
 const GoalManager = () => {
   const [selectedGoal, setSelectedGoal] = useState(null);
 
-  // Restore saved goal
   useEffect(() => {
     const loadGoal = async () => {
       const saved = await AsyncStorage.getItem("selectedGoal");

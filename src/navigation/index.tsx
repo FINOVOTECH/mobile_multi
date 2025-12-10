@@ -68,7 +68,7 @@ import ChangePassword from '../components/changePassword';
 import SipInterface2 from '../components/SipInterface/SipInterface2';
 import NFO from '../presentation/screens/NFO';
 import LoginWithPass from '../presentation/screens/loginWithPass';
-import Goals from '../presentation/screens/Goals';
+import Goals from '../presentation/screens/Goals/GoalManager';
 const Stack = createNativeStackNavigator<StackParamList>();
 const Tab = createBottomTabNavigator();
 
