@@ -5,47 +5,38 @@ import {
   View,
   TouchableOpacity,
 } from "react-native";
-import {
-  Home,
-  BookA,
-  CalendarHeart,
-  GraduationCap,
-  PlusCircle,
-  Target,
-  Sparkles,
-  ArrowRight,
-} from "lucide-react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SInfoSvg from "../../svgs";
 
 const goals = [
   {
     label: "Own home",
-    icon: Home,
+    icon: SInfoSvg.Home,
     badge: "Long-term",
     description: "Plan and build a corpus for your dream home.",
   },
   {
     label: "Education",
-    icon: BookA,
+    icon: SInfoSvg.Book,
     badge: "Education goal",
     description: "Create a stress-free education funding plan.",
   },
   {
     label: "Retirement",
-    icon: CalendarHeart,
+    icon: SInfoSvg.Rwtire,
     badge: "Retirement",
     description: "Build a retirement corpus for life after work.",
   },
   {
     label: "Child Education",
-    icon: GraduationCap,
+    icon: SInfoSvg.ChildEdu,
     badge: "Family",
     description: "Secure your child’s education with a clear plan.",
   },
   {
     label: "Custom goal",
-    icon: PlusCircle,
+    icon: SInfoSvg.Custom,
     badge: "Flexible",
     description: "Create your own personalized financial goal.",
   },
@@ -74,7 +65,7 @@ const GoalSelection = ({ onSelect = () => {} }) => {
         <View style={styles.leftSection}>
           <View style={styles.badgeRow}>
             <View style={styles.badgeIconWrap}>
-              <Target size={18} color="#fff" />
+              {/* <Target size={18} color="#fff" /> */}
             </View>
             <Text style={styles.badgeText}>SMART GOAL-BASED INVESTING</Text>
           </View>
@@ -92,15 +83,15 @@ const GoalSelection = ({ onSelect = () => {} }) => {
           {/* Feature rows */}
           <View style={styles.features}>
             <FeatureRow
-              icon={<Sparkles size={16} color="#059669" />}
+              icon={<SInfoSvg.Sparkles/>}
               text="Personalized projections based on your inputs"
             />
             <FeatureRow
-              icon={<Target size={16} color="#2563EB" />}
+             icon={<SInfoSvg.target/>}
               text="Goal-based SIP & lumpsum recommendations"
             />
             <FeatureRow
-              icon={<ArrowRight size={16} color="#7C3AED" />}
+             icon={<SInfoSvg.Right/>}
               text="Curated scheme suggestions aligned to your risk"
             />
           </View>

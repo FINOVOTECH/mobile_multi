@@ -6,18 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import {
-  Target,
-  Calendar,
-  Coins,
-  Percent,
-  Sparkles,
-  ChartLine,
-  PieChart,
-} from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { widthToDp } from "../../../helpers/Responsive";
 import Svg, { Path } from "react-native-svg";
+import SInfoSvg from "../../svgs";
 
 const safeNumber = (num) => {
   if (num === undefined || num === null || isNaN(num)) return "0";
@@ -85,7 +77,7 @@ const SimulationResult = ({ data }) => {
         <View style={styles.headerRow}>
           <View style={styles.headerTitleRow}>
             <View style={styles.headerIconWrap}>
-              <Target size={26} color="#FFFFFF" />
+              <SInfoSvg.target/>
             </View>
             <View>
               <Text style={styles.headerTitle}>Your Investment Plan</Text>
@@ -97,7 +89,7 @@ const SimulationResult = ({ data }) => {
 
           <View style={styles.headerBadgeRow}>
             <View style={styles.headerBadge}>
-              <Sparkles size={14} color="#059669" />
+              {/* <Sparkles size={14} color="#059669" /> */}
               <Text style={styles.headerBadgeText}>Plan Generated</Text>
             </View>
           </View>
@@ -106,35 +98,40 @@ const SimulationResult = ({ data }) => {
         {/* Metrics */}
         <View style={styles.metricsGrid}>
           <MetricCard
-            icon={<Calendar size={18} color="#1D4ED8" />}
+            icon={<SInfoSvg.Calender/>}
             title="Investment Horizon"
             value={`${yearsToInvest} yrs`}
           />
           <MetricCard
-            icon={<Target size={18} color="#7C3AED" />}
+          icon={<SInfoSvg.target/>}
+            // icon={<Target size={18} color="#7C3AED" />}
             title="Future Target Amount"
             value={`₹${safeNumber(futureTargetAmount)}`}
           />
           <MetricCard
-            icon={<Coins size={18} color="#059669" />}
+          icon={<SInfoSvg.Coins/>}
+            // icon={<Coins size={18} color="#059669" />}
             title="Net Corpus Needed"
             value={`₹${safeNumber(netCorpusNeeded)}`}
           />
           <MetricCard
-            icon={<Coins size={18} color="#EA580C" />}
+          icon={<SInfoSvg.RedCoins/>}
+            // icon={<Coins size={18} color="#EA580C" />}
             title="Monthly SIP Required"
             value={`₹${safeNumber(requiredSipMonthly)}`}
           />
           <MetricCard
-            icon={<Coins size={18} color="#DB2777" />}
+          icon={<SInfoSvg.LightCoins/>}
+            // icon={<Coins size={18} color="#DB2777" />}
             title="Initial Lumpsum"
             value={`₹${safeNumber(requiredLumpsum)}`}
           />
-          <MetricCard
-            icon={<Percent size={18} color="#2B8DF6" />}
+          {/* <MetricCard
+          icon={<SInfoSvg.LightCoins/>}
+            // icon={<Percent size={18} color="#2B8DF6" />}
             title="Assumed Returns"
             value=""
-          />
+          /> */}
         </View>
 
         {/* Allocation */}
@@ -142,7 +139,7 @@ const SimulationResult = ({ data }) => {
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionTitleRow}>
-                <PieChart size={20} color="#2563EB" />
+                <SInfoSvg.PieCharts/>
                 <Text style={styles.sectionTitle}>Asset Allocation</Text>
               </View>
               <Text style={styles.sectionSub}>
@@ -187,7 +184,7 @@ const SimulationResult = ({ data }) => {
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionTitleRow}>
-                <ChartLine size={20} color="#059669" />
+                {/* <ChartLine size={20} color="#059669" /> */}
                 <Text style={styles.sectionTitle}>Projection Over Time</Text>
               </View>
               <Text style={styles.sectionSub}>
@@ -251,7 +248,7 @@ const SimulationResult = ({ data }) => {
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionTitleRow}>
-                <Sparkles size={20} color="#A855F7" />
+                {/* <Sparkles size={20} color="#A855F7" /> */}
                 <Text style={styles.sectionTitle}>Recommended Schemes</Text>
               </View>
               <Text style={styles.sectionSub}>
@@ -281,7 +278,7 @@ const SimulationResult = ({ data }) => {
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionTitleRow}>
-                <Sparkles size={20} color="#2B8DF6" />
+                {/* <Sparkles size={20} color="#2B8DF6" /> */}
                 <Text style={styles.sectionTitle}>Allocation Breakdown</Text>
               </View>
               <Text style={styles.sectionSub}>Split across specific funds</Text>
@@ -412,7 +409,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 16,
-    backgroundColor: "#2B8DF6",
+    backgroundColor: "#ccd2d8ff",
     justifyContent: "center",
     alignItems: "center",
   },
