@@ -31,5 +31,6 @@ export enum ScreenName {
   BiometricLogin="BiometricLogin",
   ChangePassword="ChangePassword",
   NFO="NFO",
-  LoginWithPass='LoginWithPass'
+  LoginWithPass='LoginWithPass',
+  Goals='Goals'
 }

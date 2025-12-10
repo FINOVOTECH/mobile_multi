@@ -29,4 +29,5 @@ export type StackParamList = {
   ChangePassword: undefined;
   NFO: undefined;
   LoginWithPass: undefined;
+  Goals: undefined;
 };

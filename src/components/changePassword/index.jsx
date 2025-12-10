@@ -101,7 +101,7 @@ const ChangePassword = ({ navigation }) => {
             setNewPassword(["", "", "", ""]);
             setConfirmPassword(["", "", "", ""]);
             setErrors({});
-            navigation.goBack(); // Navigate back after successful change
+            navigation.goBack(); 
           },
         },
       ]);

@@ -41,23 +41,19 @@ export default function Profile({}) {
   const dispatch = useDispatch();
   const Alert = useSelector(state => state.marketWatch.mandateAlert);
 const loginData = useSelector(state => state?.login?.loginData);
-  
   const hasPassword = useSelector(state => {
-    return  state?.hassPass?.hassPass?.hasPassword;
+    return  state?.hassPass?.hassPassWord?.data?.hasPassword ||state?.hassPass?.hassPassWord ;
   });
-  
-
-
-  
   const [isLoading, setIsLoading] = useState(true);
   const [mandateData, setMandateData] = useState(null);
   const [showMandateAlert, setShowMandateAlert] = useState(false);
   const [showSetPasswordModal, setShowSetPasswordModal] = useState(false);
   const { portfolioData } = useGetPortfolioData();
-  const Return = portfolioData?.totals?.totalGainLoss > 0;
+  const Return = portfolioData?.overall?.gainAmount > 0;
   
-  console.log('Password status:', hasPassword);
+  console.log('Password status:', portfolioData);
   console.log('Login data structure:', loginData);
+
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const stickyThreshold = 140;
@@ -225,7 +221,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                     PORTFOLIO BALANCE
                   </Text>
                   <Text style={styles.stickyPortfolioAmount}>
-                    ₹{portfolioData?.totals?.totalCurrentValue || '0'}
+                    ₹{portfolioData?.overall?.currentValue || '0'}
                   </Text>
                 </View>
               </View>
@@ -274,7 +270,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                     </Text>
                     <Text style={styles.portfolioBalanceAmount}>
                       ₹
-                      {portfolioData?.totals?.totalCurrentValue?.toLocaleString() ||
+                      {portfolioData?.overall?.currentValue?.toLocaleString() ||
                         '0'}
                     </Text>
                   </View>
@@ -283,7 +279,7 @@ const loginData = useSelector(state => state?.login?.loginData);
 
               {/* Collapsing Portfolio Info */}
               <Animated.View
-                style={{ opacity: contentOpacity, marginTop: heightToDp(2) }}
+                style={{ opacity: contentOpacity, marginTop: heightToDp(2),marginBottom:heightToDp(2)}}
               >
                 <TouchableOpacity
                   onPress={() => navigation?.navigate('Dashboard')}
@@ -294,7 +290,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                         <Text style={styles.metricLabel}>Invested</Text>
                         <Text style={styles.metricValue}>
                           ₹{' '}
-                          {portfolioData?.totals?.totalCurrentValue?.toLocaleString() ||
+                          {portfolioData?.overall?.invested?.toLocaleString() ||
                             '00'}
                         </Text>
                       </View>
@@ -310,10 +306,12 @@ const loginData = useSelector(state => state?.login?.loginData);
                           ]}
                         >
                           {Return ? '+' : '-'} ₹
-                          {Math.abs(
+                          {/* {Math.abs(
                             (portfolioData?.totals?.totalCurrentValue || 0) -
                               (portfolioData?.totals?.totalInvested || 0),
-                          )?.toFixed(2) || '0.00'}
+                          )?.toFixed(2) || '0.00'} */}
+                           {portfolioData?.overall?.currentValue?.toLocaleString() ||
+                            '00'}
                         </Text>
                       </View>
 
@@ -328,7 +326,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                           ]}
                         >
                           {Return ? '+' : '-'}
-                          {portfolioData?.totals?.totalReturnPercent || '0'}%
+                          {portfolioData?.overall?.gainPercent || '0'}%
                         </Text>
                       </View>
                     </View>
@@ -348,7 +346,7 @@ const loginData = useSelector(state => state?.login?.loginData);
               { useNativeDriver: true },
             )}
           >
-            <View style={{ height: heightToDp(35) }} />
+            <View style={{ height: heightToDp(30), marginTop: heightToDp(2) }} />
             <StartInvestingCard
               onStartInvesting={() => navigation.navigate('SipScheme')}
             />
@@ -406,13 +404,15 @@ const styles = StyleSheet.create({
   },
   stickyHeaderGradient: {
     flex: 1,
-    paddingHorizontal: widthToDp(4),
+    paddingHorizontal: widthToDp(1),
     justifyContent: 'center',
+
   },
   stickyHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+     
   },
   stickyLeftSection: {
     flexDirection: 'row',
@@ -436,7 +436,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stickyPortfolioSection: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-center',
+    marginRight:widthToDp(2)
   },
   stickyPortfolioText: {
     color: Config.Colors.white,
@@ -463,7 +464,7 @@ const styles = StyleSheet.create({
   headerGradientOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingBottom: 20,
+    // paddingBottom: 20,
   },
   headerRow: {
     paddingHorizontal: widthToDp(4),
@@ -517,9 +518,11 @@ const styles = StyleSheet.create({
     fontSize: widthToDp(7),
   },
   portfolioBalanceCard: {
+    
     marginHorizontal: widthToDp(4),
     borderRadius: widthToDp(1),
-    padding: widthToDp(5),
+    padding: Platform.OS === 'ios' ? widthToDp(5) : widthToDp(3),
+
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },

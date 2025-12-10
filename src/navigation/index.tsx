@@ -68,6 +68,7 @@ import ChangePassword from '../components/changePassword';
 import SipInterface2 from '../components/SipInterface/SipInterface2';
 import NFO from '../presentation/screens/NFO';
 import LoginWithPass from '../presentation/screens/loginWithPass';
+import Goals from '../presentation/screens/Goals';
 const Stack = createNativeStackNavigator<StackParamList>();
 const Tab = createBottomTabNavigator();
 
@@ -484,6 +485,11 @@ export default function RootNavigator() {
       <Stack.Screen
         name={ScreenName.LoginWithPass}
         component={LoginWithPass}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={ScreenName.Goals}
+        component={Goals}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

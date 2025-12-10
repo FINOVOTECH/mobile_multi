@@ -33,11 +33,17 @@ const QuickLinksSection = ({ onViewAll }) => {
       route: 'Transaction',
     },
     {
-      id: '4',
-      title: 'Manage\nAccount',
+      id: '5',
+      title: 'Goals',
       icon: require('../../assets/images/manageAcc.png'),
-      route: 'Settings',
+      route: 'Goals',
     },
+    // {
+    //   id: '4',
+    //   title: 'Manage\nAccount',
+    //   icon: require('../../assets/images/manageAcc.png'),
+    //   route: 'Settings',
+    // },
   ];
 
   return (
@@ -116,7 +122,7 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '100%',
     paddingHorizontal: widthToDp(2),
   },
