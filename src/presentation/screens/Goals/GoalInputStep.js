@@ -1,4 +1,3 @@
-// GoalInputStep.js
 import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
@@ -7,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   Animated,
+  KeyboardAvoidingView,
 } from "react-native";
 
 const GoalInputStep = ({
@@ -49,7 +49,7 @@ const GoalInputStep = ({
   const isNumber = type === "number";
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView style={styles.screen} behavior="padding">
       {/* Back button */}
       {!isFirstStep && (
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
@@ -140,7 +140,7 @@ const GoalInputStep = ({
           <Text style={styles.nextText}>Continue →</Text>
         </TouchableOpacity>
       </Animated.View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
