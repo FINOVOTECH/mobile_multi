@@ -42,7 +42,7 @@ export default function Profile({}) {
   const Alert = useSelector(state => state.marketWatch.mandateAlert);
 const loginData = useSelector(state => state?.login?.loginData);
   const hasPassword = useSelector(state => {
-    return  state?.hassPass?.hassPassWord?.data?.hasPassword ||state?.hassPass?.hassPassWord ;
+    return  state?.hassPass?.hassPass?.hassPass||state?.hassPass?.hassPass ;
   });
   const [isLoading, setIsLoading] = useState(true);
   const [mandateData, setMandateData] = useState(null);
@@ -51,8 +51,8 @@ const loginData = useSelector(state => state?.login?.loginData);
   const { portfolioData } = useGetPortfolioData();
   const Return = portfolioData?.overall?.gainAmount > 0;
   
-  console.log('Password status:', portfolioData);
-  console.log('Login data structure:', loginData);
+  // console.log('Password status:', portfolioData);
+  // console.log('Login data structure:', loginData);
 
 
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -157,14 +157,14 @@ const loginData = useSelector(state => state?.login?.loginData);
   const checkPasswordAndMandate = async () => {
     setIsLoading(true);
     try {
-      console.log('Checking password status:', hasPassword);
+      // console.log('Checking password status:', hasPassword);
       
       // If password is not set, show the modal
       if (!hasPassword) {
-        console.log('Password not set, showing modal');
+        // console.log('Password not set, showing modal');
         setShowSetPasswordModal(true);
       } else {
-        console.log('Password is set, checking mandate');
+        // console.log('Password is set, checking mandate');
         // If password is set, check for mandate
         await fetchingMandate();
       }
@@ -178,7 +178,7 @@ const loginData = useSelector(state => state?.login?.loginData);
   // Add this useEffect to monitor changes in hasPassword
   useEffect(() => {
     console.log('hasPassword changed:', hasPassword);
-    if (hasPassword && showSetPasswordModal) {
+    if (hasPassword) {
       // If password gets set while modal is open, close the modal
       setShowSetPasswordModal(false);
       fetchingMandate();
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   },
   stickyHeaderGradient: {
     flex: 1,
-    paddingHorizontal: widthToDp(1),
+    paddingHorizontal: widthToDp(2),
     justifyContent: 'center',
 
   },

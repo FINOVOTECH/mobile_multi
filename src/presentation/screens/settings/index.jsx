@@ -21,6 +21,7 @@ import { setBiometricEnabled, setBiometricPin } from '../../../store/slices/logi
 import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../../assets/Icons/vector.png';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { persistor } from '../../../store/store';
 
 // Profile data array with proper icons
 const Profile_Data = [
@@ -129,12 +130,25 @@ export default function Setting({ navigation }) {
     `${userData?.user?.primaryHolderFirstName} ${userData?.user?.primaryHolderLastName}`,
   );
 
-  const Logout = async () => {
+const Logout = async () => {
+  try {
+    // Reset biometric values
     dispatch(setBiometricPin(''));
     dispatch(setBiometricEnabled(false));
+
+    // Reset whole Redux state + persisted storage
+    dispatch({ type: 'RESET_APP' });
+
+    // Clear AsyncStorage (optional but safe)
     await AsyncStorage.clear();
+
     navigation.navigate('Home');
-  };
+
+  } catch (error) {
+    console.log("Logout error:", error);
+  }
+};
+
 
   const Header = () => (
     <LinearGradient
@@ -300,14 +314,14 @@ export default function Setting({ navigation }) {
             onPress={Logout}
             activeOpacity={0.8}
           >
-            <LinearGradient
+            {/* <LinearGradient
               colors={['#FF6B6B', '#FF5252']}
               style={styles.logoutGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-            >
+            > */}
               <Text style={styles.logoutText}>Logout</Text>
-            </LinearGradient>
+            {/* </LinearGradient> */}
           </TouchableOpacity>
         </Animated.View>
 
@@ -495,6 +509,8 @@ const styles = StyleSheet.create({
     marginBottom: heightToDp(2),
   },
   logoutButton: {
+    backgroundColor:"#FF5252",
+    padding:Platform.OS === "ios"?heightToDp(2):heightToDp(2),
     borderRadius: widthToDp(3),
     overflow: 'hidden',
     shadowColor: '#000',
@@ -515,6 +531,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: widthToDp(4),
     fontWeight: '600',
+    textAlign:"center"
   },
 
   bottomPadding: {

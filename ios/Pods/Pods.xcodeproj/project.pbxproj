@@ -3387,8 +3387,8 @@
 		46EB2E00025A60 /* RNFetchBlobReqBuilder.h in Headers */ = {isa = PBXBuildFile; fileRef = 46EB2E000129F0 /* RNFetchBlobReqBuilder.h */; settings = {ATTRIBUTES = (Project, ); }; };
 		46EB2E00025A70 /* RNFetchBlobRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 46EB2E00012A10 /* RNFetchBlobRequest.h */; settings = {ATTRIBUTES = (Project, ); }; };
 		46EB2E00025AD0 /* rn-fetch-blob-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = 46EB2E00025AC0 /* rn-fetch-blob-dummy.m */; };
-		46EB2E00025BB0 /* Pods-TaurusFund-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 46EB2E00025BA0 /* Pods-TaurusFund-umbrella.h */; settings = {ATTRIBUTES = (Project, ); }; };
-		46EB2E00025C10 /* Pods-TaurusFund-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = 46EB2E00025C00 /* Pods-TaurusFund-dummy.m */; };
+		46EB2E00025BB0 /* Pods-JyotiMF-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 46EB2E00025BA0 /* Pods-JyotiMF-umbrella.h */; settings = {ATTRIBUTES = (Project, ); }; };
+		46EB2E00025C10 /* Pods-JyotiMF-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = 46EB2E00025C00 /* Pods-JyotiMF-dummy.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -12210,7 +12210,6 @@
 		37592FDAD45752511010F4B06AC57355 /* React-cxxreact */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "React-cxxreact"; path = "libReact-cxxreact.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		39D0105B481E5FB78C661496BD63B8A5 /* React-RCTAppDelegate */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "React-RCTAppDelegate"; path = "libReact-RCTAppDelegate.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3CA7A9404CCDD6BA22C97F8348CE3209 /* glog */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = glog; path = libglog.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		3CD5DD8958AA01001CA0890F9B6641AA /* Pods-TaurusFund */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "Pods-TaurusFund"; path = "libPods-TaurusFund.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		46EB2E000006C0 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; lastKnownFileType = text; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		46EB2E000006D0 /* BVLinearGradient.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = BVLinearGradient.h; path = ios/BVLinearGradient.h; sourceTree = "<group>"; };
 		46EB2E000006E0 /* BVLinearGradient.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = BVLinearGradient.m; path = ios/BVLinearGradient.m; sourceTree = "<group>"; };
@@ -17262,15 +17261,15 @@
 		46EB2E00025AA0 /* rn-fetch-blob.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "rn-fetch-blob.release.xcconfig"; sourceTree = "<group>"; };
 		46EB2E00025AB0 /* rn-fetch-blob-prefix.pch */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "rn-fetch-blob-prefix.pch"; sourceTree = "<group>"; };
 		46EB2E00025AC0 /* rn-fetch-blob-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "rn-fetch-blob-dummy.m"; sourceTree = "<group>"; };
-		46EB2E00025B70 /* Pods-TaurusFund.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-TaurusFund.release.xcconfig"; sourceTree = "<group>"; };
-		46EB2E00025B80 /* Pods-TaurusFund.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-TaurusFund.debug.xcconfig"; sourceTree = "<group>"; };
-		46EB2E00025B90 /* Pods-TaurusFund.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-TaurusFund.modulemap"; sourceTree = "<group>"; };
-		46EB2E00025BA0 /* Pods-TaurusFund-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-TaurusFund-umbrella.h"; sourceTree = "<group>"; };
-		46EB2E00025BC0 /* Pods-TaurusFund-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-TaurusFund-frameworks.sh"; sourceTree = "<group>"; };
-		46EB2E00025BD0 /* Pods-TaurusFund-resources.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-TaurusFund-resources.sh"; sourceTree = "<group>"; };
-		46EB2E00025BE0 /* Pods-TaurusFund-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-TaurusFund-acknowledgements.plist"; sourceTree = "<group>"; };
-		46EB2E00025BF0 /* Pods-TaurusFund-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-TaurusFund-acknowledgements.markdown"; sourceTree = "<group>"; };
-		46EB2E00025C00 /* Pods-TaurusFund-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-TaurusFund-dummy.m"; sourceTree = "<group>"; };
+		46EB2E00025B70 /* Pods-JyotiMF.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-JyotiMF.release.xcconfig"; sourceTree = "<group>"; };
+		46EB2E00025B80 /* Pods-JyotiMF.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-JyotiMF.debug.xcconfig"; sourceTree = "<group>"; };
+		46EB2E00025B90 /* Pods-JyotiMF.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-JyotiMF.modulemap"; sourceTree = "<group>"; };
+		46EB2E00025BA0 /* Pods-JyotiMF-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-JyotiMF-umbrella.h"; sourceTree = "<group>"; };
+		46EB2E00025BC0 /* Pods-JyotiMF-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-JyotiMF-frameworks.sh"; sourceTree = "<group>"; };
+		46EB2E00025BD0 /* Pods-JyotiMF-resources.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-JyotiMF-resources.sh"; sourceTree = "<group>"; };
+		46EB2E00025BE0 /* Pods-JyotiMF-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-JyotiMF-acknowledgements.plist"; sourceTree = "<group>"; };
+		46EB2E00025BF0 /* Pods-JyotiMF-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-JyotiMF-acknowledgements.markdown"; sourceTree = "<group>"; };
+		46EB2E00025C00 /* Pods-JyotiMF-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-JyotiMF-dummy.m"; sourceTree = "<group>"; };
 		4CC54C79E5C34490D96A7411A3DA9565 /* RNPermissions-RNPermissionsPrivacyInfo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "RNPermissions-RNPermissionsPrivacyInfo"; path = RNPermissionsPrivacyInfo.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F3E9C98444FA55E416B857143C48013 /* React-RuntimeHermes */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "React-RuntimeHermes"; path = "libReact-RuntimeHermes.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FDA96879D96070EB1983E98E655CBDC /* rn-fetch-blob */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "rn-fetch-blob"; path = "librn-fetch-blob.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -17341,6 +17340,7 @@
 		F7E9FAA723F6F1C87E4B641CD8262E7A /* React-jsinspectorcdp */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "React-jsinspectorcdp"; path = "libReact-jsinspectorcdp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F958876A082BF810B342435CE3FB5AF6 /* RCTTypeSafety */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = RCTTypeSafety; path = libRCTTypeSafety.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB33A97A9CD948F4200E399C0DA5C060 /* React-renderercss */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "React-renderercss"; path = "libReact-renderercss.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC072D558BC799C6C8033514E19DE4A1 /* Pods-JyotiMF */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "Pods-JyotiMF"; path = "libPods-JyotiMF.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE39837A8C8BBD0AB30E46F6AE12F2E3 /* RNReactNativeHapticFeedback */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = RNReactNativeHapticFeedback; path = libRNReactNativeHapticFeedback.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE7B9294FF05AAFD1653E2104E10844A /* React-RCTAnimation */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "React-RCTAnimation"; path = "libReact-RCTAnimation.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FFDAD994FE728F76EC459CC05E0CCDFB /* glog-glog_privacy */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "glog-glog_privacy"; path = glog_privacy.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -18054,7 +18054,7 @@
 				62060F5D524AE8173817ADD9482A0FEB /* lottie-ios-LottiePrivacyInfo */,
 				0F8D5091C801A6ECB9A173DA0E385A29 /* lottie-react-native */,
 				914D2B3007F2D4566ACCA456F0D3FC12 /* lottie-react-native-Lottie_React_Native_Privacy */,
-				3CD5DD8958AA01001CA0890F9B6641AA /* Pods-TaurusFund */,
+				FC072D558BC799C6C8033514E19DE4A1 /* Pods-JyotiMF */,
 				1936453FF2A7E3A13063C4917C4D5598 /* RCT-Folly */,
 				BA6198501C8FE4824D863DC9EF32C614 /* RCT-Folly-RCT-Folly_privacy */,
 				33EEBF1D210254B5452CE560F81C9D38 /* RCTDeprecation */,
@@ -18155,7 +18155,7 @@
 		46EB2E00000070 /* Targets Support Files */ = {
 			isa = PBXGroup;
 			children = (
-				46EB2E00025B60 /* Pods-TaurusFund */,
+				46EB2E00025B60 /* Pods-JyotiMF */,
 			);
 			name = "Targets Support Files";
 			sourceTree = "<group>";
@@ -27693,21 +27693,21 @@
 			path = "../../ios/Pods/Target Support Files/rn-fetch-blob";
 			sourceTree = "<group>";
 		};
-		46EB2E00025B60 /* Pods-TaurusFund */ = {
+		46EB2E00025B60 /* Pods-JyotiMF */ = {
 			isa = PBXGroup;
 			children = (
-				46EB2E00025B90 /* Pods-TaurusFund.modulemap */,
-				46EB2E00025BF0 /* Pods-TaurusFund-acknowledgements.markdown */,
-				46EB2E00025BE0 /* Pods-TaurusFund-acknowledgements.plist */,
-				46EB2E00025C00 /* Pods-TaurusFund-dummy.m */,
-				46EB2E00025BC0 /* Pods-TaurusFund-frameworks.sh */,
-				46EB2E00025BD0 /* Pods-TaurusFund-resources.sh */,
-				46EB2E00025BA0 /* Pods-TaurusFund-umbrella.h */,
-				46EB2E00025B80 /* Pods-TaurusFund.debug.xcconfig */,
-				46EB2E00025B70 /* Pods-TaurusFund.release.xcconfig */,
+				46EB2E00025B90 /* Pods-JyotiMF.modulemap */,
+				46EB2E00025BF0 /* Pods-JyotiMF-acknowledgements.markdown */,
+				46EB2E00025BE0 /* Pods-JyotiMF-acknowledgements.plist */,
+				46EB2E00025C00 /* Pods-JyotiMF-dummy.m */,
+				46EB2E00025BC0 /* Pods-JyotiMF-frameworks.sh */,
+				46EB2E00025BD0 /* Pods-JyotiMF-resources.sh */,
+				46EB2E00025BA0 /* Pods-JyotiMF-umbrella.h */,
+				46EB2E00025B80 /* Pods-JyotiMF.debug.xcconfig */,
+				46EB2E00025B70 /* Pods-JyotiMF.release.xcconfig */,
 			);
-			name = "Pods-TaurusFund";
-			path = "Target Support Files/Pods-TaurusFund";
+			name = "Pods-JyotiMF";
+			path = "Target Support Files/Pods-JyotiMF";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -30176,7 +30176,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				46EB2E00025BB0 /* Pods-TaurusFund-umbrella.h in Headers */,
+				46EB2E00025BB0 /* Pods-JyotiMF-umbrella.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32755,6 +32755,120 @@
 			productReference = 1936453FF2A7E3A13063C4917C4D5598 /* RCT-Folly */;
 			productType = "com.apple.product-type.library.static";
 		};
+		EDF64EF21508D0810870B12501E8B9D2 /* Pods-JyotiMF */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46EB2E00025AF0 /* Build configuration list for PBXNativeTarget "Pods-JyotiMF" */;
+			buildPhases = (
+				46EB2E00025B30 /* Headers */,
+				46EB2E00025B40 /* Sources */,
+				46EB2E00025B50 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				46EB2E00025C90 /* PBXTargetDependency */,
+				46EB2E00025CB0 /* PBXTargetDependency */,
+				46EB2E00025CD0 /* PBXTargetDependency */,
+				46EB2E00025CF0 /* PBXTargetDependency */,
+				46EB2E00025D10 /* PBXTargetDependency */,
+				46EB2E00025D30 /* PBXTargetDependency */,
+				46EB2E00025D50 /* PBXTargetDependency */,
+				46EB2E00025D70 /* PBXTargetDependency */,
+				46EB2E00025D90 /* PBXTargetDependency */,
+				46EB2E00025DB0 /* PBXTargetDependency */,
+				46EB2E00025DD0 /* PBXTargetDependency */,
+				46EB2E00025DF0 /* PBXTargetDependency */,
+				46EB2E00025E10 /* PBXTargetDependency */,
+				46EB2E00025E30 /* PBXTargetDependency */,
+				46EB2E00025E50 /* PBXTargetDependency */,
+				46EB2E00025E70 /* PBXTargetDependency */,
+				46EB2E00025E90 /* PBXTargetDependency */,
+				46EB2E00025EB0 /* PBXTargetDependency */,
+				46EB2E00025ED0 /* PBXTargetDependency */,
+				46EB2E00025EF0 /* PBXTargetDependency */,
+				46EB2E00025F10 /* PBXTargetDependency */,
+				46EB2E00025F30 /* PBXTargetDependency */,
+				46EB2E00025F50 /* PBXTargetDependency */,
+				46EB2E00025F70 /* PBXTargetDependency */,
+				46EB2E00025F90 /* PBXTargetDependency */,
+				46EB2E00025FB0 /* PBXTargetDependency */,
+				46EB2E00025FD0 /* PBXTargetDependency */,
+				46EB2E00025FF0 /* PBXTargetDependency */,
+				46EB2E00026010 /* PBXTargetDependency */,
+				46EB2E00026030 /* PBXTargetDependency */,
+				46EB2E00026050 /* PBXTargetDependency */,
+				46EB2E00026070 /* PBXTargetDependency */,
+				46EB2E00026090 /* PBXTargetDependency */,
+				46EB2E000260B0 /* PBXTargetDependency */,
+				46EB2E000260D0 /* PBXTargetDependency */,
+				46EB2E000260F0 /* PBXTargetDependency */,
+				46EB2E00026110 /* PBXTargetDependency */,
+				46EB2E00026130 /* PBXTargetDependency */,
+				46EB2E00026150 /* PBXTargetDependency */,
+				46EB2E00026170 /* PBXTargetDependency */,
+				46EB2E00026190 /* PBXTargetDependency */,
+				46EB2E000261B0 /* PBXTargetDependency */,
+				46EB2E000261D0 /* PBXTargetDependency */,
+				46EB2E000261F0 /* PBXTargetDependency */,
+				46EB2E00026210 /* PBXTargetDependency */,
+				46EB2E00026230 /* PBXTargetDependency */,
+				46EB2E00026250 /* PBXTargetDependency */,
+				46EB2E00026270 /* PBXTargetDependency */,
+				46EB2E00026290 /* PBXTargetDependency */,
+				46EB2E000262B0 /* PBXTargetDependency */,
+				46EB2E000262D0 /* PBXTargetDependency */,
+				46EB2E000262F0 /* PBXTargetDependency */,
+				46EB2E00026310 /* PBXTargetDependency */,
+				46EB2E00026330 /* PBXTargetDependency */,
+				46EB2E00026350 /* PBXTargetDependency */,
+				46EB2E00026370 /* PBXTargetDependency */,
+				46EB2E00026390 /* PBXTargetDependency */,
+				46EB2E000263B0 /* PBXTargetDependency */,
+				46EB2E000263D0 /* PBXTargetDependency */,
+				46EB2E000263F0 /* PBXTargetDependency */,
+				46EB2E00026410 /* PBXTargetDependency */,
+				46EB2E00026430 /* PBXTargetDependency */,
+				46EB2E00026450 /* PBXTargetDependency */,
+				46EB2E00026470 /* PBXTargetDependency */,
+				46EB2E00026490 /* PBXTargetDependency */,
+				46EB2E000264B0 /* PBXTargetDependency */,
+				46EB2E000264D0 /* PBXTargetDependency */,
+				46EB2E000264F0 /* PBXTargetDependency */,
+				46EB2E00026510 /* PBXTargetDependency */,
+				46EB2E00026530 /* PBXTargetDependency */,
+				46EB2E00026550 /* PBXTargetDependency */,
+				46EB2E00026570 /* PBXTargetDependency */,
+				46EB2E00026590 /* PBXTargetDependency */,
+				46EB2E000265B0 /* PBXTargetDependency */,
+				46EB2E000265D0 /* PBXTargetDependency */,
+				46EB2E000265F0 /* PBXTargetDependency */,
+				46EB2E00026610 /* PBXTargetDependency */,
+				46EB2E00026630 /* PBXTargetDependency */,
+				46EB2E00026650 /* PBXTargetDependency */,
+				46EB2E00026670 /* PBXTargetDependency */,
+				46EB2E00026690 /* PBXTargetDependency */,
+				46EB2E000266B0 /* PBXTargetDependency */,
+				46EB2E000266D0 /* PBXTargetDependency */,
+				46EB2E000266F0 /* PBXTargetDependency */,
+				46EB2E00026710 /* PBXTargetDependency */,
+				46EB2E00026730 /* PBXTargetDependency */,
+				46EB2E00026750 /* PBXTargetDependency */,
+				46EB2E00026770 /* PBXTargetDependency */,
+				46EB2E00026790 /* PBXTargetDependency */,
+				46EB2E000267B0 /* PBXTargetDependency */,
+				46EB2E000267D0 /* PBXTargetDependency */,
+				46EB2E000267F0 /* PBXTargetDependency */,
+				46EB2E00026810 /* PBXTargetDependency */,
+				46EB2E00026830 /* PBXTargetDependency */,
+				46EB2E00026850 /* PBXTargetDependency */,
+				46EB2E00026870 /* PBXTargetDependency */,
+				46EB2E00026890 /* PBXTargetDependency */,
+			);
+			name = "Pods-JyotiMF";
+			productName = "Pods-JyotiMF";
+			productReference = FC072D558BC799C6C8033514E19DE4A1 /* Pods-JyotiMF */;
+			productType = "com.apple.product-type.library.static";
+		};
 		EEBB8D24F2B3531A5C5DAA668D02331F /* react-native-blur */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 46EB2E00024F30 /* Build configuration list for PBXNativeTarget "react-native-blur" */;
@@ -32898,120 +33012,6 @@
 			productReference = 2577F299FCB0A19824FE989BE77B8E8F /* React-jsinspector */;
 			productType = "com.apple.product-type.library.static";
 		};
-		F84D3B5BC9D0C9C7E18BED32C46E315B /* Pods-TaurusFund */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 46EB2E00025AF0 /* Build configuration list for PBXNativeTarget "Pods-TaurusFund" */;
-			buildPhases = (
-				46EB2E00025B30 /* Headers */,
-				46EB2E00025B40 /* Sources */,
-				46EB2E00025B50 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				46EB2E00025C90 /* PBXTargetDependency */,
-				46EB2E00025CB0 /* PBXTargetDependency */,
-				46EB2E00025CD0 /* PBXTargetDependency */,
-				46EB2E00025CF0 /* PBXTargetDependency */,
-				46EB2E00025D10 /* PBXTargetDependency */,
-				46EB2E00025D30 /* PBXTargetDependency */,
-				46EB2E00025D50 /* PBXTargetDependency */,
-				46EB2E00025D70 /* PBXTargetDependency */,
-				46EB2E00025D90 /* PBXTargetDependency */,
-				46EB2E00025DB0 /* PBXTargetDependency */,
-				46EB2E00025DD0 /* PBXTargetDependency */,
-				46EB2E00025DF0 /* PBXTargetDependency */,
-				46EB2E00025E10 /* PBXTargetDependency */,
-				46EB2E00025E30 /* PBXTargetDependency */,
-				46EB2E00025E50 /* PBXTargetDependency */,
-				46EB2E00025E70 /* PBXTargetDependency */,
-				46EB2E00025E90 /* PBXTargetDependency */,
-				46EB2E00025EB0 /* PBXTargetDependency */,
-				46EB2E00025ED0 /* PBXTargetDependency */,
-				46EB2E00025EF0 /* PBXTargetDependency */,
-				46EB2E00025F10 /* PBXTargetDependency */,
-				46EB2E00025F30 /* PBXTargetDependency */,
-				46EB2E00025F50 /* PBXTargetDependency */,
-				46EB2E00025F70 /* PBXTargetDependency */,
-				46EB2E00025F90 /* PBXTargetDependency */,
-				46EB2E00025FB0 /* PBXTargetDependency */,
-				46EB2E00025FD0 /* PBXTargetDependency */,
-				46EB2E00025FF0 /* PBXTargetDependency */,
-				46EB2E00026010 /* PBXTargetDependency */,
-				46EB2E00026030 /* PBXTargetDependency */,
-				46EB2E00026050 /* PBXTargetDependency */,
-				46EB2E00026070 /* PBXTargetDependency */,
-				46EB2E00026090 /* PBXTargetDependency */,
-				46EB2E000260B0 /* PBXTargetDependency */,
-				46EB2E000260D0 /* PBXTargetDependency */,
-				46EB2E000260F0 /* PBXTargetDependency */,
-				46EB2E00026110 /* PBXTargetDependency */,
-				46EB2E00026130 /* PBXTargetDependency */,
-				46EB2E00026150 /* PBXTargetDependency */,
-				46EB2E00026170 /* PBXTargetDependency */,
-				46EB2E00026190 /* PBXTargetDependency */,
-				46EB2E000261B0 /* PBXTargetDependency */,
-				46EB2E000261D0 /* PBXTargetDependency */,
-				46EB2E000261F0 /* PBXTargetDependency */,
-				46EB2E00026210 /* PBXTargetDependency */,
-				46EB2E00026230 /* PBXTargetDependency */,
-				46EB2E00026250 /* PBXTargetDependency */,
-				46EB2E00026270 /* PBXTargetDependency */,
-				46EB2E00026290 /* PBXTargetDependency */,
-				46EB2E000262B0 /* PBXTargetDependency */,
-				46EB2E000262D0 /* PBXTargetDependency */,
-				46EB2E000262F0 /* PBXTargetDependency */,
-				46EB2E00026310 /* PBXTargetDependency */,
-				46EB2E00026330 /* PBXTargetDependency */,
-				46EB2E00026350 /* PBXTargetDependency */,
-				46EB2E00026370 /* PBXTargetDependency */,
-				46EB2E00026390 /* PBXTargetDependency */,
-				46EB2E000263B0 /* PBXTargetDependency */,
-				46EB2E000263D0 /* PBXTargetDependency */,
-				46EB2E000263F0 /* PBXTargetDependency */,
-				46EB2E00026410 /* PBXTargetDependency */,
-				46EB2E00026430 /* PBXTargetDependency */,
-				46EB2E00026450 /* PBXTargetDependency */,
-				46EB2E00026470 /* PBXTargetDependency */,
-				46EB2E00026490 /* PBXTargetDependency */,
-				46EB2E000264B0 /* PBXTargetDependency */,
-				46EB2E000264D0 /* PBXTargetDependency */,
-				46EB2E000264F0 /* PBXTargetDependency */,
-				46EB2E00026510 /* PBXTargetDependency */,
-				46EB2E00026530 /* PBXTargetDependency */,
-				46EB2E00026550 /* PBXTargetDependency */,
-				46EB2E00026570 /* PBXTargetDependency */,
-				46EB2E00026590 /* PBXTargetDependency */,
-				46EB2E000265B0 /* PBXTargetDependency */,
-				46EB2E000265D0 /* PBXTargetDependency */,
-				46EB2E000265F0 /* PBXTargetDependency */,
-				46EB2E00026610 /* PBXTargetDependency */,
-				46EB2E00026630 /* PBXTargetDependency */,
-				46EB2E00026650 /* PBXTargetDependency */,
-				46EB2E00026670 /* PBXTargetDependency */,
-				46EB2E00026690 /* PBXTargetDependency */,
-				46EB2E000266B0 /* PBXTargetDependency */,
-				46EB2E000266D0 /* PBXTargetDependency */,
-				46EB2E000266F0 /* PBXTargetDependency */,
-				46EB2E00026710 /* PBXTargetDependency */,
-				46EB2E00026730 /* PBXTargetDependency */,
-				46EB2E00026750 /* PBXTargetDependency */,
-				46EB2E00026770 /* PBXTargetDependency */,
-				46EB2E00026790 /* PBXTargetDependency */,
-				46EB2E000267B0 /* PBXTargetDependency */,
-				46EB2E000267D0 /* PBXTargetDependency */,
-				46EB2E000267F0 /* PBXTargetDependency */,
-				46EB2E00026810 /* PBXTargetDependency */,
-				46EB2E00026830 /* PBXTargetDependency */,
-				46EB2E00026850 /* PBXTargetDependency */,
-				46EB2E00026870 /* PBXTargetDependency */,
-				46EB2E00026890 /* PBXTargetDependency */,
-			);
-			name = "Pods-TaurusFund";
-			productName = "Pods-TaurusFund";
-			productReference = 3CD5DD8958AA01001CA0890F9B6641AA /* Pods-TaurusFund */;
-			productType = "com.apple.product-type.library.static";
-		};
 		FA877ADC442CB19CF61793D234C8B131 /* React-jsi */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 46EB2E0001FAD0 /* Build configuration list for PBXNativeTarget "React-jsi" */;
@@ -33118,7 +33118,7 @@
 				BF2A15FEC3F3424BBC4B9AD5F86F2D54 /* lottie-ios-LottiePrivacyInfo */,
 				D0A4E77DD13672F3E2E1D9593F999DBA /* lottie-react-native */,
 				01643B566CA4B61463105A9F16FACC6D /* lottie-react-native-Lottie_React_Native_Privacy */,
-				F84D3B5BC9D0C9C7E18BED32C46E315B /* Pods-TaurusFund */,
+				EDF64EF21508D0810870B12501E8B9D2 /* Pods-JyotiMF */,
 				EC55D52694092A9D0E6A78EB01207EB5 /* RCT-Folly */,
 				331AFAADB024F73370A9DC6FBD7A5A22 /* RCT-Folly-RCT-Folly_privacy */,
 				5211B5AB7B81060AA8E78614DD75D3AB /* RCTDeprecation */,
@@ -35489,7 +35489,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				46EB2E00025C10 /* Pods-TaurusFund-dummy.m in Sources */,
+				46EB2E00025C10 /* Pods-JyotiMF-dummy.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -49906,7 +49906,7 @@
 		};
 		46EB2E00025B00 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 46EB2E00025B70 /* Pods-TaurusFund.release.xcconfig */;
+			baseConfigurationReference = 46EB2E00025B70 /* Pods-JyotiMF.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_WEAK = NO;
@@ -49917,7 +49917,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				MACH_O_TYPE = staticlib;
-				MODULEMAP_FILE = "Target Support Files/Pods-TaurusFund/Pods-TaurusFund.modulemap";
+				MODULEMAP_FILE = "Target Support Files/Pods-JyotiMF/Pods-JyotiMF.modulemap";
 				OTHER_LDFLAGS = "";
 				OTHER_LIBTOOLFLAGS = "";
 				PODS_ROOT = "$(SRCROOT)";
@@ -49931,7 +49931,7 @@
 		};
 		46EB2E00025B10 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 46EB2E00025B80 /* Pods-TaurusFund.debug.xcconfig */;
+			baseConfigurationReference = 46EB2E00025B80 /* Pods-JyotiMF.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_WEAK = NO;
@@ -49942,7 +49942,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				MACH_O_TYPE = staticlib;
-				MODULEMAP_FILE = "Target Support Files/Pods-TaurusFund/Pods-TaurusFund.modulemap";
+				MODULEMAP_FILE = "Target Support Files/Pods-JyotiMF/Pods-JyotiMF.modulemap";
 				OTHER_LDFLAGS = "";
 				OTHER_LIBTOOLFLAGS = "";
 				PODS_ROOT = "$(SRCROOT)";
@@ -50937,7 +50937,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		46EB2E00025AF0 /* Build configuration list for PBXNativeTarget "Pods-TaurusFund" */ = {
+		46EB2E00025AF0 /* Build configuration list for PBXNativeTarget "Pods-JyotiMF" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				46EB2E00025B10 /* Debug */,

@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  SafeAreaView,
   Platform,
   BackHandler,
   LayoutAnimation,
@@ -18,7 +19,6 @@ import { setSipInterface } from '../../../store/slices/marketSlice';
 import Loader from '../../../components/handAnimation';
 import * as Config from '../../../helpers/Config';
 import { heightToDp } from '../../../helpers/Responsive';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -191,7 +191,7 @@ const InvestmentList = ({ navigation }) => {
                   Allotted Units: {allottedUnits}
                 </Text>
                 <Text style={styles.sipItemDetail}>
-                  Amount: {allotmentData?.wbr2Details?.amount ?? '--'}
+                  Amount: {allotmentData?.allottedAmount ?? '--'}
                 </Text>
               </TouchableOpacity>
             );
@@ -419,12 +419,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.8,
   },
-  navbarSubtitle: { fontSize: 14, color: '#B1B7C1', marginTop: 2 },
+  navbarSubtitle: { fontSize: 14, color: '#e9ecf0ff', marginTop: 2 },
   summaryCard: {
     margin: 20,
     padding: 22,
     borderRadius: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: '#ffffffff',
     elevation: 3,
     shadowColor: '#0003',
     shadowOffset: { width: 0, height: 1 },
@@ -513,8 +513,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   schemeCardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#292929',
     marginBottom: 2,
   },

@@ -41,7 +41,7 @@ export default function Home() {
   const dispatch = useDispatch();
   const LoginData = useSelector((state) => state.login.loginData);
   const DATA = useSelector((state) => state.login);
-console.log("DATA",DATA?.enabled , DATA.pin )
+// console.log("DATA",DATA?.enabled , DATA.pin )
   const [referenceId, setReferenceId] = useState("");
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [isOtpSent, setIsOtpSent] = useState(false);

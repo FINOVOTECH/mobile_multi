@@ -17,6 +17,7 @@ import * as Config from "../../helpers/Config";
 import { useDispatch, useSelector } from "react-redux";
 import { setBiometricPin } from "../../store/slices/loginSlice";
 import Rbutton from "../Rbutton";
+import { SafeAreaView } from "react-native-safe-area-context";
 const ChangePassword = ({ navigation }) => {
   const dispatch = useDispatch();
   const [newPassword, setNewPassword] = useState(["", "", "", ""]);
@@ -157,8 +158,9 @@ const ChangePassword = ({ navigation }) => {
   );
 
   return (
+    <SafeAreaView  style={styles.container}>
     <KeyboardAvoidingView
-      style={styles.container}
+     
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       {Platform.OS === "android" && <View style={styles.androidStatusBar} />}
@@ -223,6 +225,8 @@ const ChangePassword = ({ navigation }) => {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+      
+    </SafeAreaView>
   );
 };
 

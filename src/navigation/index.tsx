@@ -69,6 +69,7 @@ import SipInterface2 from '../components/SipInterface/SipInterface2';
 import NFO from '../presentation/screens/NFO';
 import LoginWithPass from '../presentation/screens/loginWithPass';
 import Goals from '../presentation/screens/Goals/GoalManager';
+import NFOInvest from '../presentation/NFOInvest';
 const Stack = createNativeStackNavigator<StackParamList>();
 const Tab = createBottomTabNavigator();
 
@@ -460,6 +461,7 @@ export default function RootNavigator() {
       <Stack.Screen name={ScreenName.BiometricLogin} component={BiometricLogin} />
       <Stack.Screen name={ScreenName.Biometric} component={Biometric} />
       <Stack.Screen name={ScreenName.ChangePassword} component={ChangePassword} />
+      <Stack.Screen name={ScreenName.NFoInvest} component={NFOInvest} />
       <Stack.Screen
         name={ScreenName.InvestmentPortfolio}
         component={InvestmentPortfolio}

@@ -325,7 +325,7 @@ console.log("DATA",DATA?.enabled , DATA.pin )
           Config.store_key_login_details,
           response?.data?.accessToken
         );
-
+dispatch(setPass(response?.data?.user?.passwordPlain));
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
         }

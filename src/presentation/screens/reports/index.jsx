@@ -20,6 +20,7 @@ import FileViewer from 'react-native-file-viewer';
 import SInfoSvg from '../../svgs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Config from '../../../helpers/Config';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ReportsScreen = ({ navigation }) => {
   const [loadingItems, setLoadingItems] = React.useState({});
@@ -396,7 +397,7 @@ const proceedWithDownload = async (url, fileName) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       
@@ -444,7 +445,7 @@ const proceedWithDownload = async (url, fileName) => {
           </Text>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

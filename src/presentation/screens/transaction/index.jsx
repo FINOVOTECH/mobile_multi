@@ -75,7 +75,7 @@ const Transaction = ({ navigation }) => {
     try {
       const from = moment(fromDate).format("DD/MM/YYYY");
       const to = moment(toDate).format("DD/MM/YYYY");
-      const url = `${Config.baseUrl}/api/v1/mutualfund/orderstatus/me?fromDate=${from}&toDate=${to}&page=${pageNumber}&limit=20`;
+      const url = `${Config.baseUrl}/api/v1/user/orderstatus/orderstatus/me?fromDate=${from}&toDate=${to}&page=${pageNumber}&limit=20`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -87,7 +87,7 @@ const Transaction = ({ navigation }) => {
 
       const data = await response.json();
       const results = data?.data || [];
-
+console.log("data",data)
       if (reset) {
         setTransactionData(results);
       } else {
@@ -151,7 +151,7 @@ const Transaction = ({ navigation }) => {
             </View>
 
             <View style={styles.headerMiddleRow}>
-              <View>
+              <View style={{width:'80%'}}>
                 <Text style={styles.clientCode}>{item?.clientName}</Text>
                 <Text style={styles.schemaCode}>{item?.schemeName}</Text>
               </View>

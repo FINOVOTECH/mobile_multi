@@ -17,6 +17,7 @@ import { setBiometricEnabled, setBiometricPin } from "../../store/slices/loginSl
 import { heightToDp, widthToDp } from "../../helpers/Responsive";
 import * as Config from "../../helpers/Config";
 import SInfoSvg from "../../presentation/svgs";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Biometric = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -62,17 +63,19 @@ const Biometric = ({ navigation }) => {
   };
 
   return (
+    <SafeAreaView style={styles.container}>
+
     <KeyboardAvoidingView
-      style={styles.container}
+      
       behavior={Platform.select({ ios: "padding", android: null })}
-    >
+      >
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <View style={styles.headerSection}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
-        >
+          >
           {/* <Text style={styles.backText}>←</Text> */}
           <SInfoSvg.BackButton />
         </TouchableOpacity>
@@ -95,7 +98,7 @@ const Biometric = ({ navigation }) => {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
-            />
+              />
             <Pressable style={styles.button} onPress={handleSubmit}>
               <Text style={styles.buttonText}>Save</Text>
             </Pressable>
@@ -106,6 +109,7 @@ const Biometric = ({ navigation }) => {
         </Text>
       </View>
     </KeyboardAvoidingView>
+        </SafeAreaView>
   );
 };
 

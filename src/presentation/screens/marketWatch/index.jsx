@@ -448,7 +448,7 @@ const MarketWatch = ({ navigation }) => {
             <View style={styles.fundDetailItem}>
               <Text style={styles.fundDetailLabel}>NAV :</Text>
               <Text style={styles.fundDetailValue}>
-                ₹ {Data?.mostRecentNAV}
+                ₹ {Data?.mostRecentNAV ||"N/A" }
               </Text>
             </View>
 
@@ -490,7 +490,7 @@ const MarketWatch = ({ navigation }) => {
                     <Text
                       style={{
                         fontSize: 14,
-                        color: Config.Colors.blue,
+                        color: "#2B8DF6",
                         fontWeight: "700",
                       }}
                     >
@@ -755,75 +755,133 @@ const MarketWatch = ({ navigation }) => {
   }, [fetchTodayNavData, fetchSummary]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {Platform.OS === "android" && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
+    // <SafeAreaView style={styles.container}>
+    //   {Platform.OS === "android" && <View style={styles.androidStatusBar} />}
+    //   <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
 
-      {/* Header with Gradient Background */}
-      <LinearGradient
-        colors={["#2B8DF6", "#2B8DF6"]}
-        style={styles.headerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <Image
-          source={bgVector}
-          style={[StyleSheet.absoluteFillObject, { opacity: 0.1 }]}
-          resizeMode="cover"
-        />
-        {renderFundInfo()}
+    //   {/* Header with Gradient Background */}
+    //   <LinearGradient
+    //     colors={["#2B8DF6", "#2B8DF6"]}
+    //     style={styles.headerGradient}
+    //     start={{ x: 0, y: 0 }}
+    //     end={{ x: 0, y: 1 }}
+    //   >
+    //     <Image
+    //       source={bgVector}
+    //       style={[StyleSheet.absoluteFillObject, { opacity: 0.1 }]}
+    //       resizeMode="cover"
+    //     />
+    //     {renderFundInfo()}
 
-        {/* Chart Container with Shadow */}
-        {/* <View style={styles.chartContainer}>
+    //     {/* Chart Container with Shadow */}
+    //     {/* <View style={styles.chartContainer}>
+    //       {renderChart()}
+
+    //       <LinearGradient
+    //         colors={['rgba(43, 141, 246, 0.8)', 'transparent']}
+    //         style={styles.topShadow}
+    //         start={{ x: 0, y: 0 }}
+    //         end={{ x: 0, y: 1 }}
+    //       />
+    //     </View> */}
+    //   </LinearGradient>
+
+    //   <ScrollView
+    //     style={styles.scrollView}
+    //     showsVerticalScrollIndicator={false}
+    //     contentContainerStyle={styles.scrollContent}
+    //   >
+    //     <LinearGradient
+    //       colors={["#2B8DF6", "#2B8DF6"]}
+    //       style={styles.headerGradient}
+    //       start={{ x: 0, y: 0 }}
+    //       end={{ x: 0, y: 1 }}
+    //     >
+    //       <View style={styles.chartContainer}>
+    //         {renderChart()}
+
+    //         <LinearGradient
+    //           colors={["rgba(43, 141, 246, 0.8)", "transparent"]}
+    //           style={styles.topShadow}
+    //           start={{ x: 0, y: 0 }}
+    //           end={{ x: 0, y: 1 }}
+    //         />
+    //       </View>
+    //     </LinearGradient>
+
+    //     {renderFundDetails()}
+
+    //     {renderOverviewDetails()}
+
+    //     {renderReturnsContent()}
+    //     {/* 
+    //     {renderSummaryContent()}
+
+    //     {renderFundManagerContent()} */}
+
+    //     <View style={styles.bottomPadding} />
+    //   </ScrollView>
+
+    //   {renderInvestButton()}
+    // </SafeAreaView>
+ 
+  <SafeAreaView style={styles.container}>
+    {Platform.OS === "android" && <View style={styles.androidStatusBar} />}
+    <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
+
+    {/* TOP HEADER GRADIENT */}
+    <LinearGradient
+      colors={["#2B8DF6", "#2B8DF6"]}
+      style={styles.headerGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+    >
+      <Image
+        source={bgVector}
+        style={[StyleSheet.absoluteFillObject, { opacity: 0.1 }]}
+        resizeMode="cover"
+      />
+
+      {renderFundInfo()}
+    </LinearGradient>
+
+    {/* SCROLL CONTENT – NO NESTED GRADIENT */}
+    <ScrollView
+      style={styles.scrollView}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
+    >
+      {/* CHART SECTION WRAPPER (REPLACES INNER LINEAR GRADIENT) */}
+      <View style={styles.chartWrapper}>
+        <View style={styles.chartContainer}>
           {renderChart()}
 
-          <LinearGradient
-            colors={['rgba(43, 141, 246, 0.8)', 'transparent']}
-            style={styles.topShadow}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
+          {/* SAFE SHADOW REPLACEMENT */}
+          <View
+            style={[
+              styles.topShadow,
+              { backgroundColor: "rgba(43, 141, 246, 0.45)" },
+            ]}
           />
-        </View> */}
-      </LinearGradient>
+        </View>
+      </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <LinearGradient
-          colors={["#2B8DF6", "#2B8DF6"]}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <View style={styles.chartContainer}>
-            {renderChart()}
+      {renderFundDetails()}
 
-            <LinearGradient
-              colors={["rgba(43, 141, 246, 0.8)", "transparent"]}
-              style={styles.topShadow}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-            />
-          </View>
-        </LinearGradient>
+      {renderOverviewDetails()}
 
-        {renderFundDetails()}
+      {renderReturnsContent()}
 
-        {renderOverviewDetails()}
+      {/* {renderSummaryContent()} */}
+      {/* {renderFundManagerContent()} */}
 
-        {renderReturnsContent()}
-        {/* 
-        {renderSummaryContent()}
+      <View style={styles.bottomPadding} />
+    </ScrollView>
 
-        {renderFundManagerContent()} */}
+    {renderInvestButton()}
+  </SafeAreaView>
 
-        <View style={styles.bottomPadding} />
-      </ScrollView>
 
-      {renderInvestButton()}
-    </SafeAreaView>
   );
 };
 
@@ -899,6 +957,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "transparent",
   },
+  chartWrapper: {
+  backgroundColor: "#2B8DF6",
+  paddingBottom: heightToDp(1),
+},
   loadingText: {
     fontSize: widthToDp(3.5),
     color: "#FFFFFF",

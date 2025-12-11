@@ -16,6 +16,7 @@ import {
   TextInput,
   FlatList,
   Alert,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import SInfoSvg from '../../presentation/svgs';
@@ -31,22 +32,25 @@ const { height: screenHeight } = Dimensions.get('window');
 const SipInterface = ({ navigation }) => {
   const Data = useSelector(state => state.marketWatch.sipInterface);
   console.log('SIP INTERFACE', Data);
-  // console.log('SIP INTERFACE INSIDE', investmentData);
+
   const [isDarkTheme, setIsDarkTheme] = useState(false);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
-  const [customizeModalVisible, setCustomizeModalVisible] = useState(false);
-  const [pauseModalVisible, setPauseModalVisible] = useState(false);
-  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+
+  // 🔴 SINGLE MODAL STATE
+  const [modalVisible, setModalVisible] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // 'customize' | 'pause' | 'cancel' | 'redemption' | 'stepup' | 'switch'
+  const [slideAnim] = useState(new Animated.Value(screenHeight));
+
   const steps = [3, 6, 9, 12];
   const [pauseDuration, setPauseDuration] = useState(steps[0]);
   const [selectedCancelOption, setSelectedCancelOption] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [otherReason, setOtherReason] = useState('');
   const [loader, setLoading] = useState(false);
-  const [redemptionModalVisible, setRedemptionModalVisible] = useState(false);
+
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
-  const [redemptionSlideAnim] = useState(new Animated.Value(screenHeight));
+
   const [redemptionForm, setRedemptionForm] = useState({
     clientCode: '',
     schemeCode: '',
@@ -55,8 +59,7 @@ const SipInterface = ({ navigation }) => {
     redemptionAmount: '',
     redemptionUnits: '',
   });
-  const [stepUpModalVisible, setStepUpModalVisible] = useState(false);
-  const [stepUpSlideAnim] = useState(new Animated.Value(screenHeight));
+
   const [stepUpForm, setStepUpForm] = useState({
     duration: 'YEARLY',
     sipInstallmentAmount: '',
@@ -65,9 +68,15 @@ const SipInterface = ({ navigation }) => {
     nextSipIncrementByAmount: '',
   });
 
-  const [slideAnim] = useState(new Animated.Value(screenHeight));
-  const [pauseSlideAnim] = useState(new Animated.Value(screenHeight));
-  const [cancelSlideAnim] = useState(new Animated.Value(screenHeight));
+  const [switchForm, setSwitchForm] = useState({
+    fromSchemeCd: '',
+    toSchemeCd: '',
+    switchAmount: '',
+    allUnitsFlag: 'N', // "Y" = All Units, "N" = Partial
+    buySellType: 'FRESH', // "FRESH" or "ADDITIONAL"
+    folioNo: '', // Required only for physical clients
+    remarks: 'Client initiated switch order',
+  });
 
   const cancelOptions = [
     'Non availability of Funds',
@@ -84,18 +93,6 @@ const SipInterface = ({ navigation }) => {
     'This is not the right time to invest',
     'Others (pls specify the reason)',
   ];
-  const [switchModalVisible, setSwitchModalVisible] = useState(false);
-  const [switchSlideAnim] = useState(new Animated.Value(screenHeight));
-
-  const [switchForm, setSwitchForm] = useState({
-    fromSchemeCd: '',
-    toSchemeCd: '',
-    switchAmount: '',
-    allUnitsFlag: 'N', // "Y" = All Units, "N" = Partial
-    buySellType: 'FRESH', // "FRESH" or "ADDITIONAL"
-    folioNo: '', // Required only for physical clients
-    remarks: 'Client initiated switch order',
-  });
 
   useEffect(() => {
     console.log('ALLTTED UNITS', Data?.allotmentData?.allottedUnit);
@@ -109,6 +106,7 @@ const SipInterface = ({ navigation }) => {
         redemptionAmount: '',
         redemptionUnits: Data?.allotmentData?.allottedUnit || '',
       }));
+
       setSwitchForm(prev => ({
         ...prev,
         fromSchemeCd: Data?.allotmentData?.schemeCode || '',
@@ -117,27 +115,20 @@ const SipInterface = ({ navigation }) => {
     }
   }, []);
 
-  const openSwitchModal = () => {
-    closeCustomizeModal();
-    setTimeout(() => {
-      setSwitchModalVisible(true);
-      animateModal(switchSlideAnim, 0);
-    }, 300);
-  };
-  const closeSwitchModal = () => setSwitchModalVisible(false);
-
-  const updateSwitchForm = (field, value) =>
-    setSwitchForm(prev => ({ ...prev, [field]: value }));
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
+        if (modalVisible) {
+          handleCloseModal();
+          return true;
+        }
         navigation.goBack();
         return true;
       },
     );
     return () => backHandler.remove();
-  }, [navigation]);
+  }, [navigation, modalVisible]);
 
   const showResponseMessage = (title, message, isSuccess = true) => {
     Alert.alert(
@@ -149,54 +140,42 @@ const SipInterface = ({ navigation }) => {
   };
 
   const animateModal = (animValue, toValue, callback = null) => {
-    Animated.timing(animValue, {
+    Animated.spring(animValue, {
       toValue,
-      duration: 300,
       useNativeDriver: true,
+      tension: 65,
+      friction: 11,
     }).start(callback);
   };
 
+  // 🔵 Open / close base modal
+
+  const openModal = type => {
+    setActiveModal(type);
+    setModalVisible(true);
+    // reset position for smooth animation
+    slideAnim.setValue(screenHeight);
+    setTimeout(() => {
+      animateModal(slideAnim, 0);
+    }, Platform.OS === 'ios' ? 50 : 0);
+  };
+
   const openCustomizeModal = () => {
-    setCustomizeModalVisible(true);
-    animateModal(slideAnim, 0);
+    openModal('customize');
   };
 
-  const closeCustomizeModal = () => {
+  const handleCloseModal = () => {
+    // e.g., during OTP we don't want to close
+    if (activeModal === 'redemption' && showOtpInput) return;
     animateModal(slideAnim, screenHeight, () => {
-      setCustomizeModalVisible(false);
+      setModalVisible(false);
+      setActiveModal(null);
+      setShowOtpInput(false);
+      setOtp('');
     });
   };
 
-  const openPauseModal = () => {
-    closeCustomizeModal();
-    setTimeout(() => {
-      setPauseModalVisible(true);
-      animateModal(pauseSlideAnim, 0);
-    }, 300);
-  };
-
-  const closePauseModal = () => {
-    animateModal(pauseSlideAnim, screenHeight, () => {
-      setPauseModalVisible(false);
-    });
-  };
-
-  const openCancelModal = () => {
-    closeCustomizeModal();
-    setTimeout(() => {
-      setCancelModalVisible(true);
-      animateModal(cancelSlideAnim, 0);
-    }, 300);
-  };
-
-  const closeCancelModal = () => {
-    animateModal(cancelSlideAnim, screenHeight, () => {
-      setCancelModalVisible(false);
-      setSelectedCancelOption('');
-      setOtherReason('');
-      setShowDropdown(false);
-    });
-  };
+  // =================== API HANDLERS ===================
 
   const handlePauseSIP = async () => {
     if (!Data?.allotmentData?.SIPRegnNo) {
@@ -225,7 +204,7 @@ const SipInterface = ({ navigation }) => {
               pauseDuration > 1 ? 's' : ''
             }`,
         );
-        closePauseModal();
+        handleCloseModal();
       } else {
         showResponseMessage(
           'Error',
@@ -296,7 +275,7 @@ const SipInterface = ({ navigation }) => {
           'Success',
           response?.data?.message || 'SIP cancelled successfully',
         );
-        closeCancelModal();
+        handleCloseModal();
       } else {
         showResponseMessage(
           'Error',
@@ -317,25 +296,7 @@ const SipInterface = ({ navigation }) => {
     }
   };
 
-  const openRedemptionModal = () => {
-    closeCustomizeModal();
-    setTimeout(() => {
-      setRedemptionModalVisible(true);
-      animateModal(redemptionSlideAnim, 0);
-    }, 300);
-  };
-
-  const closeRedemptionModal = () => {
-    if (showOtpInput) return; // Prevent closing during OTP verification
-    animateModal(redemptionSlideAnim, screenHeight, () => {
-      setRedemptionModalVisible(false);
-      setShowOtpInput(false);
-      setOtp('');
-    });
-  };
-
   const handleSwitchSIP = async () => {
-    // ✅ Validate required fields
     if (
       !switchForm.fromSchemeCd ||
       !switchForm.toSchemeCd ||
@@ -353,11 +314,11 @@ const SipInterface = ({ navigation }) => {
         switchAmount: switchForm.switchAmount,
         allUnitsFlag: switchForm.allUnitsFlag,
         buySellType: switchForm.buySellType,
-        folioNo: switchForm.folioNo, // required only for Physical clients
+        folioNo: switchForm.folioNo,
         remarks: switchForm.remarks || 'Client initiated switch order',
       };
       console.log('🛰️ Switch SIP Payload:', payload);
-      // ✅ Call API using existing service
+
       const response = await apiPostService(
         '/api/v1/mutualfund/switch-order',
         payload,
@@ -368,13 +329,12 @@ const SipInterface = ({ navigation }) => {
         },
       );
 
-      // ✅ Handle success / failure response
       if (response?.status === 200 || response?.status === 201) {
         showResponseMessage(
           'Success',
           'Switch SIP request submitted successfully.',
         );
-        closeSwitchModal();
+        handleCloseModal();
       } else {
         showResponseMessage(
           'Error',
@@ -394,7 +354,7 @@ const SipInterface = ({ navigation }) => {
       setLoading(false);
     }
   };
-  // ✅ Redemption API Function
+
   const handleRedemptionSubmit = async () => {
     if (!redemptionForm.redemptionUnits) {
       showResponseMessage('Error', 'Please enter redemption units', false);
@@ -432,10 +392,11 @@ const SipInterface = ({ navigation }) => {
           response?.data?.message ||
             `Redemption of ${payload.redemptionUnits} units submitted successfully!`,
         );
-        closeRedemptionModal();
-        setRedemptionForm({
+        handleCloseModal();
+        setRedemptionForm(prev => ({
+          ...prev,
           redemptionUnits: '',
-        });
+        }));
       } else {
         showResponseMessage(
           'Error',
@@ -454,34 +415,6 @@ const SipInterface = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const openStepUpModal = () => {
-    closeCustomizeModal();
-    setTimeout(() => {
-      setStepUpModalVisible(true);
-      animateModal(stepUpSlideAnim, 0);
-    }, 300);
-  };
-
-  const closeStepUpModal = () => {
-    animateModal(stepUpSlideAnim, screenHeight, () => {
-      setStepUpModalVisible(false);
-      setStepUpForm({
-        duration: 'YEARLY',
-        sipInstallmentAmount: '',
-        incrementType: 'percentage',
-        nextSipIncrementPercentage: '',
-        nextSipIncrementByAmount: '',
-      });
-    });
-  };
-
-  const updateStepUpForm = (field, value) => {
-    setStepUpForm(prev => ({
-      ...prev,
-      [field]: value,
-    }));
   };
 
   const handleStepUpSIP = async () => {
@@ -518,20 +451,20 @@ const SipInterface = ({ navigation }) => {
     setLoading(true);
     console.log('STEP UP VALUES', {
       schemaCode: Data?.allotmentData?.schemeCode,
-      sipOrderId: Data?.allotmentData?.SIPRegnNo || '12345', // Use actual SIP ID or fallback
+      sipOrderId: Data?.allotmentData?.SIPRegnNo || '12345',
       duration: stepUpForm.duration,
       sipInstallmentAmount: stepUpForm.sipInstallmentAmount,
     });
+
     try {
       const clientCode = await getData('clientCode');
       const requestBody = {
         schemaCode: Data?.allotmentData?.schemeCode,
-        sipOrderId: Data?.allotmentData?.orderNo || '12345', // Use actual SIP ID or fallback
+        sipOrderId: Data?.allotmentData?.orderNo || '12345',
         duration: stepUpForm.duration,
         sipInstallmentAmount: stepUpForm.sipInstallmentAmount,
       };
 
-      // Add increment field based on selected type
       if (stepUpForm.incrementType === 'percentage') {
         requestBody.nextSipIncrementPercentage =
           stepUpForm.nextSipIncrementPercentage;
@@ -555,7 +488,7 @@ const SipInterface = ({ navigation }) => {
           'Success',
           response?.data?.message || 'SIP Step-up activated successfully',
         );
-        closeStepUpModal();
+        handleCloseModal();
       } else {
         showResponseMessage(
           'Error',
@@ -584,26 +517,15 @@ const SipInterface = ({ navigation }) => {
     }));
   };
 
-  const formatDateForInput = dateStr => {
-    if (!dateStr) return '';
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(
-        2,
-        '0',
-      )}`;
-    }
-    return dateStr;
+  const updateStepUpForm = (field, value) => {
+    setStepUpForm(prev => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
-  const formatDateForAPI = dateStr => {
-    if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-    return dateStr;
-  };
+  const updateSwitchForm = (field, value) =>
+    setSwitchForm(prev => ({ ...prev, [field]: value }));
 
   const formatDate = dateString => {
     if (!dateString) return 'N/A';
@@ -687,278 +609,403 @@ const SipInterface = ({ navigation }) => {
       onPress={() => {
         setSelectedCancelOption(item);
         setShowDropdown(false);
-      }}
-    >
+      }}>
       <Text style={styles.dropdownItemText}>
         {`${String(index + 1).padStart(2, '0')} ${item}`}
       </Text>
     </TouchableOpacity>
   );
-// ========== CUSTOMIZE OPTION CONDITIONAL LOGIC ==========
 
-const sipStatus = Data?.sip?.status;
-const allottedUnits = parseFloat(Data?.allotmentData?.allottedUnit || 0);
+  // ========== CUSTOMIZE OPTION CONDITIONAL LOGIC ==========
+  const sipStatus = Data?.sip?.status;
+  const allottedUnits = parseFloat(Data?.allotmentData?.allottedUnit || 0);
 
-let customizeOptions = [];
+  let customizeOptions = [];
 
-if (sipStatus === 'cancelled' && allottedUnits > 0) {
-  // Case 1 → SIP Cancelled + has units → Only Redemption
-  customizeOptions = [
-    {
-      icon: '💰',
-      title: 'SIP Redemption',
-      description: 'Redeem units from your SIP investment',
-      onPress: openRedemptionModal,
-      color: '#2196F3',
-    },
-  ];
-} else if (sipStatus === 'cancelled' && allottedUnits <= 0) {
-  // Case 2 → SIP Cancelled + 0 units → Show info
-  customizeOptions = 'NO_UNITS';
-} else {
-  // Case 3 → SIP Active → Show all options normally
-  customizeOptions = [
-    {
-      icon: '⏸️',
-      title: 'Pause SIP',
-      description: 'Temporarily pause your SIP for 1–10 months',
-      onPress: openPauseModal,
-      color: '#FFA500',
-    },
-    {
-      icon: '❌',
-      title: 'Cancel SIP',
-      description: 'Permanently cancel your SIP investment',
-      onPress: openCancelModal,
-      color: '#FF4444',
-    },
-    {
-      icon: '📈',
-      title: 'Step-up SIP',
-      description: 'Increase your SIP amount periodically',
-      onPress: openStepUpModal,
-      color: '#4CAF50',
-    },
-    {
-      icon: '💰',
-      title: 'SIP Redemption',
-      description: 'Redeem units from your SIP investment',
-      onPress: openRedemptionModal,
-      color: '#2196F3',
-    },
-    {
-      icon: '🔄',
-      title: 'Switch SIP',
-      description: 'Switch your SIP to another scheme',
-      onPress: openSwitchModal,
-      color: '#9C27B0',
-    },
-  ];
-}
+  if (sipStatus === 'cancelled' && allottedUnits > 0) {
+    // Case 1 → SIP Cancelled + has units → Only Redemption
+    customizeOptions = [
+      {
+        key: 'redemption',
+        icon: '💰',
+        title: 'SIP Redemption',
+        description: 'Redeem units from your SIP investment',
+        color: '#2196F3',
+      },
+    ];
+  } else if (sipStatus === 'cancelled' && allottedUnits <= 0) {
+    // Case 2 → SIP Cancelled + 0 units → Show info
+    customizeOptions = 'NO_UNITS';
+  } else {
+    // Case 3 → SIP Active → Show all options normally
+    customizeOptions = [
+      {
+        key: 'pause',
+        icon: '⏸️',
+        title: 'Pause SIP',
+        description: 'Temporarily pause your SIP for 1–10 months',
+        color: '#FFA500',
+      },
+      {
+        key: 'cancel',
+        icon: '❌',
+        title: 'Cancel SIP',
+        description: 'Permanently cancel your SIP investment',
+        color: '#FF4444',
+      },
+      {
+        key: 'stepup',
+        icon: '📈',
+        title: 'Step-up SIP',
+        description: 'Increase your SIP amount periodically',
+        color: '#4CAF50',
+      },
+      {
+        key: 'redemption',
+        icon: '💰',
+        title: 'SIP Redemption',
+        description: 'Redeem units from your SIP investment',
+        color: '#2196F3',
+      },
+      {
+        key: 'switch',
+        icon: '🔄',
+        title: 'Switch SIP',
+        description: 'Switch your SIP to another scheme',
+        color: '#9C27B0',
+      },
+    ];
+  }
 
-  const renderModal = (visible, animValue, onClose, title, children) => (
+  const renderModalWrapper = (visible, animValue, onClose, title, children) => (
     <Modal
       visible={visible}
       transparent={true}
       animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent={true}
-    >
-      <View style={styles.modalOverlay}>
+      presentationStyle="overFullScreen">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}>
         <TouchableOpacity
-          style={styles.modalOverlayTouchable}
-          onPress={onClose}
+          style={styles.modalOverlay}
           activeOpacity={1}
-        />
-        <Animated.View
-          style={[
-            styles.modalContainer,
-            { transform: [{ translateY: animValue }] },
-          ]}
-        >
-          {/* Modal Header with Gradient */}
-          <View style={styles.modalHeader}>
-            <View style={styles.modalTitleContainer}>
-              <Text style={styles.modalTitle}>{title}</Text>
-              <View style={styles.modalTitleUnderline} />
-            </View>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <View style={styles.closeButtonCircle}>
-                <Text style={styles.closeButtonText}>×</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+          onPress={onClose}>
+          <View style={{ flex: 1 }} />
 
-          {/* Modal Content */}
-          <ScrollView style={styles.modalContentWrapper}>{children}</ScrollView>
-        </Animated.View>
-      </View>
+          <TouchableOpacity activeOpacity={1}>
+            <Animated.View
+              style={[
+                styles.modalContainer,
+                {
+                  transform: [{ translateY: animValue }],
+                },
+              ]}>
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <View style={styles.modalTitleContainer}>
+                  <Text style={styles.modalTitle}>{title}</Text>
+                  <View style={styles.modalTitleUnderline} />
+                </View>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={styles.closeButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <View style={styles.closeButtonCircle}>
+                    <Text style={styles.closeButtonText}>×</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {/* Modal Content */}
+              <ScrollView
+                style={styles.modalContentWrapper}
+                contentContainerStyle={{ paddingBottom: heightToDp(2) }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}>
+                {children}
+              </ScrollView>
+            </Animated.View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+  const getModalTitle = () => {
+    switch (activeModal) {
+      case 'customize':
+        return 'Customize Your SIP';
+      case 'pause':
+        return 'Pause Investment';
+      case 'cancel':
+        return 'Cancel SIP';
+      case 'redemption':
+        return 'SIP Redemption';
+      case 'stepup':
+        return 'SIP Step-Up';
+      case 'switch':
+        return 'Switch SIP';
+      default:
+        return '';
+    }
+  };
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <SInfoSvg.BackButton />
-        </TouchableOpacity>
-      </View>
+  const getModalBody = () => {
+    if (!activeModal) return null;
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.fundHeader}>
-          <View style={styles.fundIconWrapper}>
-            <View style={styles.fundIcon}>
-              <Image
-                source={{
-                  uri: 'https://cdn5.vectorstock.com/i/1000x1000/44/19/mutual-fund-vector-7404419.jpg',
-                }}
-                style={{ width: 40, height: 40, borderRadius: 25 }}
-                resizeMode="contain"
-              />
+    if (activeModal === 'customize') {
+      return (
+        <View style={styles.modalContent}>
+          <Text style={styles.customizeSubtitle}>
+            Choose an option to manage your SIP investment
+          </Text>
+
+          {customizeOptions === 'NO_UNITS' ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ fontSize: 16, color: '#666', textAlign: 'center' }}>
+                You don’t have units to redeem.
+              </Text>
+            </View>
+          ) : (
+            customizeOptions.map(option => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.customizeOption,
+                  { borderLeftColor: option.color },
+                ]}
+                onPress={() => setActiveModal(option.key)}>
+                <View style={styles.optionContent}>
+                  <View
+                    style={[
+                      styles.optionIcon,
+                      { backgroundColor: `${option.color}20` },
+                    ]}>
+                    <Text
+                      style={[styles.optionIconText, { color: option.color }]}>
+                      {option.icon}
+                    </Text>
+                  </View>
+
+                  <View style={styles.optionTextContainer}>
+                    <Text style={styles.optionTitle}>{option.title}</Text>
+                    <Text style={styles.optionDescription}>
+                      {option.description}
+                    </Text>
+                  </View>
+
+                  <View style={styles.optionArrowContainer}>
+                    <Text style={styles.optionArrow}>›</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      );
+    }
+
+    if (activeModal === 'pause') {
+      return (
+        <View style={styles.modalContent}>
+          <Text style={styles.pauseLabel}>
+            Select pause duration ({pauseDuration} month
+            {pauseDuration > 1 ? 's' : ''})
+          </Text>
+          <View style={styles.sliderContainer}>
+            <CustomSlider
+              value={steps.indexOf(pauseDuration)}
+              minimumValue={0}
+              maximumValue={steps.length - 1}
+              step={1}
+              onValueChange={index => setPauseDuration(steps[index])}
+              style={styles.slider}
+              thumbStyle={styles.thumbStyle}
+              trackStyle={styles.trackStyle}
+              minimumTrackTintColor="#1768BF"
+              maximumTrackTintColor="#d3d3d3"
+              thumbTintColor={Config.Colors.primary}
+            />
+            <View style={styles.sliderLabels}>
+              <Text style={styles.sliderLabelText}>0</Text>
+              <Text style={styles.sliderLabelText}>12</Text>
             </View>
           </View>
-          <View style={styles.fundDetails}>
-            <Text style={styles.fundName}>
-              {Data?.allotmentData?.schemeName || 'Scheme Name Not Available'}
-            </Text>
-            <Text style={styles.monthlyText}>
-              {Data?.allotmentData?.schemeCode || 'Scheme Code Not Available'}
-            </Text>
-            <Text
-              style={{
-                backgroundColor:
-                  Data?.sip?.status === 'cancelled' ? '#FEE2E2' : '#D1FAE5',
-                paddingVertical: 6,
-                paddingHorizontal: 12,
-                borderRadius: 20,
-                fontSize: 14,
-                color:
-                  Data?.sip?.status === 'active'
-                    ? '#065F46'
-                    : Data?.sip?.status === 'cancelled'
-                    ? '#991B1B'
-                    : '#333',
-                overflow: 'hidden',
-                alignSelf: 'flex-end',
-              }}
-            >
-              {Data?.sip?.status === 'active'
-                ? 'Active'
-                : Data?.sip?.status === 'cancelled'
-                ? 'Cancelled'
-                : 'Unknown'}
-            </Text>
-          </View>
+          <Rbutton
+            title="Submit"
+            loader={loader}
+            onPress={handlePauseSIP}
+          />
         </View>
+      );
+    }
 
-        <View style={styles.sipSummary}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>SIP Invested Value</Text>
-            <Text style={styles.summaryValue}>
-              {formatCurrency(Data?.allotmentData?.currentValue || 0)}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Current NAV</Text>
-            <Text style={styles.summaryValue}>
-              ₹ {Data?.allotmentData?.currentNav || 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Units</Text>
-            <Text style={styles.summaryValue}>
-              {Data?.allotmentData?.allottedUnit || 'N/A'}
-            </Text>
-          </View>
-
-          {showMoreDetails && (
-            <>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Folio Number</Text>
-                <Text style={styles.summaryValue}>
-                  {Data?.allotmentData?.folioNo || 'N/A'}
-                </Text>
-              </View>
-              {Data?.allotmentData?.schemeName.includes('ETF') && (
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Current Market Price</Text>
-                  <Text style={styles.summaryValue}>
-                    ₹{Data?.allotmentData?.currentValue || 'N/A'}
-                  </Text>
-                </View>
-              )}
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>NAV Date</Text>
-                <Text style={styles.summaryValue}>
-                  {Data?.allotmentData?.currentNav}
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Registration Number</Text>
-                <Text style={styles.summaryValue}>
-                  {Data?.allotmentData?.SIPRegnNo || 'N/A'}
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Registration Date</Text>
-                <Text style={styles.summaryValue}>
-                  {formatDate(Data?.allotmentData?.wbr2Details?.date) || 'N/A'}
-                </Text>
-              </View>
-            </>
-          )}
+    if (activeModal === 'cancel') {
+      return (
+        <View style={styles.modalContent}>
+          <Text style={styles.cancelLabel}>
+            Please select a reason for cancellation
+          </Text>
 
           <TouchableOpacity
-            style={styles.viewMoreButton}
-            onPress={() => setShowMoreDetails(!showMoreDetails)}
-          >
-            <Text style={styles.viewMoreText}>
-              {showMoreDetails ? 'View Less' : 'View More'}
+            style={styles.dropdownButton}
+            onPress={() => setShowDropdown(!showDropdown)}>
+            <Text style={styles.dropdownButtonText}>
+              {selectedCancelOption || 'Select reason...'}
             </Text>
-            <SInfoSvg.UpChevron
-              width={widthToDp(4)}
-              height={heightToDp(3)}
-              style={{
-                transform: [{ rotate: showMoreDetails ? '180deg' : '0deg' }],
-              }}
-            />
+            <Text style={styles.dropdownIcon}>{showDropdown ? '▲' : '▼'}</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
 
-      <View style={styles.buttonContainer}>
-        <Rbutton title={'Customize SIP'} onPress={openCustomizeModal} />
-      </View>
-      {renderModal(
-        stepUpModalVisible,
-        stepUpSlideAnim,
-        closeStepUpModal,
-        'SIP Step-Up',
+          {showDropdown && (
+            <View style={styles.dropdownContainer}>
+              <FlatList
+                data={cancelOptions}
+                renderItem={renderCancelOption}
+                keyExtractor={(item, index) => index.toString()}
+              />
+            </View>
+          )}
+
+          {selectedCancelOption === 'Others (pls specify the reason)' && (
+            <View style={styles.reasonInputContainer}>
+              <Text style={styles.reasonInputLabel}>
+                Please specify your reason:
+              </Text>
+              <TextInput
+                style={styles.reasonInput}
+                placeholder="Enter your reason here..."
+                placeholderTextColor={isDarkTheme ? '#888888' : '#999999'}
+                value={otherReason}
+                onChangeText={setOtherReason}
+                maxLength={184}
+                multiline
+                numberOfLines={4}
+              />
+              <Text style={styles.charCount}>
+                {otherReason.length}/184 characters
+              </Text>
+            </View>
+          )}
+
+          <Rbutton
+            title="Cancel SIP"
+            loader={loader}
+            onPress={handleCancelSIP}
+            disabled={
+              loader ||
+              !selectedCancelOption ||
+              (selectedCancelOption === 'Others (pls specify the reason)' &&
+                !otherReason.trim())
+            }
+          />
+        </View>
+      );
+    }
+
+    if (activeModal === 'redemption') {
+      return (
+        <View style={styles.modalContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.redemptionLabel}>
+              Redeem units from your SIP investment
+            </Text>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Scheme Code</Text>
+              <TextInput
+                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
+                value={Data?.allotmentData?.schemeCode || 'N/A'}
+                editable={false}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Folio Number</Text>
+              <TextInput
+                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
+                value={Data?.allotmentData?.folioNo || 'N/A'}
+                editable={false}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>
+                Redemption Units * (alloted Units:{' '}
+                {Data?.allotmentData?.allottedUnit || 0})
+              </Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="Enter units to redeem (e.g., 2.5)"
+                placeholderTextColor={isDarkTheme ? '#888888' : '#999999'}
+                value={String(redemptionForm.redemptionUnits)}
+                keyboardType="numeric"
+                onChangeText={value => {
+                  const maxUnits = parseFloat(
+                    Data?.allotmentData?.allottedUnit || 0,
+                  );
+
+                  if (value === '') {
+                    setRedemptionForm(prev => ({
+                      ...prev,
+                      redemptionUnits: '',
+                    }));
+                    return;
+                  }
+
+                  const regex = /^[0-9]*\.?[0-9]*$/;
+                  if (!regex.test(value)) {
+                    return;
+                  }
+
+                  if (value.endsWith('.')) {
+                    setRedemptionForm(prev => ({
+                      ...prev,
+                      redemptionUnits: value,
+                    }));
+                    return;
+                  }
+
+                  let num = parseFloat(value);
+                  if (isNaN(num)) num = '';
+                  if (num < 0) num = 0;
+                  if (num > maxUnits) num = maxUnits;
+
+                  setRedemptionForm(prev => ({
+                    ...prev,
+                    redemptionUnits: num.toString(),
+                  }));
+                }}
+              />
+            </View>
+
+            <Rbutton
+              title="Submit Redemption"
+              loader={loader}
+              onPress={handleRedemptionSubmit}
+              style={styles.submitButton}
+              textStyle={styles.submitButtonText}
+              disabled={loader || !redemptionForm.redemptionUnits}
+            />
+          </ScrollView>
+        </View>
+      );
+    }
+
+    if (activeModal === 'stepup') {
+      return (
         <View style={styles.modalContent}>
           <ScrollView
             style={styles.stepUpScrollView}
             contentContainerStyle={{ paddingBottom: heightToDp(3) }}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
+            keyboardShouldPersistTaps="handled">
             <Text style={styles.stepUpLabel}>
               Configure your SIP step-up plan
             </Text>
 
-            {/* Current SIP Amount */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>
                 Current SIP Installment Amount *
@@ -975,7 +1022,6 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               />
             </View>
 
-            {/* Duration Selection */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Step-up Duration *</Text>
               <View style={styles.durationContainer}>
@@ -987,15 +1033,13 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                       stepUpForm.duration === duration &&
                         styles.durationButtonActive,
                     ]}
-                    onPress={() => updateStepUpForm('duration', duration)}
-                  >
+                    onPress={() => updateStepUpForm('duration', duration)}>
                     <Text
                       style={[
                         styles.durationButtonText,
                         stepUpForm.duration === duration &&
                           styles.durationButtonTextActive,
-                      ]}
-                    >
+                      ]}>
                       {duration === 'HALFYEARLY' ? 'Half Yearly' : 'Yearly'}
                     </Text>
                   </TouchableOpacity>
@@ -1003,7 +1047,6 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               </View>
             </View>
 
-            {/* Increment Type Selection */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Increment Type *</Text>
               <View style={styles.incrementTypeContainer}>
@@ -1015,15 +1058,13 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                   ]}
                   onPress={() =>
                     updateStepUpForm('incrementType', 'percentage')
-                  }
-                >
+                  }>
                   <Text
                     style={[
                       styles.incrementTypeButtonText,
                       stepUpForm.incrementType === 'percentage' &&
                         styles.incrementTypeButtonTextActive,
-                    ]}
-                  >
+                    ]}>
                     By Percentage (%)
                   </Text>
                 </TouchableOpacity>
@@ -1033,22 +1074,19 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                     stepUpForm.incrementType === 'amount' &&
                       styles.incrementTypeButtonActive,
                   ]}
-                  onPress={() => updateStepUpForm('incrementType', 'amount')}
-                >
+                  onPress={() => updateStepUpForm('incrementType', 'amount')}>
                   <Text
                     style={[
                       styles.incrementTypeButtonText,
                       stepUpForm.incrementType === 'amount' &&
                         styles.incrementTypeButtonTextActive,
-                    ]}
-                  >
+                    ]}>
                     By Amount (₹)
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Increment Value Input */}
             {stepUpForm.incrementType === 'percentage' ? (
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Increment Percentage *</Text>
@@ -1089,8 +1127,7 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               </View>
             )}
 
-            {/* Step-Up Summary */}
-            <View style={styles.stepUpSummary}>
+            {/* <View style={styles.stepUpSummary}>
               <Text style={styles.summaryTitle}>Step-Up Summary</Text>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Current Amount:</Text>
@@ -1119,11 +1156,14 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                   stepUpForm.nextSipIncrementByAmount) && (
                   <View style={[styles.summaryRow, styles.highlightRow]}>
                     <Text style={styles.summaryLabel}>Next Amount:</Text>
-                    <Text style={[styles.summaryValue, styles.highlightValue]}>
+                    <Text
+                      style={[styles.summaryValue, styles.highlightValue]}>
                       ₹
                       {stepUpForm.incrementType === 'percentage'
                         ? Math.round(
-                            parseFloat(stepUpForm.sipInstallmentAmount || 0) *
+                            parseFloat(
+                              stepUpForm.sipInstallmentAmount || 0,
+                            ) *
                               (1 +
                                 parseFloat(
                                   stepUpForm.nextSipIncrementPercentage || 0,
@@ -1131,11 +1171,13 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                                   100),
                           )
                         : parseFloat(stepUpForm.sipInstallmentAmount || 0) +
-                          parseFloat(stepUpForm.nextSipIncrementByAmount || 0)}
+                          parseFloat(
+                            stepUpForm.nextSipIncrementByAmount || 0,
+                          )}
                     </Text>
                   </View>
                 )}
-            </View>
+            </View> */}
 
             <Rbutton
               title="Activate Step-Up"
@@ -1153,319 +1195,18 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               }
             />
           </ScrollView>
-        </View>,
-      )}
+        </View>
+      );
+    }
 
-     {renderModal(
-  customizeModalVisible,
-  slideAnim,
-  closeCustomizeModal,
-  'Customize Your SIP',
-  <View style={styles.modalContent}>
-    <Text style={styles.customizeSubtitle}>
-      Choose an option to manage your SIP investment
-    </Text>
-
-    {customizeOptions === 'NO_UNITS' ? (
-      <View style={{ padding: 20, alignItems: 'center' }}>
-        <Text style={{ fontSize: 16, color: '#666', textAlign: 'center' }}>
-          You don’t have units to redeem.
-        </Text>
-      </View>
-    ) : (
-      customizeOptions.map((option, index) => (
-        <TouchableOpacity
-          key={index}
-          style={[
-            styles.customizeOption,
-            { borderLeftColor: option.color },
-          ]}
-          onPress={option.onPress}
-        >
-          <View style={styles.optionContent}>
-            <View
-              style={[
-                styles.optionIcon,
-                { backgroundColor: `${option.color}20` },
-              ]}
-            >
-              <Text
-                style={[styles.optionIconText, { color: option.color }]}
-              >
-                {option.icon}
-              </Text>
-            </View>
-
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>{option.title}</Text>
-              <Text style={styles.optionDescription}>
-                {option.description}
-              </Text>
-            </View>
-
-            <View style={styles.optionArrowContainer}>
-              <Text style={styles.optionArrow}>›</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      ))
-    )}
-  </View>
-)}
-
-
-      {renderModal(
-        pauseModalVisible,
-        pauseSlideAnim,
-        closePauseModal,
-        'Pause Investment',
-        <View style={styles.modalContent}>
-          <Text style={styles.pauseLabel}>
-            Select pause duration ({pauseDuration} month
-            {pauseDuration > 1 ? 's' : ''})
-          </Text>
-          <View style={styles.sliderContainer}>
-            <CustomSlider
-              value={steps.indexOf(pauseDuration)}
-              minimumValue={0}
-              maximumValue={steps.length - 1}
-              step={1}
-              onValueChange={index => setPauseDuration(steps[index])}
-              style={styles.slider}
-              thumbStyle={styles.thumbStyle}
-              trackStyle={styles.trackStyle}
-              minimumTrackTintColor="#1768BF"
-              maximumTrackTintColor="#d3d3d3"
-              thumbTintColor={Config.Colors.primary}
-            />
-            <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabelText}>0</Text>
-              <Text style={styles.sliderLabelText}>12</Text>
-            </View>
-          </View>
-          <Rbutton
-            title="Submit"
-            loader={loader}
-            onPress={handlePauseSIP}
-            // style={styles.submitButton} // optional extra styling
-            // textStyle={styles.submitButtonText} // optional extra text styling
-          />
-        </View>,
-      )}
-
-      {renderModal(
-        cancelModalVisible,
-        cancelSlideAnim,
-        closeCancelModal,
-        'Cancel SIP',
-        <View style={styles.modalContent}>
-          <Text style={styles.cancelLabel}>
-            Please select a reason for cancellation
-          </Text>
-
-          <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => setShowDropdown(!showDropdown)}
-          >
-            <Text style={styles.dropdownButtonText}>
-              {selectedCancelOption || 'Select reason...'}
-            </Text>
-            <Text style={styles.dropdownIcon}>{showDropdown ? '▲' : '▼'}</Text>
-          </TouchableOpacity>
-
-          {showDropdown && (
-            <View style={styles.dropdownContainer}>
-              <FlatList
-                data={cancelOptions}
-                renderItem={renderCancelOption}
-                keyExtractor={(item, index) => index.toString()}
-                maxHeight={heightToDp(30)}
-              />
-            </View>
-          )}
-
-          {selectedCancelOption === 'Others (pls specify the reason)' && (
-            <View style={styles.reasonInputContainer}>
-              <Text style={styles.reasonInputLabel}>
-                Please specify your reason:
-              </Text>
-              <TextInput
-                style={styles.reasonInput}
-                placeholder="Enter your reason here..."
-                placeholderTextColor={isDarkTheme ? '#888888' : '#999999'}
-                value={otherReason}
-                onChangeText={setOtherReason}
-                maxLength={184}
-                multiline
-                numberOfLines={4}
-              />
-              <Text style={styles.charCount}>
-                {otherReason.length}/184 characters
-              </Text>
-            </View>
-          )}
-
-          <Rbutton
-            title="Cancel SIP"
-            loader={loader}
-            onPress={handleCancelSIP}
-            // style={styles.submitButton}
-            // textStyle={styles.submitButtonText}
-            disabled={
-              loader ||
-              !selectedCancelOption ||
-              (selectedCancelOption === 'Others (pls specify the reason)' &&
-                !otherReason.trim())
-            }
-          />
-        </View>,
-      )}
-
-      {renderModal(
-        redemptionModalVisible,
-        redemptionSlideAnim,
-        closeRedemptionModal,
-        'SIP Redemption',
+    if (activeModal === 'switch') {
+      return (
         <View style={styles.modalContent}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.redemptionLabel}>
-              Redeem units from your SIP investment
-            </Text>
-
-            {/* Scheme Code (Read-only) */}
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Scheme Code</Text>
-              <TextInput
-                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-                value={Data?.allotmentData?.schemeCode || 'N/A'}
-                editable={false}
-              />
-            </View>
-
-            {/* Client Code (Read-only) */}
-            {/* <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Client Code</Text>
-              <TextInput
-                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-                value={'SM099'}
-                editable={false}
-              />
-            </View> */}
-
-            {/* Folio Number (Read-only) */}
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Folio Number</Text>
-              <TextInput
-                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-                value={Data?.allotmentData?.folioNo || 'N/A'}
-                editable={false}
-              />
-            </View>
-
-            {/* All Units Flag (Read-only) */}
-            {/* <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>All Units Flag</Text>
-              <TextInput
-                style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-                value={'N'}
-                editable={false}
-              />
-            </View> */}
-
-            {/* Redemption Amount (Read-only) */}
-            {/* <View style={styles.formGroup}>
-        <Text style={styles.formLabel}>Redemption Amount</Text>
-        <TextInput
-          style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
-          value={'-'}
-          editable={false}
-        />
-      </View> */}
-
-            {/* Redemption Units (Editable) */}
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>
-                Redemption Units * (alloted Units:{' '}
-                {Data?.allotmentData?.allottedUnit || 0})
-              </Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Enter units to redeem (e.g., 2.5)"
-                placeholderTextColor={isDarkTheme ? '#888888' : '#999999'}
-                value={String(redemptionForm.redemptionUnits)}
-                keyboardType="numeric"
-                onChangeText={value => {
-                  const maxUnits = parseFloat(
-                    Data?.allotmentData?.allottedUnit || 0,
-                  );
-
-                  // Allow empty input
-                  if (value === '') {
-                    setRedemptionForm(prev => ({
-                      ...prev,
-                      redemptionUnits: '',
-                    }));
-                    return;
-                  }
-
-                  // Allow only digits and dot
-                  const regex = /^[0-9]*\.?[0-9]*$/;
-                  if (!regex.test(value)) {
-                    return; // ignore invalid characters
-                  }
-
-                  // If value ends with ".", allow it (user is typing decimal)
-                  if (value.endsWith('.')) {
-                    setRedemptionForm(prev => ({
-                      ...prev,
-                      redemptionUnits: value,
-                    }));
-                    return;
-                  }
-
-                  let num = parseFloat(value);
-
-                  if (isNaN(num)) num = '';
-
-                  // Prevent negative
-                  if (num < 0) num = 0;
-
-                  // Prevent more than allotted units
-                  if (num > maxUnits) num = maxUnits;
-
-                  setRedemptionForm(prev => ({
-                    ...prev,
-                    redemptionUnits: num.toString(),
-                  }));
-                }}
-              />
-            </View>
-
-            {/* Submit Button */}
-            <Rbutton
-              title="Submit Redemption"
-              loader={loader}
-              onPress={handleRedemptionSubmit}
-              style={styles.submitButton}
-              textStyle={styles.submitButtonText}
-              disabled={loader || !redemptionForm.redemptionUnits}
-            />
-          </ScrollView>
-        </View>,
-      )}
-      {renderModal(
-        switchModalVisible,
-        switchSlideAnim,
-        closeSwitchModal,
-        'Switch SIP',
-        <View style={styles.modalContent}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Header */}
             <Text style={styles.stepUpLabel}>
               Switch your SIP investment from one scheme to another
             </Text>
 
-            {/* From Scheme Code */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>From Scheme Code *</Text>
               <TextInput
@@ -1477,7 +1218,6 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               />
             </View>
 
-            {/* To Scheme Code */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>To Scheme Code *</Text>
               <TextInput
@@ -1489,7 +1229,6 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               />
             </View>
 
-            {/* Switch Amount */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Switch Amount (₹)*</Text>
               <TextInput
@@ -1502,7 +1241,6 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               />
             </View>
 
-            {/* All Units Flag */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Switch All Units?</Text>
               <View style={styles.durationContainer}>
@@ -1514,15 +1252,13 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                       switchForm.allUnitsFlag === flag &&
                         styles.durationButtonActive,
                     ]}
-                    onPress={() => updateSwitchForm('allUnitsFlag', flag)}
-                  >
+                    onPress={() => updateSwitchForm('allUnitsFlag', flag)}>
                     <Text
                       style={[
                         styles.durationButtonText,
                         switchForm.allUnitsFlag === flag &&
                           styles.durationButtonTextActive,
-                      ]}
-                    >
+                      ]}>
                       {flag === 'Y' ? 'Yes (All Units)' : 'No (Partial)'}
                     </Text>
                   </TouchableOpacity>
@@ -1530,7 +1266,6 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               </View>
             </View>
 
-            {/* Buy/Sell Type */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Buy/Sell Type *</Text>
               <View style={styles.durationContainer}>
@@ -1542,15 +1277,13 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                       switchForm.buySellType === type &&
                         styles.durationButtonActive,
                     ]}
-                    onPress={() => updateSwitchForm('buySellType', type)}
-                  >
+                    onPress={() => updateSwitchForm('buySellType', type)}>
                     <Text
                       style={[
                         styles.durationButtonText,
                         switchForm.buySellType === type &&
                           styles.durationButtonTextActive,
-                      ]}
-                    >
+                      ]}>
                       {type}
                     </Text>
                   </TouchableOpacity>
@@ -1558,7 +1291,6 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               </View>
             </View>
 
-            {/* Folio Number (optional) */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Folio Number (if applicable)</Text>
               <TextInput
@@ -1569,6 +1301,7 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                 onChangeText={value => updateSwitchForm('folioNo', value)}
               />
             </View>
+
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Remarks</Text>
               <TextInput
@@ -1583,6 +1316,7 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
                 multiline
               />
             </View>
+
             <Rbutton
               title="Submit Switch Request"
               loader={loader}
@@ -1597,7 +1331,156 @@ if (sipStatus === 'cancelled' && allottedUnits > 0) {
               }
             />
           </ScrollView>
-        </View>,
+        </View>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
+          <SInfoSvg.BackButton />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.fundHeader}>
+          <View style={styles.fundIconWrapper}>
+            <View style={styles.fundIcon}>
+              <Image
+                source={{
+                  uri: 'https://cdn5.vectorstock.com/i/1000x1000/44/19/mutual-fund-vector-7404419.jpg',
+                }}
+                style={{ width: 40, height: 40, borderRadius: 25 }}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+          <View style={styles.fundDetails}>
+            <Text style={styles.fundName}>
+              {Data?.allotmentData?.schemeName || 'Scheme Name Not Available'}
+            </Text>
+            <Text style={styles.monthlyText}>
+              {Data?.allotmentData?.schemeCode || 'Scheme Code Not Available'}
+            </Text>
+            <Text
+              style={{
+                backgroundColor:
+                  Data?.sip?.status === 'cancelled' ? '#FEE2E2' : '#D1FAE5',
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                borderRadius: 20,
+                fontSize: 14,
+                color:
+                  Data?.sip?.status === 'active'
+                    ? '#065F46'
+                    : Data?.sip?.status === 'cancelled'
+                    ? '#991B1B'
+                    : '#333',
+                overflow: 'hidden',
+                alignSelf: 'flex-end',
+              }}>
+              {Data?.sip?.status === 'active'
+                ? 'Active'
+                : Data?.sip?.status === 'cancelled'
+                ? 'Cancelled'
+                : 'Unknown'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.sipSummary}>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>SIP Invested Value</Text>
+            <Text style={styles.summaryValue}>
+              {formatCurrency(Data?.allotmentData?.currentValue || 0)}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Current NAV</Text>
+            <Text style={styles.summaryValue}>
+              ₹ {Data?.allotmentData?.currentNav || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Total Units</Text>
+            <Text style={styles.summaryValue}>
+              {Data?.allotmentData?.allottedUnit || 'N/A'}
+            </Text>
+          </View>
+
+          {showMoreDetails && (
+            <>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Folio Number</Text>
+                <Text style={styles.summaryValue}>
+                  {Data?.allotmentData?.folioNo || 'N/A'}
+                </Text>
+              </View>
+              {Data?.allotmentData?.schemeName?.includes('ETF') && (
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Current Market Price</Text>
+                  <Text style={styles.summaryValue}>
+                    ₹{Data?.allotmentData?.currentValue || 'N/A'}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>NAV Date</Text>
+                <Text style={styles.summaryValue}>
+                  {Data?.allotmentData?.currentNav}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Registration Number</Text>
+                <Text style={styles.summaryValue}>
+                  {Data?.allotmentData?.SIPRegnNo || 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Registration Date</Text>
+                <Text style={styles.summaryValue}>
+                  {formatDate(Data?.allotmentData?.wbr2Details?.date) || 'N/A'}
+                </Text>
+              </View>
+            </>
+          )}
+
+          <TouchableOpacity
+            style={styles.viewMoreButton}
+            onPress={() => setShowMoreDetails(!showMoreDetails)}>
+            <Text style={styles.viewMoreText}>
+              {showMoreDetails ? 'View Less' : 'View More'}
+            </Text>
+            <SInfoSvg.UpChevron
+              width={widthToDp(4)}
+              height={heightToDp(3)}
+              style={{
+                transform: [{ rotate: showMoreDetails ? '180deg' : '0deg' }],
+              }}
+            />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      <View style={styles.buttonContainer}>
+        <Rbutton title={'Customize SIP'} onPress={openCustomizeModal} />
+      </View>
+
+      {renderModalWrapper(
+        modalVisible,
+        slideAnim,
+        handleCloseModal,
+        getModalTitle(),
+        getModalBody(),
       )}
     </SafeAreaView>
   );
@@ -1611,7 +1494,6 @@ const getStyles = isDarkTheme =>
     },
     androidStatusBar: {
       height: StatusBar.currentHeight,
-      // backgroundColor: 'black',
       backgroundColor: 'transparent',
     },
     header: {
@@ -1620,9 +1502,7 @@ const getStyles = isDarkTheme =>
       alignItems: 'center',
       paddingHorizontal: widthToDp(4),
     },
-    backButton: {
-      // padding: widthToDp(2),
-    },
+    backButton: {},
     backIcon: {
       fontSize: widthToDp(7),
       color: isDarkTheme ? '#ffffff' : '#000000',
@@ -1821,20 +1701,17 @@ const getStyles = isDarkTheme =>
       fontSize: widthToDp(4.5),
       fontWeight: '600',
     },
-    // Modal Styles
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0, 0, 0, 0.6)',
       justifyContent: 'flex-end',
     },
-    modalOverlayTouchable: {
-      flex: 1,
-    },
     modalContainer: {
       backgroundColor: isDarkTheme ? '#2A2A2A' : '#FFFFFF',
       borderTopLeftRadius: widthToDp(8),
       borderTopRightRadius: widthToDp(8),
-      paddingBottom: Platform.OS === 'ios' ? heightToDp(6) : heightToDp(3),
+      paddingBottom:
+        Platform.OS === 'ios' ? heightToDp(6) : heightToDp(3),
       maxHeight: screenHeight * 0.85,
       shadowColor: '#000',
       shadowOffset: {
@@ -1844,6 +1721,7 @@ const getStyles = isDarkTheme =>
       shadowOpacity: 0.25,
       shadowRadius: 8,
       elevation: 10,
+      overflow: 'hidden',
     },
     modalHeader: {
       flexDirection: 'row',
@@ -1872,7 +1750,6 @@ const getStyles = isDarkTheme =>
     modalTitleContainer: {
       flex: 1,
     },
-    // Customize Modal Styles
     customizeSubtitle: {
       fontSize: widthToDp(3.8),
       color: isDarkTheme ? '#AAAAAA' : '#666666',
@@ -1949,7 +1826,6 @@ const getStyles = isDarkTheme =>
       color: isDarkTheme ? '#666666' : '#CCCCCC',
       fontWeight: '300',
     },
-    // Pause Modal Styles
     pauseLabel: {
       fontSize: widthToDp(4.5),
       fontWeight: '500',
@@ -1973,7 +1849,6 @@ const getStyles = isDarkTheme =>
       fontSize: widthToDp(3.5),
       color: isDarkTheme ? '#cccccc' : '#666666',
     },
-    // Cancel Modal Styles
     cancelLabel: {
       fontSize: widthToDp(4),
       fontWeight: '500',
@@ -2055,7 +1930,6 @@ const getStyles = isDarkTheme =>
       fontWeight: '500',
       color: isDarkTheme ? '#ffffff' : '#000000',
       textAlign: 'center',
-      // marginVertical: heightToDp(2),
     },
     submitButton: {
       backgroundColor: Config.Colors.primary,
@@ -2063,14 +1937,13 @@ const getStyles = isDarkTheme =>
       borderRadius: widthToDp(8),
       alignItems: 'center',
       justifyContent: 'center',
-      marginbottom: heightToDp(2),
+      marginBottom: heightToDp(2),
     },
     submitButtonText: {
       color: 'black',
       fontSize: widthToDp(4.5),
       fontWeight: '600',
     },
-    // Custom Slider Styles
     customSliderContainer: {
       height: heightToDp(5),
       justifyContent: 'center',
@@ -2122,468 +1995,10 @@ const getStyles = isDarkTheme =>
       height: 8,
       borderRadius: 4,
     },
-    // Custom Slider Styles
-    stepUpContainer: {
-      marginBottom: heightToDp(2),
-      padding: widthToDp(3),
-      backgroundColor: isDarkTheme ? '#333333' : '#f0f8ff',
-      borderRadius: widthToDp(3),
-      borderLeftWidth: 4,
-      borderLeftColor: '#4caf50',
-    },
-
-    stepUpTitle: {
-      fontSize: widthToDp(4),
-      fontWeight: '600',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      marginBottom: heightToDp(1),
-    },
-
-    stepUpDescription: {
-      fontSize: widthToDp(3.5),
-      color: isDarkTheme ? '#cccccc' : '#666666',
-      lineHeight: widthToDp(5),
-    },
-
-    stepUpAmountContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginTop: heightToDp(1),
-      paddingTop: heightToDp(1),
-      borderTopWidth: 1,
-      borderTopColor: isDarkTheme ? '#444444' : '#e0e0e0',
-    },
-
-    stepUpAmountLabel: {
-      fontSize: widthToDp(3.5),
-      color: isDarkTheme ? '#cccccc' : '#666666',
-    },
-
-    stepUpAmountValue: {
-      fontSize: widthToDp(4),
-      fontWeight: '600',
-      color: '#4caf50',
-    },
-
-    // SIP Redemption specific styles
-    redemptionContainer: {
-      marginBottom: heightToDp(2),
-      padding: widthToDp(3),
-      backgroundColor: isDarkTheme ? '#333333' : '#fff8f0',
-      borderRadius: widthToDp(3),
-      borderLeftWidth: 4,
-      borderLeftColor: '#ff9800',
-    },
-
-    redemptionTitle: {
-      fontSize: widthToDp(4),
-      fontWeight: '600',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      marginBottom: heightToDp(1),
-    },
-
-    redemptionDescription: {
-      fontSize: widthToDp(3.5),
-      color: isDarkTheme ? '#cccccc' : '#666666',
-      lineHeight: widthToDp(5),
-    },
-
-    redemptionDetailsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: heightToDp(1),
-      paddingTop: heightToDp(1),
-      borderTopWidth: 1,
-      borderTopColor: isDarkTheme ? '#444444' : '#e0e0e0',
-    },
-
-    redemptionDetailItem: {
-      alignItems: 'center',
-    },
-
-    redemptionDetailLabel: {
-      fontSize: widthToDp(3),
-      color: isDarkTheme ? '#888888' : '#999999',
-      marginBottom: heightToDp(0.5),
-    },
-
-    redemptionDetailValue: {
-      fontSize: widthToDp(3.5),
-      fontWeight: '600',
-      color: '#ff9800',
-    },
-
-    // Enhanced option styles for new buttons
-    optionIconStepUp: {
-      width: widthToDp(8),
-      height: widthToDp(8),
-      borderRadius: widthToDp(6),
-      backgroundColor: '#e8f5e8',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: widthToDp(3),
-    },
-
-    optionIconRedemption: {
-      width: widthToDp(8),
-      height: widthToDp(8),
-      borderRadius: widthToDp(6),
-      backgroundColor: '#fff3e0',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: widthToDp(3),
-    },
-
-    // Loading states for buttons
-    loadingButton: {
-      backgroundColor: isDarkTheme ? '#555555' : '#cccccc',
-      opacity: 0.7,
-    },
-
-    loadingText: {
-      color: isDarkTheme ? '#888888' : '#999999',
-    },
-
-    // Success/Error message styles
-    messageContainer: {
-      padding: widthToDp(3),
-      borderRadius: widthToDp(2),
-      marginBottom: heightToDp(2),
-    },
-
-    successMessage: {
-      backgroundColor: '#d4edda',
-      borderColor: '#c3e6cb',
-      borderWidth: 1,
-    },
-
-    errorMessage: {
-      backgroundColor: '#f8d7da',
-      borderColor: '#f5c6cb',
-      borderWidth: 1,
-    },
-
-    messageText: {
-      fontSize: widthToDp(3.5),
-      textAlign: 'center',
-    },
-
-    successText: {
-      color: '#155724',
-    },
-
-    errorText: {
-      color: '#721c24',
-    },
-    //-------------------------------------------------------
-    redemptionLabel: {
-      fontSize: widthToDp(4.5),
-      fontWeight: '600',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      textAlign: 'center',
-      marginBottom: heightToDp(3),
-    },
-
-    formGroup: {
-      marginBottom: heightToDp(2.5),
-    },
-
-    formLabel: {
-      fontSize: widthToDp(4),
-      fontWeight: '500',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      marginBottom: heightToDp(1),
-    },
-
-    formInput: {
-      borderWidth: 1,
-      borderColor: isDarkTheme ? '#444444' : '#d0d0d0',
-      borderRadius: widthToDp(2),
-      paddingHorizontal: widthToDp(3),
-      paddingVertical: heightToDp(1.5),
-      backgroundColor: isDarkTheme ? '#333333' : '#ffffff',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      fontSize: widthToDp(4),
-      minHeight: heightToDp(6),
-    },
-
-    frequencyContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      gap: widthToDp(2),
-    },
-
-    frequencyButton: {
-      flex: 1,
-      paddingVertical: heightToDp(1.5),
-      paddingHorizontal: widthToDp(2),
-      borderWidth: 1,
-      borderColor: isDarkTheme ? '#444444' : '#d0d0d0',
-      borderRadius: widthToDp(2),
-      backgroundColor: isDarkTheme ? '#333333' : '#ffffff',
-      alignItems: 'center',
-    },
-
-    frequencyButtonActive: {
-      backgroundColor: Config.Colors.primary,
-      borderColor: Config.Colors.primary,
-    },
-
-    frequencyButtonText: {
-      fontSize: widthToDp(3.5),
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      fontWeight: '500',
-    },
-
-    frequencyButtonTextActive: {
-      color: '#ffffff',
-      fontWeight: '600',
-    },
-
-    checkboxContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: heightToDp(2.5),
-      paddingVertical: heightToDp(1),
-    },
-
-    checkbox: {
-      width: widthToDp(6),
-      height: widthToDp(6),
-      borderWidth: 2,
-      borderColor: isDarkTheme ? '#666666' : '#cccccc',
-      borderRadius: widthToDp(1),
-      backgroundColor: isDarkTheme ? '#333333' : '#ffffff',
-      marginRight: widthToDp(3),
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    checkboxChecked: {
-      backgroundColor: Config.Colors.primary,
-      borderColor: Config.Colors.primary,
-    },
-
-    checkboxTick: {
-      color: '#ffffff',
-      fontSize: widthToDp(4),
-      fontWeight: 'bold',
-    },
-
-    checkboxLabel: {
-      fontSize: widthToDp(3.8),
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      flex: 1,
-      lineHeight: widthToDp(5),
-    },
-
-    redemptionSummary: {
-      backgroundColor: isDarkTheme ? '#333333' : '#f8f9fa',
-      borderRadius: widthToDp(3),
-      padding: widthToDp(4),
-      marginBottom: heightToDp(2.5),
-      borderWidth: 1,
-      borderColor: isDarkTheme ? '#444444' : '#e9ecef',
-    },
-
-    summaryTitle: {
-      fontSize: widthToDp(4.5),
-      fontWeight: '600',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      marginBottom: heightToDp(2),
-      textAlign: 'center',
-    },
-
-    redemptionSummaryRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: heightToDp(0.8),
-      borderBottomWidth: 1,
-      borderBottomColor: isDarkTheme ? '#444444' : '#e9ecef',
-    },
-
-    redemptionSummaryLabel: {
-      fontSize: widthToDp(3.8),
-      color: isDarkTheme ? '#cccccc' : '#666666',
-      flex: 1,
-    },
-
-    redemptionSummaryValue: {
-      fontSize: widthToDp(3.8),
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      fontWeight: '600',
-      textAlign: 'right',
-    },
-
-    // Enhanced input focus styles
-    formInputFocused: {
-      borderColor: Config.Colors.primary,
-      borderWidth: 2,
-      shadowColor: Config.Colors.primary,
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-
-    // Validation styles
-    formInputError: {
-      borderColor: '#dc3545',
-      borderWidth: 2,
-    },
-
-    errorText: {
-      color: '#dc3545',
-      fontSize: widthToDp(3),
-      marginTop: heightToDp(0.5),
-      fontStyle: 'italic',
-    },
-
-    // Required field indicator
-    requiredIndicator: {
-      color: '#dc3545',
-      fontSize: widthToDp(4),
-      fontWeight: 'bold',
-    },
-    // OTP Verification Styles
-    otpTitle: {
-      fontSize: widthToDp(5),
-      fontWeight: '600',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      textAlign: 'center',
-      marginBottom: heightToDp(1),
-    },
-
-    otpSubtitle: {
-      fontSize: widthToDp(3.8),
-      color: isDarkTheme ? '#cccccc' : '#666666',
-      textAlign: 'center',
-      marginBottom: heightToDp(3),
-      lineHeight: widthToDp(5),
-    },
-
-    otpContainer: {
-      alignItems: 'center',
-      marginBottom: heightToDp(3),
-    },
-
-    otpInput: {
-      borderWidth: 2,
-      borderColor: isDarkTheme ? '#444444' : '#d0d0d0',
-      borderRadius: widthToDp(3),
-      paddingHorizontal: widthToDp(4),
-      paddingVertical: heightToDp(2),
-      backgroundColor: isDarkTheme ? '#333333' : '#ffffff',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      fontSize: widthToDp(6),
-      fontWeight: '600',
-      letterSpacing: widthToDp(2),
-      textAlign: 'center',
-      width: widthToDp(60),
-      minHeight: heightToDp(7),
-    },
-
-    otpInputFocused: {
-      borderColor: Config.Colors.primary,
-      borderWidth: 3,
-      shadowColor: Config.Colors.primary,
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.2,
-      shadowRadius: 6,
-      elevation: 4,
-    },
-
-    otpNote: {
-      fontSize: widthToDp(3.2),
-      color: isDarkTheme ? '#ff9999' : '#dc3545',
-      textAlign: 'center',
-      marginTop: heightToDp(2),
-      fontStyle: 'italic',
-      lineHeight: widthToDp(4.5),
-    },
-
-    // Enhanced modal styles for OTP mode
-    modalContainerOtp: {
-      backgroundColor: isDarkTheme ? '#2a2a2a' : '#ffffff',
-      borderTopLeftRadius: widthToDp(5),
-      borderTopRightRadius: widthToDp(5),
-      paddingHorizontal: widthToDp(4),
-      paddingBottom: heightToDp(3),
-      maxHeight: screenHeight * 0.5, // Smaller height for OTP view
-    },
-
-    // Loading indicator for OTP verification
-    otpLoadingContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    otpLoadingText: {
-      marginLeft: widthToDp(2),
-      fontSize: widthToDp(4),
-      color: isDarkTheme ? '#ffffff' : '#000000',
-    },
-
-    // Security notice styles
-    securityNotice: {
-      backgroundColor: isDarkTheme ? '#1a3a5c' : '#e3f2fd',
-      borderRadius: widthToDp(2),
-      padding: widthToDp(3),
-      marginBottom: heightToDp(2),
-      borderLeftWidth: 4,
-      borderLeftColor: Config.Colors.primary,
-    },
-
-    securityNoticeText: {
-      fontSize: widthToDp(3.5),
-      color: isDarkTheme ? '#bbdefb' : '#1565c0',
-      lineHeight: widthToDp(4.8),
-    },
-
-    // OTP digits individual styling (if you want to show 4 separate boxes)
-    otpDigitsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingHorizontal: widthToDp(8),
-      marginBottom: heightToDp(3),
-    },
-
-    otpDigitBox: {
-      width: widthToDp(12),
-      height: widthToDp(12),
-      borderWidth: 2,
-      borderColor: isDarkTheme ? '#444444' : '#d0d0d0',
-      borderRadius: widthToDp(2),
-      backgroundColor: isDarkTheme ? '#333333' : '#ffffff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    otpDigitBoxFilled: {
-      borderColor: Config.Colors.primary,
-      backgroundColor: isDarkTheme ? '#1a3a5c' : '#e3f2fd',
-    },
-
-    otpDigitText: {
-      fontSize: widthToDp(5),
-      fontWeight: '600',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-    },
-
     stepUpScrollView: {
       flexGrow: 1,
       paddingBottom: heightToDp(1),
     },
-
     stepUpLabel: {
       fontSize: widthToDp(4.5),
       fontWeight: '600',
@@ -2591,13 +2006,11 @@ const getStyles = isDarkTheme =>
       textAlign: 'center',
       marginBottom: heightToDp(3),
     },
-
     durationContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       gap: widthToDp(3),
     },
-
     durationButton: {
       flex: 1,
       paddingVertical: heightToDp(1.5),
@@ -2608,29 +2021,24 @@ const getStyles = isDarkTheme =>
       backgroundColor: isDarkTheme ? '#333333' : '#ffffff',
       alignItems: 'center',
     },
-
     durationButtonActive: {
       backgroundColor: Config.Colors.primary,
       borderColor: Config.Colors.primary,
     },
-
     durationButtonText: {
       fontSize: widthToDp(3.5),
       color: isDarkTheme ? '#ffffff' : '#000000',
       fontWeight: '500',
     },
-
     durationButtonTextActive: {
       color: '#ffffff',
       fontWeight: '600',
     },
-
     incrementTypeContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       gap: widthToDp(3),
     },
-
     incrementTypeButton: {
       flex: 1,
       paddingVertical: heightToDp(1.5),
@@ -2641,25 +2049,9 @@ const getStyles = isDarkTheme =>
       backgroundColor: isDarkTheme ? '#333333' : '#ffffff',
       alignItems: 'center',
     },
-
     incrementTypeButtonActive: {
       backgroundColor: Config.Colors.primary,
       borderColor: Config.Colors.primary,
-    },
-    '@media (max-width: 320)': {
-      modalContainer: {
-        borderTopLeftRadius: widthToDp(6),
-        borderTopRightRadius: widthToDp(6),
-      },
-      optionContent: {
-        paddingVertical: heightToDp(1.5),
-        paddingHorizontal: widthToDp(2),
-      },
-      optionIcon: {
-        width: widthToDp(8),
-        height: widthToDp(8),
-        marginRight: widthToDp(3),
-      },
     },
     incrementTypeButtonText: {
       fontSize: widthToDp(3.3),
@@ -2667,12 +2059,10 @@ const getStyles = isDarkTheme =>
       fontWeight: '500',
       textAlign: 'center',
     },
-
     incrementTypeButtonTextActive: {
       color: '#ffffff',
       fontWeight: '600',
     },
-
     helperText: {
       fontSize: widthToDp(3.2),
       color: isDarkTheme ? '#888888' : '#666666',
@@ -2680,7 +2070,6 @@ const getStyles = isDarkTheme =>
       marginTop: heightToDp(0.8),
       lineHeight: widthToDp(4.5),
     },
-
     stepUpSummary: {
       backgroundColor: isDarkTheme ? '#333333' : '#f0f8ff',
       borderRadius: widthToDp(3),
@@ -2691,7 +2080,6 @@ const getStyles = isDarkTheme =>
       borderLeftWidth: 4,
       borderLeftColor: '#4caf50',
     },
-
     highlightRow: {
       backgroundColor: isDarkTheme ? '#2d4a32' : '#e8f5e8',
       marginHorizontal: -widthToDp(3),
@@ -2699,15 +2087,28 @@ const getStyles = isDarkTheme =>
       borderRadius: widthToDp(1),
       marginTop: heightToDp(1),
     },
-
     highlightValue: {
       color: '#4caf50',
       fontSize: widthToDp(4.2),
       fontWeight: '700',
     },
-
-    // Enhanced form input for step-up
-    stepUpFormInput: {
+    redemptionLabel: {
+      fontSize: widthToDp(4.5),
+      fontWeight: '600',
+      color: isDarkTheme ? '#ffffff' : '#000000',
+      textAlign: 'center',
+      marginBottom: heightToDp(3),
+    },
+    formGroup: {
+      marginBottom: heightToDp(2.5),
+    },
+    formLabel: {
+      fontSize: widthToDp(4),
+      fontWeight: '500',
+      color: isDarkTheme ? '#ffffff' : '#000000',
+      marginBottom: heightToDp(1),
+    },
+    formInput: {
       borderWidth: 1,
       borderColor: isDarkTheme ? '#444444' : '#d0d0d0',
       borderRadius: widthToDp(2),
@@ -2717,80 +2118,6 @@ const getStyles = isDarkTheme =>
       color: isDarkTheme ? '#ffffff' : '#000000',
       fontSize: widthToDp(4),
       minHeight: heightToDp(6),
-    },
-
-    stepUpFormInputFocused: {
-      borderColor: '#4caf50',
-      borderWidth: 2,
-      shadowColor: '#4caf50',
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-
-    // Info box styles
-    infoBox: {
-      backgroundColor: isDarkTheme ? '#1a3a5c' : '#e3f2fd',
-      borderRadius: widthToDp(2),
-      padding: widthToDp(3),
-      marginBottom: heightToDp(2),
-      borderLeftWidth: 4,
-      borderLeftColor: Config.Colors.primary,
-    },
-
-    infoBoxText: {
-      fontSize: widthToDp(3.5),
-      color: isDarkTheme ? '#bbdefb' : '#1565c0',
-      lineHeight: widthToDp(5),
-    },
-
-    infoIcon: {
-      fontSize: widthToDp(4),
-      color: isDarkTheme ? '#bbdefb' : '#1565c0',
-      marginRight: widthToDp(2),
-    },
-
-    // Step-up benefits section
-    benefitsContainer: {
-      backgroundColor: isDarkTheme ? '#1a2a1a' : '#f0fff0',
-      borderRadius: widthToDp(2),
-      padding: widthToDp(3),
-      marginBottom: heightToDp(2),
-      borderLeftWidth: 4,
-      borderLeftColor: '#4caf50',
-    },
-
-    benefitsTitle: {
-      fontSize: widthToDp(4),
-      fontWeight: '600',
-      color: isDarkTheme ? '#ffffff' : '#000000',
-      marginBottom: heightToDp(1),
-    },
-
-    benefitItem: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      marginBottom: heightToDp(0.8),
-    },
-
-    benefitBullet: {
-      width: widthToDp(1.5),
-      height: widthToDp(1.5),
-      borderRadius: widthToDp(0.75),
-      backgroundColor: '#4caf50',
-      marginRight: widthToDp(2),
-      marginTop: heightToDp(0.8),
-    },
-
-    benefitText: {
-      flex: 1,
-      fontSize: widthToDp(3.5),
-      color: isDarkTheme ? '#cccccc' : '#333333',
-      lineHeight: widthToDp(5),
     },
   });
 

@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  SafeAreaView,
   TextInput,
   Platform,
   ScrollView,
@@ -28,14 +33,17 @@ import Rbutton from '../../components/Rbutton';
 import MandateAlert from '../../components/MandateAlert';
 import LinearGradient from 'react-native-linear-gradient';
 import bgVector from '../../assets/Icons/vector.png';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import EndDatePickerComponent from '../../utils/EndDatePickerComponent';
+import StartDatePickerComponent from '../../utils/StartDatePickerComponent';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const Invest = ({ navigation }) => {
   const InvestData = useSelector(state => state.marketWatch.investment);
-  const UserData = useSelector(state => state.login.loginData)
+  const UserData = useSelector(state => state.login.loginData);
   const investmentType = useSelector(state => state.marketWatch.investType);
-  console.log("invest_data---=-=-=>", InvestData, investmentType, UserData);
+  console.log('invest_data---=-=-=>', InvestData);
 
   const [selectedAmount, setSelectedAmount] = useState(0);
   const [customAmount, setCustomAmount] = useState('');
@@ -44,10 +52,9 @@ const Invest = ({ navigation }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const scrollViewRef = useRef(null);
   const amountInputRef = useRef(null);
-const [selectedFrequency, setSelectedFrequency] = useState(null);
-const [selectedEndDate, setSelectedEndDate] = useState(null);
-const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-
+  const [selectedFrequency, setSelectedFrequency] = useState(null);
+  const [selectedEndDate, setSelectedEndDate] = useState(null);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [selectedMandate, setSelectedMandate] = useState(null);
@@ -86,7 +93,7 @@ const [showEndDatePicker, setShowEndDatePicker] = useState(false);
     setIsLoading(true);
     try {
       const Token = await getData(Config.store_key_login_details);
-      console.log("Token", Token);
+      console.log('Token', Token);
       const response = await fetch(
         `${Config.baseUrl}/api/client/registration/mandate/history`,
         {
@@ -94,7 +101,7 @@ const [showEndDatePicker, setShowEndDatePicker] = useState(false);
           headers: {
             'Content-Type': 'application/json',
             clientcode: UserData?.user?.clientCode,
-            "Authorization": Token,
+            Authorization: Token,
           },
         },
       );
@@ -119,7 +126,6 @@ const [showEndDatePicker, setShowEndDatePicker] = useState(false);
       } else {
         console.error('Error fetching mandate history:', data?.message);
       }
-
     } catch (error) {
       console.error('Error fetching mandate history:', error);
     } finally {
@@ -127,37 +133,36 @@ const [showEndDatePicker, setShowEndDatePicker] = useState(false);
     }
   };
 
-useEffect(() => {
-  if (InvestData?.allSipOptions?.length > 0 && investmentType === "SIP") {
+  useEffect(() => {
+    if (InvestData?.allSipOptions?.length > 0 && investmentType === 'SIP') {
+      // pick first frequency as default
+      const firstFreq = InvestData.allSipOptions[0];
 
-    // pick first frequency as default
-    const firstFreq = InvestData.allSipOptions[0];
+      setSelectedFrequency(firstFreq.freq);
+      setMinimumAmount(firstFreq.amount);
+      setSelectedAmount(firstFreq.amount);
+      setCustomAmount('');
+    }
 
-    setSelectedFrequency(firstFreq.freq);
-    setMinimumAmount(firstFreq.amount);
-    setSelectedAmount(firstFreq.amount);
-    setCustomAmount("");
-  }
-
-  // existing fallback for Lumpsum or missing data
-  else if (InvestData?.sipMinimumInstallmentAmount?.length > 0) {
-    const minAmount = parseFloat(InvestData.sipMinimumInstallmentAmount[0]) || 0;
-    setMinimumAmount(minAmount);
-    setSelectedAmount(minAmount);
-  }
-}, [InvestData, investmentType]);
-
+    // existing fallback for Lumpsum or missing data
+    else if (InvestData?.sipMinimumInstallmentAmount?.length > 0) {
+      const minAmount =
+        parseFloat(InvestData.sipMinimumInstallmentAmount[0]) || 0;
+      setMinimumAmount(minAmount);
+      setSelectedAmount(minAmount);
+    }
+  }, [InvestData, investmentType]);
 
   const validateForm = () => {
     const newErrors = {};
     const amount = getCurrentAmount();
-if (investmentType === "SIP" && selectedFrequency === "DAILY") {
-  if (!selectedEndDate) {
-    newErrors.endDate = "Please select an end date";
-  } else if (selectedEndDate <= selectedDate) {
-    newErrors.endDate = "End date must be AFTER start date";
-  }
-}
+    if (investmentType === 'SIP' && selectedFrequency === 'DAILY') {
+      if (!selectedEndDate) {
+        newErrors.endDate = 'Please select an end date';
+      } else if (selectedEndDate <= selectedDate) {
+        newErrors.endDate = 'End date must be AFTER start date';
+      }
+    }
 
     if (amount === 0) {
       newErrors.amount = 'Please enter an amount';
@@ -213,7 +218,10 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
 
   const handleAmountSelect = amount => {
     if (amount < minimumAmount) {
-      setErrors(prev => ({ ...prev, amount: `Minimum amount is ₹${minimumAmount}` }));
+      setErrors(prev => ({
+        ...prev,
+        amount: `Minimum amount is ₹${minimumAmount}`,
+      }));
       return;
     }
     setSelectedAmount(amount);
@@ -248,30 +256,30 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
   };
 
   const onDateChange = (event, date) => {
-  if (Platform.OS === 'android') {
-    setShowDatePicker(false);
-  }
-
-  if (date) {
-    const selectedDay = date.getDate();
-
-    // ✅ Restrict SIP date: disable 29, 30, 31
-    if (investmentType === 'SIP' && selectedDay > 28) {
-      // move to the 1st of next month
-      const nextMonth = new Date(date);
-      nextMonth.setMonth(date.getMonth() + 1);
-      nextMonth.setDate(1);
-      setSelectedDate(nextMonth);
-    } else {
-      setSelectedDate(date);
-    }
-
-    setErrors(prev => ({ ...prev, date: '' }));
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
-  }
-};
+
+    if (date) {
+      const selectedDay = date.getDate();
+
+      // ✅ Restrict SIP date: disable 29, 30, 31
+      if (investmentType === 'SIP' && selectedDay > 28) {
+        // move to the 1st of next month
+        const nextMonth = new Date(date);
+        nextMonth.setMonth(date.getMonth() + 1);
+        nextMonth.setDate(1);
+        setSelectedDate(nextMonth);
+      } else {
+        setSelectedDate(date);
+      }
+
+      setErrors(prev => ({ ...prev, date: '' }));
+      if (Platform.OS === 'ios') {
+        setShowDatePicker(false);
+      }
+    }
+  };
 
   const getScheduleText = () => {
     if (!selectedDate) {
@@ -281,7 +289,19 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
     return selectedDate.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
+    });
+  };
+  const getScheduleENDText = () => {
+    console.log('selected ENd Data', selectedEndDate);
+    if (!selectedEndDate) {
+      return 'Select End date';
+    }
+
+    return selectedEndDate.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
     });
   };
 
@@ -304,9 +324,10 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
     if (investmentType === 'LUMPSUM') {
       payload = {
         amount: amount.toString(),
-        buyType: "FRESH",
+        buyType: 'FRESH',
         schemaCode: InvestData?.primarySchemeCode,
-        mandateId: paymentMethod === 'MANDATE' ? selectedMandate?.mandateId : "",
+        mandateId:
+          paymentMethod === 'MANDATE' ? selectedMandate?.mandateId : '',
         paymentMethod: paymentMethod,
       };
     } else if (investmentType === 'SIP') {
@@ -314,35 +335,36 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
 
       payload = {
         installmentAmount: amount.toString(),
-          frequencyType: selectedFrequency || "MONTHLY",
+        frequencyType: selectedFrequency || 'MONTHLY',
         noOfInstallment: 300,
         mandateId: selectedMandate?.mandateId,
         firstOrderToday: paymentMethod === 'UPI' ? true : false,
         startDate: startDate,
-          endDate: selectedFrequency === "DAILY"
-    ? selectedEndDate?.toLocaleDateString("en-GB")
-    : null,
+        endDate:
+          selectedFrequency === 'DAILY'
+            ? selectedEndDate?.toLocaleDateString('en-GB')
+            : null,
         schemaCode: InvestData?.primarySchemeCode,
-        buyType: "FRESH",
+        buyType: 'FRESH',
         paymentMethod: paymentMethod,
       };
     }
-      console.log("Payload before API call:",payload);
+    console.log('Payload before API call:', payload);
 
     try {
       const Token = await getData(Config.store_key_login_details);
-      console.log("Token", Token);
-      const endpoint = investmentType === 'SIP'
-        ? '/api/v1/purchase/sip/entry'
-        : '/api/v1/purchase/order/entry';
-
+      console.log('Token', Token);
+      const endpoint =
+        investmentType === 'SIP'
+          ? '/api/v1/purchase/sip/entry'
+          : '/api/v1/purchase/order/entry';
 
       const response = await fetch(`${Config.baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           clientcode: UserData?.user?.clientCode,
-          "Authorization": Token,
+          Authorization: Token,
         },
         body: JSON.stringify(payload),
       });
@@ -373,7 +395,9 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
       if (isSuccess) {
         const paymentData = {
           investmentResponse: investmentResponse,
-          orderNumber: investmentResponse.resultText?.orderId || investmentResponse.resultText?.orderNumber,
+          orderNumber:
+            investmentResponse.resultText?.orderId ||
+            investmentResponse.resultText?.orderNumber,
           urNumber: investmentResponse.resultText?.URNumber,
           totalAmount: investmentResponse.totalAmount,
           bseRemarks: investmentResponse.resultText?.bseRemarks,
@@ -384,20 +408,23 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
           amount: getCurrentAmount(),
           paymentMethod: paymentMethod,
           selectedMandate: selectedMandate,
-          startDate: investmentType === 'SIP' ? selectedDate?.toLocaleDateString('en-GB') : null,
+          startDate:
+            investmentType === 'SIP'
+              ? selectedDate?.toLocaleDateString('en-GB')
+              : null,
           frequency: investmentType === 'SIP' ? 'MONTHLY' : null,
           clientCode: UserData?.user?.clientCode,
           userName: UserData?.user?.name || UserData?.user?.clientName,
           timestamp: new Date().toISOString(),
-          investmentStatus: 'CONFIRMED'
+          investmentStatus: 'CONFIRMED',
         };
-        navigation.navigate("PaymentComponent", { paymentData });
+        navigation.navigate('PaymentComponent', { paymentData });
       }
     };
 
     const handleTransactionSuccess = () => {
       setShowResponseModal(false);
-      navigation.navigate("MarketWatch");
+      navigation.navigate('MarketWatch');
     };
 
     const handlePayNow = () => {
@@ -417,14 +444,17 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
           amount: getCurrentAmount(),
           paymentMethod: paymentMethod,
           selectedMandate: selectedMandate,
-          startDate: investmentType === 'SIP' ? selectedDate?.toLocaleDateString('en-GB') : null,
+          startDate:
+            investmentType === 'SIP'
+              ? selectedDate?.toLocaleDateString('en-GB')
+              : null,
           frequency: investmentType === 'SIP' ? 'MONTHLY' : null,
           clientCode: UserData?.user?.clientCode,
           userName: UserData?.user?.name || UserData?.user?.clientName,
           timestamp: new Date().toISOString(),
-          investmentStatus: 'CONFIRMED'
+          investmentStatus: 'CONFIRMED',
         };
-        navigation.navigate("PaymentComponent", { paymentData });
+        navigation.navigate('PaymentComponent', { paymentData });
       }
     };
 
@@ -432,11 +462,11 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
       setShowResponseModal(false);
     };
 
-    const formatAmount = (amount) => {
+    const formatAmount = amount => {
       return `₹${parseFloat(amount).toLocaleString()}`;
     };
 
-    const extractSchemeFromRemarks = (remarks) => {
+    const extractSchemeFromRemarks = remarks => {
       const schemeMatch = remarks?.match(/SCHEME:\s*([^T]+)/);
       return schemeMatch ? schemeMatch[1].trim() : 'Investment';
     };
@@ -453,16 +483,21 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
         <View style={styles.responseModalOverlay}>
           <View style={styles.responseModalContainer}>
             <View style={styles.responseModalHeader}>
-              <View style={[styles.successIcon, !isSuccess && styles.failedIcon]}>
+              <View
+                style={[styles.successIcon, !isSuccess && styles.failedIcon]}
+              >
                 <Text style={styles.successIconText}>
                   {isSuccess ? '✓' : '✕'}
                 </Text>
               </View>
               <Text style={styles.responseModalTitle}>
                 {isSuccess
-                  ? (investmentType === 'SIP' ? 'SIP Order Confirmed!' : 'Investment Confirmed!')
-                  : (investmentType === 'SIP' ? 'SIP Order Failed!' : 'Investment Failed!')
-                }
+                  ? investmentType === 'SIP'
+                    ? 'SIP Order Confirmed!'
+                    : 'Investment Confirmed!'
+                  : investmentType === 'SIP'
+                  ? 'SIP Order Failed!'
+                  : 'Investment Failed!'}
               </Text>
             </View>
 
@@ -493,7 +528,9 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
                   <View style={styles.responseRow}>
                     <Text style={styles.responseLabel}>Scheme:</Text>
                     <Text style={styles.responseValue}>
-                      {extractSchemeFromRemarks(investmentResponse.resultText?.bseRemarks)}
+                      {extractSchemeFromRemarks(
+                        investmentResponse.resultText?.bseRemarks,
+                      )}
                     </Text>
                   </View>
                 </>
@@ -526,10 +563,12 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
 
               <View style={styles.responseRow}>
                 <Text style={styles.responseLabel}>Status:</Text>
-                <Text style={[
-                  styles.responseValue,
-                  isSuccess ? styles.successText : styles.failedText
-                ]}>
+                <Text
+                  style={[
+                    styles.responseValue,
+                    isSuccess ? styles.successText : styles.failedText,
+                  ]}
+                >
                   {investmentResponse.resultText?.bseResponseFlag}
                 </Text>
               </View>
@@ -539,10 +578,12 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
                   <Text style={styles.remarksLabel}>
                     {isFailed ? 'Error Details:' : 'Details:'}
                   </Text>
-                  <Text style={[
-                    styles.remarksText,
-                    isFailed && styles.failedRemarksText
-                  ]}>
+                  <Text
+                    style={[
+                      styles.remarksText,
+                      isFailed && styles.failedRemarksText,
+                    ]}
+                  >
                     {investmentResponse.resultText.bseRemarks}
                   </Text>
                 </View>
@@ -558,7 +599,9 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
                       onPress={handleContinueToPayment}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.responseModalButtonText}>Continue to Payment</Text>
+                      <Text style={styles.responseModalButtonText}>
+                        Continue to Payment
+                      </Text>
                     </TouchableOpacity>
                   ) : (
                     <View style={styles.mandateButtonsContainer}>
@@ -567,15 +610,22 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
                         onPress={handleTransactionSuccess}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.responseModalButtonText}>Transaction Successful</Text>
+                        <Text style={styles.responseModalButtonText}>
+                          Transaction Successful
+                        </Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
-                        style={[styles.responseModalButton, styles.payNowButton]}
+                        style={[
+                          styles.responseModalButton,
+                          styles.payNowButton,
+                        ]}
                         onPress={handlePayNow}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.responseModalButtonText}>Pay Now</Text>
+                        <Text style={styles.responseModalButtonText}>
+                          Pay Now
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -598,72 +648,120 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
     );
   };
 
-  const DatePickerComponent = () => {
-    let minimumDate;
-    if (investmentType === 'SIP' && paymentMethod === 'UPI') {
-      minimumDate = getMinimumDateForSIPUPI();
-    } else {
-      minimumDate = getMinimumDateForMandate();
-    }
+  // const DatePickerComponent = () => {
+  //   let minimumDate;
+  //   if (investmentType === 'SIP' && paymentMethod === 'UPI') {
+  //     minimumDate = getMinimumDateForSIPUPI();
+  //   } else {
+  //     minimumDate = getMinimumDateForMandate();
+  //   }
 
-    const maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  //   const maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
-    if (Platform.OS === 'ios') {
-      return (
-        <Modal
-          visible={showDatePicker}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setShowDatePicker(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={styles.iosDatePickerContainer}>
-                  <View style={styles.datePickerHeader}>
-                    <TouchableOpacity
-                      onPress={() => setShowDatePicker(false)}
-                      style={styles.datePickerButton}
-                    >
-                      <Text style={styles.datePickerButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.datePickerTitle}>Select Start Date</Text>
-                    <TouchableOpacity
-                      onPress={() => setShowDatePicker(false)}
-                      style={styles.datePickerButton}
-                    >
-                      <Text style={[styles.datePickerButtonText, styles.doneButton]}>Done</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <DateTimePicker
-                    value={selectedDate || minimumDate}
-                    mode="date"
-                    display="spinner"
-                    onChange={onDateChange}
-                    minimumDate={minimumDate}
-                    maximumDate={maximumDate}
-                    locale="en-US"
-                  />
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-      );
-    }
+  //   // ---------- iOS CUSTOM PICKER ----------
+  //   if (Platform.OS === 'ios') {
+  //     return (
+  //       <Modal
+  //         animationType="slide"
+  //         transparent
+  //         visible={showDatePicker}
+  //         onRequestClose={() => setShowDatePicker(false)}
+  //       >
+  //         {/* Overlay */}
+  //         <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
+  //           <View style={styles.modalOverlay}>
+  //             <TouchableWithoutFeedback>
+  //               <View style={styles.iosDatePickerContainer}>
+  //                 {/* Header */}
+  //                 <View style={styles.datePickerHeader}>
+  //                   <TouchableOpacity
+  //                     onPress={() => {
+  //                       setShowDatePicker(false);
+  //                     }}
+  //                   >
+  //                     <Text style={styles.datePickerButtonText}>Cancel</Text>
+  //                   </TouchableOpacity>
 
-    return showDatePicker ? (
-      <DateTimePicker
-        value={selectedDate || minimumDate}
-        mode="date"
-        display="default"
-        onChange={onDateChange}
-        minimumDate={minimumDate}
-        maximumDate={maximumDate}
-        is24Hour={true}
-      />
-    ) : null;
-  };
+  //                   <Text style={styles.datePickerTitle}>
+  //                     Select Start Date
+  //                   </Text>
+
+  //                   <TouchableOpacity
+  //                     onPress={() => {
+  //                       setShowDatePicker(false);
+  //                     }}
+  //                   >
+  //                     <Text
+  //                       style={[styles.datePickerButtonText, styles.doneButton]}
+  //                     >
+  //                       Done
+  //                     </Text>
+  //                   </TouchableOpacity>
+  //                 </View>
+
+  //                 {/* Picker */}
+  //                 <DateTimePicker
+  //                   value={selectedDate || minimumDate}
+  //                   mode="date"
+  //                   display="spinner"
+  //                   onChange={(event, date) => {
+  //                     if (!date) return;
+
+  //                     const selectedDay = date.getDate();
+
+  //                     // 🚫 Disable 29/30/31 for SIP
+  //                     if (investmentType === 'SIP' && selectedDay > 28) {
+  //                       const nextMonth = new Date(date);
+  //                       nextMonth.setMonth(date.getMonth() + 1);
+  //                       nextMonth.setDate(1);
+  //                       setSelectedDate(nextMonth);
+  //                     } else {
+  //                       setSelectedDate(date);
+  //                     }
+
+  //                     setErrors(prev => ({ ...prev, date: '' }));
+  //                   }}
+  //                   minimumDate={minimumDate}
+  //                   maximumDate={maximumDate}
+  //                 />
+  //               </View>
+  //             </TouchableWithoutFeedback>
+  //           </View>
+  //         </TouchableWithoutFeedback>
+  //       </Modal>
+  //     );
+  //   }
+
+  //   // ---------- ANDROID DEFAULT PICKER ----------
+  //   return (
+  //     showDatePicker && (
+  //       <DateTimePicker
+  //         value={selectedDate || minimumDate}
+  //         mode="date"
+  //         display="default"
+  //         minimumDate={minimumDate}
+  //         maximumDate={maximumDate}
+  //         onChange={(event, date) => {
+  //           setShowDatePicker(false);
+  //           if (!date) return;
+
+  //           const selectedDay = date.getDate();
+
+  //           if (investmentType === 'SIP' && selectedDay > 28) {
+  //             const nextMonth = new Date(date);
+  //             nextMonth.setMonth(date.getMonth() + 1);
+  //             nextMonth.setDate(1);
+  //             setSelectedDate(nextMonth);
+  //           } else {
+  //             setSelectedDate(date);
+  //           }
+
+  //           setErrors(prev => ({ ...prev, date: '' }));
+  //         }}
+  //       />
+  //     )
+  //   );
+  // };
 
   const Header = () => (
     <LinearGradient
@@ -705,7 +803,10 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
         <TextInput
           ref={amountInputRef}
           style={[styles.amountInput, errors.amount && styles.errorInput]}
-          value={customAmount || (selectedAmount > 0 ? selectedAmount.toString() : '')}
+          value={
+            customAmount ||
+            (selectedAmount > 0 ? selectedAmount.toString() : '')
+          }
           onChangeText={handleCustomAmountChange}
           onFocus={handleAmountInputFocus}
           keyboardType="numeric"
@@ -732,15 +833,21 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
             key={`${amount}-${index}`}
             style={[
               styles.quickAmountButton,
-              selectedAmount === amount && !customAmount && styles.selectedAmountButton,
+              selectedAmount === amount &&
+                !customAmount &&
+                styles.selectedAmountButton,
             ]}
             onPress={() => handleAmountSelect(amount)}
             activeOpacity={0.7}
           >
-            <Text style={[
-              styles.quickAmountText,
-              selectedAmount === amount && !customAmount && styles.selectedAmountText,
-            ]}>
+            <Text
+              style={[
+                styles.quickAmountText,
+                selectedAmount === amount &&
+                  !customAmount &&
+                  styles.selectedAmountText,
+              ]}
+            >
               ₹{amount.toLocaleString()}
             </Text>
           </TouchableOpacity>
@@ -757,7 +864,7 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
           <TouchableOpacity
             style={[
               styles.paymentOption,
-              paymentMethod === 'UPI' && styles.selectedPaymentOption
+              paymentMethod === 'UPI' && styles.selectedPaymentOption,
             ]}
             onPress={() => {
               setPaymentMethod('UPI');
@@ -765,16 +872,22 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
             }}
             activeOpacity={0.7}
           >
-            <View style={[
-              styles.radioButton,
-              paymentMethod === 'UPI' && styles.selectedRadioButton
-            ]}>
-              {paymentMethod === 'UPI' && <View style={styles.radioButtonInner} />}
+            <View
+              style={[
+                styles.radioButton,
+                paymentMethod === 'UPI' && styles.selectedRadioButton,
+              ]}
+            >
+              {paymentMethod === 'UPI' && (
+                <View style={styles.radioButtonInner} />
+              )}
             </View>
-            <Text style={[
-              styles.paymentOptionText,
-              paymentMethod === 'UPI' && styles.selectedPaymentOptionText
-            ]}>
+            <Text
+              style={[
+                styles.paymentOptionText,
+                paymentMethod === 'UPI' && styles.selectedPaymentOptionText,
+              ]}
+            >
               Payment via UPI
             </Text>
           </TouchableOpacity>
@@ -782,21 +895,27 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
           <TouchableOpacity
             style={[
               styles.paymentOption,
-              paymentMethod === 'MANDATE' && styles.selectedPaymentOption
+              paymentMethod === 'MANDATE' && styles.selectedPaymentOption,
             ]}
             onPress={() => setPaymentMethod('MANDATE')}
             activeOpacity={0.7}
           >
-            <View style={[
-              styles.radioButton,
-              paymentMethod === 'MANDATE' && styles.selectedRadioButton
-            ]}>
-              {paymentMethod === 'MANDATE' && <View style={styles.radioButtonInner} />}
+            <View
+              style={[
+                styles.radioButton,
+                paymentMethod === 'MANDATE' && styles.selectedRadioButton,
+              ]}
+            >
+              {paymentMethod === 'MANDATE' && (
+                <View style={styles.radioButtonInner} />
+              )}
             </View>
-            <Text style={[
-              styles.paymentOptionText,
-              paymentMethod === 'MANDATE' && styles.selectedPaymentOptionText
-            ]}>
+            <Text
+              style={[
+                styles.paymentOptionText,
+                paymentMethod === 'MANDATE' && styles.selectedPaymentOptionText,
+              ]}
+            >
               Payment via Mandate
             </Text>
           </TouchableOpacity>
@@ -806,7 +925,7 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
   };
 
   const MandateSelection = () => {
-    const handleMandateSelect = (mandate) => {
+    const handleMandateSelect = mandate => {
       setSelectedMandate(mandate);
       setShowMandateModal(false);
       setErrors(prev => ({ ...prev, mandate: '' }));
@@ -822,12 +941,23 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
         >
           {selectedMandate ? (
             <>
-              <View style={[styles.mandateLogo, { backgroundColor: Config.Colors.primary }]}>
-                <Text style={styles.mandateLogoText}>{selectedMandate?.bankName?.slice(0, 1)}</Text>
+              <View
+                style={[
+                  styles.mandateLogo,
+                  { backgroundColor: Config.Colors.primary },
+                ]}
+              >
+                <Text style={styles.mandateLogoText}>
+                  {selectedMandate?.bankName?.slice(0, 1)}
+                </Text>
               </View>
               <View style={styles.mandateDetails}>
-                <Text style={styles.mandateId}>{selectedMandate?.mandateId}</Text>
-                <Text style={styles.mandateBankName}>Bank Name: {selectedMandate?.bankName}</Text>
+                <Text style={styles.mandateId}>
+                  {selectedMandate?.mandateId}
+                </Text>
+                <Text style={styles.mandateBankName}>
+                  Bank Name: {selectedMandate?.bankName}
+                </Text>
               </View>
             </>
           ) : (
@@ -835,7 +965,9 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
           )}
           <Text style={styles.mandateArrow}>⌄</Text>
         </TouchableOpacity>
-        {errors.mandate && <Text style={styles.errorText}>{errors.mandate}</Text>}
+        {errors.mandate && (
+          <Text style={styles.errorText}>{errors.mandate}</Text>
+        )}
 
         <Modal
           visible={showMandateModal}
@@ -845,37 +977,51 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
         >
           <TouchableWithoutFeedback onPress={() => setShowMandateModal(false)}>
             <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => { }}>
+              <TouchableWithoutFeedback onPress={() => {}}>
                 <View style={styles.mandateModalContainer}>
                   <View style={styles.mandateModalHeader}>
                     <Text style={styles.mandateModalTitle}>Select Mandate</Text>
-                    <TouchableOpacity onPress={() => setShowMandateModal(false)}>
+                    <TouchableOpacity
+                      onPress={() => setShowMandateModal(false)}
+                    >
                       <Text style={styles.mandateModalClose}>✕</Text>
                     </TouchableOpacity>
                   </View>
                   <ScrollView style={styles.mandateList}>
-                    {mandateOptions?.map((mandate) => (
+                    {mandateOptions?.map(mandate => (
                       <TouchableOpacity
                         key={mandate?.UMRNNo}
                         style={[
                           styles.mandateOption,
-                          selectedMandate?.UMRNNo === mandate?.UMRNNo && styles.selectedMandateOption
+                          selectedMandate?.UMRNNo === mandate?.UMRNNo &&
+                            styles.selectedMandateOption,
                         ]}
                         onPress={() => handleMandateSelect(mandate)}
                         activeOpacity={0.7}
                       >
-                        <View style={[styles.mandateLogo, { backgroundColor: Config.Colors.primary }]}>
-                          <Text style={styles.mandateLogoText}>{mandate?.bankName?.slice(0, 1)}</Text>
+                        <View
+                          style={[
+                            styles.mandateLogo,
+                            { backgroundColor: Config.Colors.primary },
+                          ]}
+                        >
+                          <Text style={styles.mandateLogoText}>
+                            {mandate?.bankName?.slice(0, 1)}
+                          </Text>
                         </View>
                         <View style={styles.mandateDetails}>
-                          <Text style={styles.mandateId}>{mandate?.mandateId}</Text>
+                          <Text style={styles.mandateId}>
+                            {mandate?.mandateId}
+                          </Text>
                           <Text style={styles.mandateBankInfo}>
                             Registration Date: {mandate?.registrationDate}
                           </Text>
                           <Text style={styles.mandateBankInfo}>
                             Approved Date: {mandate?.approvedDate}
                           </Text>
-                          <Text style={styles.mandateBankName}>Bank Name: {mandate?.bankName}</Text>
+                          <Text style={styles.mandateBankName}>
+                            Bank Name: {mandate?.bankName}
+                          </Text>
                         </View>
                         {selectedMandate?.UMRNNo === mandate?.UMRNNo && (
                           <View style={styles.mandateCheckmark}>
@@ -916,14 +1062,19 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
   };
 
   const handleCreateMandate = () => {
-    navigation.navigate("BankMandate")
+    navigation.navigate('BankMandate');
   };
+  let minimumDate =
+    investmentType === 'SIP' && paymentMethod === 'UPI'
+      ? getMinimumDateForSIPUPI()
+      : getMinimumDateForMandate();
 
+  let maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
       <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
-      
+
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2B8DF6" />
@@ -941,72 +1092,74 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
           >
             <AmountSection />
             <QuickAmountSection />
-            {investmentType === "SIP" && (
-  <View style={styles.sectionBox}>
-    <Text style={styles.sectionTitle}>SIP Frequency</Text>
+            {investmentType === 'SIP' && (
+              <View style={styles.sectionBox}>
+                <Text style={styles.sectionTitle}>SIP Frequency</Text>
 
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-      {InvestData?.allSipOptions?.map(({ freq, amount }) => (
-        <TouchableOpacity
-          key={freq}
-          style={[
-            styles.freqButton,
-            selectedFrequency === freq && styles.freqButtonSelected,
-          ]}
-         onPress={() => {
-  setSelectedFrequency(freq);
-  setMinimumAmount(amount);
-  setSelectedAmount(amount);
-  setCustomAmount("");
+                <View
+                  style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}
+                >
+                  {InvestData?.allSipOptions?.map(({ freq, amount }) => (
+                    <TouchableOpacity
+                      key={freq}
+                      style={[
+                        styles.freqButton,
+                        selectedFrequency === freq && styles.freqButtonSelected,
+                      ]}
+                      onPress={() => {
+                        setSelectedFrequency(freq);
+                        setMinimumAmount(amount);
+                        setSelectedAmount(amount);
+                        setCustomAmount('');
 
-  if (freq !== "DAILY") {
-    setSelectedEndDate(null); 
-  }
-}}
-
-        >
-          <Text
-            style={[
-              styles.freqButtonText,
-              selectedFrequency === freq && styles.freqButtonTextSelected,
-            ]}
-          >
-            {freq}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  </View>
-)}
-{investmentType === "SIP" && selectedFrequency === "DAILY" && (
-  <View style={styles.sectionBox}>
-    <Text style={styles.sectionTitle}>SIP End Date</Text>
-
-    <TouchableOpacity
-      style={[styles.scheduleButton, errors.endDate && styles.errorInput]}
-      onPress={() => setShowEndDatePicker(true)}
-    >
-      <Text style={styles.scheduleIcon}>📅</Text>
-      <Text style={styles.scheduleText}>
-        {selectedEndDate
-          ? selectedEndDate.toLocaleDateString("en-GB")
-          : "Select End Date"}
-      </Text>
-      <Text style={styles.scheduleArrow}>⌄</Text>
-    </TouchableOpacity>
-
-    {errors.endDate && (
-      <Text style={styles.errorText}>{errors.endDate}</Text>
-    )}
-  </View>
-)}
+                        if (freq !== 'DAILY') {
+                          setSelectedEndDate(null);
+                        }
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.freqButtonText,
+                          selectedFrequency === freq &&
+                            styles.freqButtonTextSelected,
+                        ]}
+                      >
+                        {freq}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
 
             <PaymentMethodSection />
             {!(investmentType === 'LUMPSUM' && paymentMethod === 'UPI') && (
               <MandateSelection />
             )}
             <ScheduleSection />
+            {investmentType === 'SIP' && selectedFrequency === 'DAILY' && (
+              <View style={styles.sectionBox}>
+                <Text style={styles.sectionTitle}>SIP End Date</Text>
 
+                <TouchableOpacity
+                  style={[
+                    styles.scheduleButton,
+                    errors.endDate && styles.errorInput,
+                  ]}
+                  onPress={() => setShowEndDatePicker(true)}
+                >
+                  <Text style={styles.scheduleIcon}>📅</Text>
+                  <Text style={styles.scheduleText}>
+                    {getScheduleENDText()}
+                  </Text>
+                  <Text style={styles.scheduleArrow}>⌄</Text>
+                </TouchableOpacity>
+
+                {errors.endDate && (
+                  <Text style={styles.errorText}>{errors.endDate}</Text>
+                )}
+              </View>
+            )}
             {errors.general && (
               <View style={styles.generalErrorContainer}>
                 <Text style={styles.errorText}>{errors.general}</Text>
@@ -1017,42 +1170,36 @@ if (investmentType === "SIP" && selectedFrequency === "DAILY") {
           </ScrollView>
 
           <View style={styles.bottomButtons}>
-            <Rbutton
-              title={getButtonText()}
-              onPress={handleInvestment}
-            />
+            <Rbutton title={getButtonText()} onPress={handleInvestment} />
           </View>
 
-          <DatePickerComponent />
-          {/* END DATE PICKER for DAILY SIP */}
-{showEndDatePicker && (
-  <DateTimePicker
-    value={selectedEndDate || new Date()}
-    mode="date"
-    display="default"
-    minimumDate={selectedDate || new Date()} // cannot end before start date
-    maximumDate={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)} // 1 year max
-    onChange={(event, date) => {
-      setShowEndDatePicker(false);
-
-      if (date) {
-        const day = date.getDate();
-
-        // Disable 29,30,31 just like SIP start date
-        if (day > 28) {
-          const nextMonth = new Date(date);
-          nextMonth.setMonth(date.getMonth() + 1);
-          nextMonth.setDate(1);
-          setSelectedEndDate(nextMonth);
-        } else {
-          setSelectedEndDate(date);
-        }
-
-        setErrors(prev => ({ ...prev, endDate: "" }));
-      }
-    }}
-  />
-)}
+          <StartDatePickerComponent
+            showDatePicker={showDatePicker}
+            setShowDatePicker={setShowDatePicker}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            minimumDate={minimumDate}
+            maximumDate={maximumDate}
+            investmentType={investmentType}
+            setErrors={setErrors}
+            // styles
+            modalOverlay={styles.modalOverlay}
+            iosDatePickerContainer={styles.iosDatePickerContainer}
+            datePickerHeader={styles.datePickerHeader}
+            datePickerButtonText={styles.datePickerButtonText}
+            doneButton={styles.doneButton}
+            datePickerTitle={styles.datePickerTitle}
+          />
+          <EndDatePickerComponent
+            showEndDatePicker={showEndDatePicker}
+            setShowEndDatePicker={setShowEndDatePicker}
+            selectedEndDate={selectedEndDate}
+            setSelectedEndDate={setSelectedEndDate}
+            selectedStartDate={selectedDate}
+            setErrors={setErrors}
+            investmentType={investmentType}
+            styles={styles}
+          />
 
           <ResponseModal />
           <MandateAlert
@@ -1073,7 +1220,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: '#2B8DF6',
   },
   loadingContainer: {
@@ -1248,27 +1395,27 @@ const styles = StyleSheet.create({
     color: Config.Colors.primary,
     fontWeight: '600',
   },
-freqButton: {
-  paddingVertical: 10,
-  paddingHorizontal: 16,
-  borderRadius: 10,
-  borderWidth: 1,
-  borderColor: "#d0d0d0",
-  backgroundColor: "#fafafa",
-},
-freqButtonSelected: {
-  backgroundColor: Config.Colors.primary,
-  borderColor: Config.Colors.primary,
-},
-freqButtonText: {
-  fontSize: 14,
-  color: "#333",
-  fontWeight: "500",
-},
-freqButtonTextSelected: {
-  color: "#fff",
-  fontWeight: "600",
-},
+  freqButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#d0d0d0',
+    backgroundColor: '#fafafa',
+  },
+  freqButtonSelected: {
+    backgroundColor: Config.Colors.primary,
+    borderColor: Config.Colors.primary,
+  },
+  freqButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  freqButtonTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 
   // Mandate Selection Styles
   mandateSelector: {
@@ -1587,6 +1734,38 @@ freqButtonTextSelected: {
   },
   mandateButtonsContainer: {
     gap: 10,
+  },
+  iosDatePickerContainer: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: widthToDp(5),
+    borderTopRightRadius: widthToDp(5),
+    paddingBottom: heightToDp(3),
+  },
+
+  datePickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: widthToDp(4),
+    paddingVertical: heightToDp(1.5),
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+
+  datePickerTitle: {
+    fontSize: widthToDp(4.3),
+    fontWeight: '600',
+    color: '#333',
+  },
+
+  datePickerButtonText: {
+    fontSize: widthToDp(4),
+    color: Config.Colors.primary,
+    padding: widthToDp(2),
+  },
+
+  doneButton: {
+    fontWeight: '600',
   },
 });
 
