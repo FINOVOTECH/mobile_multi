@@ -1,4 +1,4 @@
-package com.jyoti.mf
+package com.jyotimf.mf
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

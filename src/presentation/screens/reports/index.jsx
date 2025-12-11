@@ -142,31 +142,16 @@ const proceedWithDownload = async (url, fileName) => {
       return;
     }
 
-    // Try different directories with fallbacks
-    let downloadDir;
-    
-    if (Platform.OS === 'ios') {
-      downloadDir = RNFS.LibraryDirectoryPath;
-    } else {
-      // Try Download directory first, then fallback to Document directory
-      try {
-        downloadDir = RNFS.DownloadDirectoryPath;
-        // Test if we can access Download directory
-        await RNFS.exists(downloadDir);
-      } catch (error) {
-        console.log('Download directory not accessible, using Documents');
-        downloadDir = RNFS.DocumentDirectoryPath;
-      }
-    }
+    let downloadDir = RNFS.DocumentDirectoryPath; // safest folder
+    const localFile = `${downloadDir}/${fileName}`; // MUST add file name
 
-    const localFile = `${downloadDir}/${fileName}`;
     console.log('Downloading to:', localFile);
 
     const downloadOptions = {
       fromUrl: `${Config.baseUrl}${url}`,
       toFile: localFile,
       headers: {
-        'Authorization': token,
+        Authorization: token,
         'Content-Type': 'application/pdf',
       },
       background: true,
@@ -174,7 +159,6 @@ const proceedWithDownload = async (url, fileName) => {
     };
 
     const downloadResult = await RNFS.downloadFile(downloadOptions).promise;
-    console.log('Download result:', downloadResult);
 
     if (downloadResult.statusCode === 200) {
       Alert.alert(
@@ -183,39 +167,25 @@ const proceedWithDownload = async (url, fileName) => {
         [
           {
             text: 'Open',
-            onPress: () => {
-              FileViewer.open(localFile, {
-                showOpenWithDialog: true,
-                showAppsSuggestions: true,
-              }).catch(openError => {
-                console.log('File open error:', openError);
-                Alert.alert('Error', 'No app available to open PDF files');
-              });
-            }
+            onPress: () => FileViewer.open(localFile)
+              .catch(e => {
+                console.log('Open file error', e);
+                Alert.alert('Error', 'Cannot open file');
+              })
           },
-          {
-            text: 'OK',
-            style: 'cancel'
-          }
+          { text: 'OK', style: 'cancel' }
         ]
       );
     } else {
-      throw new Error(`Download failed with status: ${downloadResult.statusCode}`);
+      throw new Error(`Download failed: ${downloadResult.statusCode}`);
     }
+
   } catch (error) {
     console.error('Download error:', error);
-    
-    if (error.message?.includes('Permission denied') || error.message?.includes('ENOENT')) {
-      Alert.alert(
-        'Storage Access Issue',
-        'Cannot access storage. Please check app permissions in settings or try again.',
-        [{ text: 'OK' }]
-      );
-    } else {
-      Alert.alert('Download Failed', 'Unable to download the report. Please try again.');
-    }
+    Alert.alert('Download Failed', 'Unable to download the report.');
   }
 };
+
 
   const fetchReport = async (item) => {
     if (!clientCode) {

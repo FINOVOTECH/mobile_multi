@@ -14,10 +14,10 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.jyoti.mf"
+    namespace "com.jyotimf.mf"
 
     defaultConfig {
-        applicationId "com.jyoti.mf"
+        applicationId "com.jyotimf.mf"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
        versionCode 3          

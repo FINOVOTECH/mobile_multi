@@ -1,4 +1,4 @@
-package com.jyoti.mf
+package com.jyotimf.mf
 
 import android.app.Application
 import com.facebook.react.PackageList
