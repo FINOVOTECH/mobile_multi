@@ -142,7 +142,7 @@ const RegiLogin = ({
                   style={styles.logo}
                   resizeMode='contain'
                 />
-                <Text style={styles.logoText}>Jyoti MF</Text>
+                <Text style={styles.logoText}>Jyoti Wealth</Text>
               </View>
               <Text> </Text>
             </View>

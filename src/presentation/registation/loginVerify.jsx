@@ -246,10 +246,12 @@ const LoginVerify = ({
       const data = await response.json();
       console.log("OTP Verification DATA:::", data);
 
-      if (data.status === "SUCCESS") {
+      if (data.status === "SUCCESS"||"IN_PROGRESS") {
         if (data?.passwordResetToken) {
           showPinModalWithAnimation();
           setPinVerify(data?.registrationId);
+          // setRegiId(data?.registrationId)
+          // console.log("REGISTRATION ==>>",data?.registrationId)
           setPinToken(data?.passwordResetToken)
         } else {
           setPinVerify(data?.registrationId);
@@ -312,7 +314,7 @@ const LoginVerify = ({
                 style={styles.logo}
                 resizeMode='contain'
               />
-              <Text style={styles.logoText}>Jyoti MF</Text>
+              <Text style={styles.logoText}>Jyoti Wealth</Text>
             </View>
 
             {/* Title */}

@@ -115,15 +115,63 @@ const BasicDetails = ({
         }
     };
 
-    const handleSkipNomination = () => {
-        setShowNomineeQuestion(false);
-        Alert.alert('Success', 'Basic details submitted successfully!', [
+  const handleSkipNomination = async () => {
+    if (isLoading) return;
+
+    try {
+        setIsLoading(true);
+
+        const registrationId = pinVerify; // already passed as prop
+        // const token = await AsyncStorage.getItem("employeeToken");
+
+        const response = await fetch(
+            `${baseUrl}/api/v1/first/registration/add-nomination`,
             {
-                text: 'OK',
-                onPress: () => setStatus("BANK_ADDED")
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "registration-id": registrationId,
+                    // Authorization: token,
+                },
+                body: JSON.stringify({
+                    nomineeOpt: "N",
+                }),
             }
-        ]);
-    };
+        );
+
+        const data = await response.json();
+        console.log("Skip Nomination Response:", data);
+
+        if (response.ok && data.status === "SUCCESS") {
+            setShowNomineeQuestion(false);
+
+            Alert.alert(
+                "Success",
+                "Basic details submitted successfully!",
+                [
+                    {
+                        text: "OK",
+                        onPress: () => setStatus("BANK_ADDED"),
+                    },
+                ]
+            );
+        } else {
+            Alert.alert(
+                "Error",
+                data.message || "Failed to skip nomination"
+            );
+        }
+    } catch (error) {
+        console.error("Skip Nomination Error:", error);
+        Alert.alert(
+            "Network Error",
+            "Please check your internet connection and try again."
+        );
+    } finally {
+        setIsLoading(false);
+    }
+};
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -144,7 +192,7 @@ const BasicDetails = ({
                                 style={styles.logo}
                                 resizeMode='contain'
                             />
-                            <Text style={styles.logoText}>Jyoti MF</Text>
+                            <Text style={styles.logoText}>Jyoti Wealth</Text>
                         </View>
 
                         <View style={styles.titleContainer}>

@@ -1,10 +1,26 @@
-import { SafeAreaView, StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, BackHandler } from 'react-native';
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  BackHandler,
+} from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { widthToDp, heightToDp } from "../../helpers/Responsive";
+import { widthToDp, heightToDp } from '../../helpers/Responsive';
 import { baseUrl } from '../../helpers/Config';
-import * as Config from "../../helpers/Config"
+import * as Config from '../../helpers/Config';
 import { useNavigation } from '@react-navigation/native';
 import Rbutton from '../../components/Rbutton';
+import { Modal } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 const PanVerification = ({
   setStatus,
@@ -12,13 +28,15 @@ const PanVerification = ({
   setIsLoading,
   errors = {},
   setErrors,
-  pinVerify
+  pinVerify,
 }) => {
   const navigation = useNavigation();
   const [panNumber, setPanNumber] = useState('');
   const [panName, setPanName] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
+  const [showCamsModal, setShowCamsModal] = useState(false);
+  const [camsUrl, setCamsUrl] = useState('');
 
   useEffect(() => {
     const backAction = () => {
@@ -26,31 +44,39 @@ const PanVerification = ({
       return true;
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
 
     return () => backHandler.remove();
-  }, [])
+  }, []);
   useEffect(() => {
     if (!errors || typeof errors !== 'object') {
       setErrors({});
     }
   }, [setErrors]);
 
-  const validateGender = (genderValue) => {
-    return genderValue && (genderValue === 'MALE' || genderValue === 'FEMALE' || genderValue === 'OTHER');
+  const validateGender = genderValue => {
+    return (
+      genderValue &&
+      (genderValue === 'MALE' ||
+        genderValue === 'FEMALE' ||
+        genderValue === 'OTHER')
+    );
   };
 
-  const validatePanNumber = (pan) => {
+  const validatePanNumber = pan => {
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
     return panRegex.test(pan);
   };
 
-  const validatePanName = (name) => {
+  const validatePanName = name => {
     const nameRegex = /^[a-zA-Z\s]{2,50}$/;
     return nameRegex.test(name.trim());
   };
 
-  const validateDob = (dateStr) => {
+  const validateDob = dateStr => {
     const dobRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
     if (!dobRegex.test(dateStr)) return false;
 
@@ -61,86 +87,100 @@ const PanVerification = ({
     let age = today.getFullYear() - date.getFullYear();
     const monthDiff = today.getMonth() - date.getMonth();
 
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < date.getDate())
+    ) {
       age--;
     }
 
-    return date.getDate() == day &&
-      date.getMonth() == (month - 1) &&
+    return (
+      date.getDate() == day &&
+      date.getMonth() == month - 1 &&
       date.getFullYear() == year &&
       age >= 18 &&
-      date <= today;
+      date <= today
+    );
   };
 
-  const handleGenderChange = (selectedGender) => {
+  const handleGenderChange = selectedGender => {
     setGender(selectedGender);
 
     // Clear gender error when valid gender is selected
     if (selectedGender && validateGender(selectedGender)) {
       setErrors(prev => ({
         ...(prev || {}),
-        gender: ''
+        gender: '',
       }));
     }
   };
 
-  const handlePanNumberChange = (text) => {
+  const handlePanNumberChange = text => {
     const formattedText = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
     setPanNumber(formattedText);
 
     // Real-time validation feedback
-    if (formattedText && !validatePanNumber(formattedText) && formattedText.length === 10) {
+    if (
+      formattedText &&
+      !validatePanNumber(formattedText) &&
+      formattedText.length === 10
+    ) {
       setErrors(prev => ({
         ...(prev || {}),
-        panNumber: 'Please enter a valid PAN number (e.g., ABCDE1234F)'
+        panNumber: 'Please enter a valid PAN number (e.g., ABCDE1234F)',
       }));
     } else if (formattedText && validatePanNumber(formattedText)) {
       setErrors(prev => ({
         ...(prev || {}),
-        panNumber: ''
+        panNumber: '',
       }));
     }
   };
 
-  const handlePanNameChange = (text) => {
+  const handlePanNameChange = text => {
     setPanName(text);
 
     // Real-time validation feedback
     if (text && !validatePanName(text) && text.length >= 2) {
       setErrors(prev => ({
         ...(prev || {}),
-        panName: 'Please enter a valid name (2-50 characters, letters only)'
+        panName: 'Please enter a valid name (2-50 characters, letters only)',
       }));
     } else if (text && validatePanName(text)) {
       setErrors(prev => ({
         ...(prev || {}),
-        panName: ''
+        panName: '',
       }));
     }
   };
 
-  const handleDobChange = (text) => {
+  const handleDobChange = text => {
     // Format input as DD/MM/YYYY
     let formattedText = text.replace(/\D/g, '');
     if (formattedText.length >= 3) {
       formattedText = formattedText.slice(0, 2) + '/' + formattedText.slice(2);
     }
     if (formattedText.length >= 6) {
-      formattedText = formattedText.slice(0, 5) + '/' + formattedText.slice(5, 9);
+      formattedText =
+        formattedText.slice(0, 5) + '/' + formattedText.slice(5, 9);
     }
 
     setDob(formattedText);
 
     // Real-time validation feedback
-    if (formattedText && !validateDob(formattedText) && formattedText.length === 10) {
+    if (
+      formattedText &&
+      !validateDob(formattedText) &&
+      formattedText.length === 10
+    ) {
       setErrors(prev => ({
         ...(prev || {}),
-        dob: 'Please enter a valid date (DD/MM/YYYY) and must be 18+ years old'
+        dob: 'Please enter a valid date (DD/MM/YYYY) and must be 18+ years old',
       }));
     } else if (formattedText && validateDob(formattedText)) {
       setErrors(prev => ({
         ...(prev || {}),
-        dob: ''
+        dob: '',
       }));
     }
   };
@@ -164,13 +204,15 @@ const PanVerification = ({
     if (!panNumber) {
       newErrors.panNumber = 'PAN number is required';
     } else if (!validatePanNumber(panNumber)) {
-      newErrors.panNumber = 'Please enter a valid PAN number (e.g., ABCDE1234F)';
+      newErrors.panNumber =
+        'Please enter a valid PAN number (e.g., ABCDE1234F)';
     }
 
     if (!panName) {
       newErrors.panName = 'PAN name is required';
     } else if (!validatePanName(panName)) {
-      newErrors.panName = 'Please enter a valid name (2-50 characters, letters only)';
+      newErrors.panName =
+        'Please enter a valid name (2-50 characters, letters only)';
     }
 
     if (!gender) {
@@ -183,12 +225,16 @@ const PanVerification = ({
     if (!dob) {
       newErrors.dob = 'Date of birth is required';
     } else if (!validateDob(dob)) {
-      newErrors.dob = 'Please enter a valid date (DD/MM/YYYY) and must be 18+ years old';
+      newErrors.dob =
+        'Please enter a valid date (DD/MM/YYYY) and must be 18+ years old';
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      Alert.alert('Validation Error', 'Please fill all fields with valid information');
+      Alert.alert(
+        'Validation Error',
+        'Please fill all fields with valid information',
+      );
       return;
     }
 
@@ -199,22 +245,25 @@ const PanVerification = ({
       name: panName,
       pan: panNumber,
       gender,
-      dob: dob
-    }
-    console.log("PAN PAYLOAD::", payload, pinVerify)
+      dob: dob,
+    };
+    console.log('PAN PAYLOAD::', payload, pinVerify);
 
     try {
-      const response = await fetch(`${baseUrl}/api/v1/first/registration/verify/pan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          "registration-id": pinVerify
+      const response = await fetch(
+        `${baseUrl}/api/v1/first/registration/verify/pan`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'registration-id': pinVerify,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       const data = await response.json();
-      console.log("PAN Verification DATA:::", data);
+      console.log('PAN Verification DATA:::', data);
 
       if (response.ok && data.success !== false) {
         // Clear form data on success
@@ -228,14 +277,22 @@ const PanVerification = ({
         Alert.alert('Success', 'PAN verification completed successfully!', [
           {
             text: 'OK',
-            onPress: () => setStatus(data?.nextStep)
+            onPress: () => setStatus(data?.nextStep),
             // onPress: () => navigation.navigate("Home")
-          }
+          },
         ]);
       } else {
-        // Handle API errors
-        const errorMessage = data.message || data.error || 'PAN verification failed';
+        const errorMessage =
+          data.message || data.error || 'PAN verification failed';
 
+        // 👉 FIRST check if CAMS KYC redirection is required
+        if (data?.status === 'FAILED' && data?.camsurl) {
+          setCamsUrl(data.camsurl);
+          setShowCamsModal(true);
+          return;
+        }
+
+        // 👉 Normal validation errors
         if (data.errors && typeof data.errors === 'object') {
           setErrors(data.errors);
         } else {
@@ -244,15 +301,19 @@ const PanVerification = ({
 
         Alert.alert('Verification Failed', errorMessage);
 
-        // If verification failed due to server issues, go back to login verification
         if (setStatus) {
-          setStatus("loginVerify");
+          setStatus('loginVerify');
         }
       }
     } catch (error) {
       console.error('PAN Verification Error:', error);
-      setErrors({ general: 'Network error. Please check your connection and try again.' });
-      Alert.alert('Network Error', 'Please check your connection and try again.');
+      setErrors({
+        general: 'Network error. Please check your connection and try again.',
+      });
+      Alert.alert(
+        'Network Error',
+        'Please check your connection and try again.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -275,16 +336,18 @@ const PanVerification = ({
           <View>
             <View style={styles.logoContainer}>
               <Image
-                source={require("../../assets/images/logo.png")}
+                source={require('../../assets/images/logo.png')}
                 style={styles.logo}
-                resizeMode='contain'
+                resizeMode="contain"
               />
-              <Text style={styles.logoText}>Jyoti MF</Text>
+              <Text style={styles.logoText}>TaurusFund</Text>
             </View>
 
             <View style={styles.titleContainer}>
               <Text style={styles.titleText}>PAN Verification</Text>
-              <Text style={styles.subtitleText}>Enter your PAN details for verification</Text>
+              <Text style={styles.subtitleText}>
+                Enter your PAN details for verification
+              </Text>
             </View>
 
             <View style={styles.formContainer}>
@@ -293,7 +356,7 @@ const PanVerification = ({
                 <TextInput
                   style={[
                     styles.input,
-                    safeErrors.panNumber && styles.inputError
+                    safeErrors.panNumber && styles.inputError,
                   ]}
                   placeholder="e.g., ABCDE1234F"
                   value={panNumber}
@@ -303,7 +366,9 @@ const PanVerification = ({
                   autoCapitalize="characters"
                   autoCorrect={false}
                 />
-                {safeErrors.panNumber ? <Text style={styles.errorText}>{safeErrors.panNumber}</Text> : null}
+                {safeErrors.panNumber ? (
+                  <Text style={styles.errorText}>{safeErrors.panNumber}</Text>
+                ) : null}
               </View>
 
               <View style={styles.inputContainer}>
@@ -311,7 +376,7 @@ const PanVerification = ({
                 <TextInput
                   style={[
                     styles.input,
-                    safeErrors.panName && styles.inputError
+                    safeErrors.panName && styles.inputError,
                   ]}
                   placeholder="Enter name as per PAN"
                   value={panName}
@@ -321,7 +386,9 @@ const PanVerification = ({
                   autoCapitalize="words"
                   autoCorrect={false}
                 />
-                {safeErrors.panName ? <Text style={styles.errorText}>{safeErrors.panName}</Text> : null}
+                {safeErrors.panName ? (
+                  <Text style={styles.errorText}>{safeErrors.panName}</Text>
+                ) : null}
               </View>
 
               <View style={styles.inputContainer}>
@@ -330,56 +397,67 @@ const PanVerification = ({
                   <TouchableOpacity
                     style={[
                       styles.genderOption,
-                      gender === 'MALE' && styles.genderOptionSelected
+                      gender === 'MALE' && styles.genderOptionSelected,
                     ]}
                     onPress={() => handleGenderChange('MALE')}
                     activeOpacity={0.7}
                   >
-                    <Text style={[
-                      styles.genderOptionText,
-                      gender === 'MALE' && styles.genderOptionTextSelected
-                    ]}>MALE</Text>
+                    <Text
+                      style={[
+                        styles.genderOptionText,
+                        gender === 'MALE' && styles.genderOptionTextSelected,
+                      ]}
+                    >
+                      MALE
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={[
                       styles.genderOption,
-                      gender === 'FEMALE' && styles.genderOptionSelected
+                      gender === 'FEMALE' && styles.genderOptionSelected,
                     ]}
                     onPress={() => handleGenderChange('FEMALE')}
                     activeOpacity={0.7}
                   >
-                    <Text style={[
-                      styles.genderOptionText,
-                      gender === 'FEMALE' && styles.genderOptionTextSelected
-                    ]}>FEMALE</Text>
+                    <Text
+                      style={[
+                        styles.genderOptionText,
+                        gender === 'FEMALE' && styles.genderOptionTextSelected,
+                      ]}
+                    >
+                      FEMALE
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={[
                       styles.genderOption,
-                      gender === 'OTHER' && styles.genderOptionSelected
+                      gender === 'OTHER' && styles.genderOptionSelected,
                     ]}
                     onPress={() => handleGenderChange('OTHER')}
                     activeOpacity={0.7}
                   >
-                    <Text style={[
-                      styles.genderOptionText,
-                      gender === 'OTHER' && styles.genderOptionTextSelected
-                    ]}>OTHER</Text>
+                    <Text
+                      style={[
+                        styles.genderOptionText,
+                        gender === 'OTHER' && styles.genderOptionTextSelected,
+                      ]}
+                    >
+                      OTHER
+                    </Text>
                   </TouchableOpacity>
                 </View>
-                {safeErrors.gender ? <Text style={styles.errorText}>{safeErrors.gender}</Text> : null}
+                {safeErrors.gender ? (
+                  <Text style={styles.errorText}>{safeErrors.gender}</Text>
+                ) : null}
               </View>
 
               {/* Date of Birth field - now uncommented and active */}
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>DATE OF BIRTH *</Text>
                 <TextInput
-                  style={[
-                    styles.input,
-                    safeErrors.dob && styles.inputError
-                  ]}
+                  style={[styles.input, safeErrors.dob && styles.inputError]}
                   placeholder="DD/MM/YYYY (e.g., 10/05/1999)"
                   value={dob}
                   onChangeText={handleDobChange}
@@ -387,11 +465,15 @@ const PanVerification = ({
                   maxLength={10}
                   placeholderTextColor="#999"
                 />
-                {safeErrors.dob ? <Text style={styles.errorText}>{safeErrors.dob}</Text> : null}
+                {safeErrors.dob ? (
+                  <Text style={styles.errorText}>{safeErrors.dob}</Text>
+                ) : null}
               </View>
 
               {safeErrors.general && (
-                <Text style={styles.generalErrorText}>{safeErrors.general}</Text>
+                <Text style={styles.generalErrorText}>
+                  {safeErrors.general}
+                </Text>
               )}
             </View>
 
@@ -410,15 +492,43 @@ const PanVerification = ({
               disabled={!isFormValid() || isLoading}
               style={[
                 // styles.nextButton,
-                (!isFormValid() || isLoading)
+                !isFormValid() || isLoading,
               ]}
-              textStyle={[
-                styles.nextButtonText,
-                (!isFormValid() || isLoading)
-              ]}
+              textStyle={[styles.nextButtonText, !isFormValid() || isLoading]}
             />
           </View>
         </ScrollView>
+        <Modal
+          visible={showCamsModal}
+          animationType="slide"
+          onRequestClose={() => setShowCamsModal(false)}
+        >
+          <SafeAreaView style={{ flex: 1 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                padding: 10,
+              }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
+                Complete KYC
+              </Text>
+
+              <TouchableOpacity onPress={() => setShowCamsModal(false)}>
+                <Text style={{ color: 'red', fontSize: 16 }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+
+            <WebView
+              source={{ uri: camsUrl }}
+              startInLoadingState={true}
+              renderLoading={() => (
+                <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+              )}
+            />
+          </SafeAreaView>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -436,12 +546,12 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
   },
   logoContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingTop: heightToDp(3),
     marginBottom: heightToDp(1),
     gap: widthToDp(2),
@@ -454,7 +564,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: widthToDp(6),
     fontWeight: '700',
-    color: "black",
+    color: 'black',
     opacity: 0.8,
   },
   titleContainer: {
@@ -547,9 +657,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
   nextButtonText: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: widthToDp(5),
-    color: "black",
+    color: 'black',
     fontWeight: '600',
   },
   disabledButtonText: {

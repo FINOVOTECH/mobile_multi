@@ -11,8 +11,6 @@ import {
   Platform,
 } from 'react-native';
 import RNFS from 'react-native-fs';
-import axios from 'axios';
-import { Buffer } from 'buffer';
 import { widthToDp, heightToDp } from '../../../helpers/Responsive';
 import { getData } from '../../../helpers/localStorage';
 import FileViewer from 'react-native-file-viewer';
@@ -29,8 +27,7 @@ const ReportsScreen = ({ navigation }) => {
     const fetchClientCode = async () => {
       try {
         const storedValue = await AsyncStorage.getItem('clientCode');
-        const clientCode = storedValue;
-        setClientCode(clientCode);
+        setClientCode(storedValue || '');
       } catch (error) {
         console.error("Error retrieving clientCode:", error);
       }
@@ -42,95 +39,39 @@ const ReportsScreen = ({ navigation }) => {
   const reportItems = [
     {
       id: 1,
-      name: 'Capital Gain/Loss Report',
-      endPoint: `/api/v1/mf/capital-gain/${clientCode}/pdf?fy=2025-2026`,
-      fileName: 'Capital_Gain_Report.pdf'
+      name: 'SIP Performance Report',
+      endPoint: '/api/v1/reports/sip-performance/pdf',
+      fileName: 'SIP_Performance_Report.pdf'
     },
     {
       id: 2,
-      name: 'Transaction Report',
-      endPoint: `/api/v1/reports/transaction-statement/${clientCode}/pdf`,
-      fileName: 'Transaction_Report.pdf'
+      name: 'Portfolio Valuation Report',
+      endPoint: '/api/v1/reports/portfolio-valuation/pdf',
+      fileName: 'Portfolio_Valuation_Report.pdf'
+    },
+    {
+      id: 3,
+      name: 'Transaction Statement',
+      endPoint: '/api/v1/reports/transaction-statement/pdf',
+      fileName: 'Transaction_Statement.pdf'
+    },
+    {
+      id: 4,
+      name: 'Unrealized Gains Report',
+      endPoint: '/api/v1/reports/unrealized-gains/pdf',
+      fileName: 'Unrealized_Gains_Report.pdf'
+    },
+    {
+      id: 5,
+      name: 'Capital Gain/Loss Report',
+      endPoint: '/api/v1/reports/capital-gain/pdf',
+      fileName: 'Capital_Gain_Report.pdf'
     },
   ];
 
-const requestStoragePermission = async () => {
-  // No permission required for app-private storage
-  return true;
-};
-
-const downloadFile = async (url, fileName) => {
-  try {
-    console.log('Starting download process...');
-
-    // Always true now
-    await requestStoragePermission();
-
-    await proceedWithDownload(url, fileName);
-
-  } catch (error) {
-    console.error('Download setup error:', error);
-    Alert.alert('Error', 'Failed to download report. Please try again.');
-  }
-};
-
-
-const proceedWithDownload = async (url, fileName) => {
-  try {
-    const token = await getData(Config.store_key_login_details);
-    if (!token) {
-      Alert.alert('Error', 'Please login again');
-      return;
-    }
-
- let downloadDir = RNFS.DocumentDirectoryPath;
-const localFile = `${downloadDir}/${fileName}`;
-
-    console.log('Downloading to:', localFile);
-
-    const downloadOptions = {
-      fromUrl: `${Config.baseUrl}${url}`,
-      toFile: localFile,
-      headers: {
-        Authorization: token,
-        'Content-Type': 'application/pdf',
-      },
-      background: true,
-      discretionary: true,
-    };
-
-    const downloadResult = await RNFS.downloadFile(downloadOptions).promise;
-
-    if (downloadResult.statusCode === 200) {
-      Alert.alert(
-        'Success',
-        `Report downloaded successfully!`,
-        [
-          {
-            text: 'Open',
-            onPress: () => FileViewer.open(localFile)
-              .catch(e => {
-                console.log('Open file error', e);
-                Alert.alert('Error', 'Cannot open file');
-              })
-          },
-          { text: 'OK', style: 'cancel' }
-        ]
-      );
-    } else {
-      throw new Error(`Download failed: ${downloadResult.statusCode}`);
-    }
-
-  } catch (error) {
-    console.error('Download error:', error);
-    Alert.alert('Download Failed', 'Unable to download the report.');
-  }
-};
-
-
-  const fetchReport = async (item) => {
+  const downloadFile = async (item) => {
     if (!clientCode) {
-      Alert.alert('Error', 'Client code not found');
+      Alert.alert('Error', 'Client information not available');
       return;
     }
 
@@ -138,75 +79,85 @@ const localFile = `${downloadDir}/${fileName}`;
     setLoadingItems(prev => ({ ...prev, [item.id]: true }));
 
     try {
-      const token = await getData(Config.store_key_login_details);
+      const token = await AsyncStorage.getItem('token');
       if (!token) {
         Alert.alert('Error', 'Please login again');
         return;
       }
 
-      // First, check if the API returns valid data
-      const checkResponse = await axios({
-        method: 'GET',
-        url: `${Config.baseUrl}${item.endPoint}`,
+      // Prepare download path
+      const downloadDir = RNFS.DocumentDirectoryPath;
+      const localFile = `${downloadDir}/${item.fileName}`;
+      
+      // Construct URL with clientCode if needed
+      let url = `${Config.baseUrl}${item.endPoint}`;
+      // If API expects clientCode as query parameter
+      url;
+
+      console.log('Downloading from:', url);
+
+      const downloadOptions = {
+        fromUrl: url,
+        toFile: localFile,
         headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json',
+          Authorization: token,
         },
-      });
+        background: true,
+        discretionary: true,
+        progressInterval: 100,
+        progressDivider: 10,
+      };
 
-      // Check if the response indicates no data
-      if (checkResponse.data && checkResponse.data.status === 'FAILED') {
-        if (checkResponse.data.message === 'No transactions found for capital gain report') {
-          Alert.alert(
-            'No Data Available',
-            'No capital gain transactions found for the selected financial year.',
-            [{ text: 'OK' }]
-          );
-          return;
+      const downloadResult = await RNFS.downloadFile(downloadOptions).promise;
+
+      console.log('Download result:', downloadOptions,downloadResult);
+
+      if (downloadResult.statusCode === 200) {
+        // Check if file exists and has content
+        const fileExists = await RNFS.exists(localFile);
+        if (fileExists) {
+          const fileStat = await RNFS.stat(localFile);
+          
+          if (fileStat.size > 0) {
+            Alert.alert(
+              'Success',
+              `${item.name} downloaded successfully!`,
+              [
+                {
+                  text: 'Open',
+                  onPress: () => FileViewer.open(localFile)
+                    .catch(e => {
+                      console.log('Open file error', e);
+                      Alert.alert('Error', 'Cannot open file. Please install a PDF reader.');
+                    })
+                },
+                { text: 'OK', style: 'cancel' }
+              ]
+            );
+          } else {
+            throw new Error('Downloaded file is empty');
+          }
+        } else {
+          throw new Error('File not found after download');
         }
+      } else {
+        throw new Error(`Download failed with status: ${downloadResult.statusCode}`);
       }
-
-      // If we get here, proceed with download
-      await downloadFile(item.endPoint, item.fileName);
 
     } catch (error) {
-      console.error('API Error:', error);
+      console.error('Download error:', error);
       
-      // Handle specific error cases
-      if (error.response?.data?.status === 'FAILED') {
-        const errorMessage = error.response.data.message;
-        
-        if (errorMessage === 'No transactions found for capital gain report') {
-          Alert.alert(
-            'No Transactions Found',
-            'There are no capital gain transactions available for the selected financial year.',
-            [{ text: 'OK' }]
-          );
-          return;
-        } else {
-          Alert.alert('Report Unavailable', errorMessage || 'Report is not available at the moment.');
-        }
-      } 
-      else if (error.response?.status === 404) {
-        Alert.alert('Not Found', 'Report not available for the selected period');
-      } 
-      else if (error.response?.status === 401) {
-        Alert.alert('Session Expired', 'Please login again');
-      } 
-      else if (error.response?.status === 400) {
-        // Handle bad request - might be no data
-        if (error.response.data?.message?.includes('No transactions')) {
-          Alert.alert(
-            'No Data',
-            'No transactions found for generating the report.',
-            [{ text: 'OK' }]
-          );
-        } else {
-          Alert.alert('Error', 'Invalid request for report generation');
-        }
-      }
-      else {
-        Alert.alert('Error', 'Failed to fetch report. Please try again.');
+      // Handle specific errors
+      if (error.message.includes('status: 404')) {
+        Alert.alert('Not Found', 'Report is not available at the moment.');
+      } else if (error.message.includes('status: 401')) {
+        Alert.alert('Session Expired', 'Please login again.');
+      } else if (error.message.includes('status: 500')) {
+        Alert.alert('Server Error', 'Please try again later.');
+      } else if (error.message.includes('No data') || error.message.includes('empty')) {
+        Alert.alert('No Data', 'No report data available.');
+      } else {
+        Alert.alert('Download Failed', 'Unable to download the report. Please try again.');
       }
     } finally {
       // Clear loading state
@@ -214,93 +165,26 @@ const localFile = `${downloadDir}/${fileName}`;
     }
   };
 
-  // Alternative approach - check API response before download
-  const checkReportAvailability = async (item) => {
-    if (!clientCode) {
-      Alert.alert('Error', 'Client information not available');
-      return;
-    }
-
-    setLoadingItems(prev => ({ ...prev, [item.id]: true }));
-
-    try {
-      const token = await getData(Config.store_key_login_details);
-      
-      const response = await fetch(`${Config.baseUrl}${item.endPoint}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const responseData = await response.json();
-
-      if (responseData.status === 'FAILED') {
-        if (responseData.message === 'No transactions found for capital gain report') {
-          Alert.alert(
-            'No Capital Gain Data',
-            'You don\'t have any capital gain transactions for Financial Year 2025-2026.',
-            [
-              {
-                text: 'OK',
-                style: 'default'
-              }
-            ]
-          );
-          return;
-        }
-      }
-
-      // If no error, proceed with download
-      await downloadFile(item.endPoint, item.fileName);
-
-    } catch (error) {
-      console.error('Check availability error:', error);
-      
-      // If it's a capital gain specific error
-      if (error.message?.includes('No transactions') || 
-          error.response?.data?.message?.includes('No transactions')) {
-        Alert.alert(
-          'No Transactions',
-          'No capital gain transactions found for the selected period.',
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert('Error', 'Unable to check report availability');
-      }
-    } finally {
-      setLoadingItems(prev => ({ ...prev, [item.id]: false }));
-    }
-  };
-
   const handleReportPress = async (item) => {
-    // Check if client code is available
     if (!clientCode) {
-      Alert.alert('Error', 'Client information not available');
+      Alert.alert('Error', 'Loading client information...');
       return;
     }
 
-    // For capital gain report, check availability first
-    if (item.id === 1) {
-      await checkReportAvailability(item);
-    } else {
-      // For other reports, proceed directly
-      Alert.alert(
-        'Download Report',
-        `Do you want to download ${item.name}?`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          },
-          {
-            text: 'Download',
-            onPress: () => fetchReport(item)
-          }
-        ]
-      );
-    }
+    Alert.alert(
+      'Download Report',
+      `Do you want to download ${item.name}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Download',
+          onPress: () => downloadFile(item)
+        }
+      ]
+    );
   };
 
   const handleBackPress = () => {
@@ -325,10 +209,10 @@ const localFile = `${downloadDir}/${fileName}`;
       </View>
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>Mutual Funds</Text>
+        <Text style={styles.sectionTitle}>Mutual Fund Reports</Text>
         {reportItems.map((item) => (
           <TouchableOpacity
-            key={item.id+1}
+            key={item.id}
             style={styles.reportItem}
             onPress={() => handleReportPress(item)}
             activeOpacity={0.5}
@@ -366,7 +250,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     backgroundColor: "transparent",
   },
   header: {
@@ -415,7 +299,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     paddingHorizontal: widthToDp(4),
     paddingVertical: heightToDp(2.2),
-    marginBottom: heightToDp(0.5),
+    marginBottom: heightToDp(0.8),
     borderRadius: widthToDp(2),
     borderWidth: 1,
     borderColor: '#f1f3f4',
