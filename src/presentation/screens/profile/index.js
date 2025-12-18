@@ -325,7 +325,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                               : styles.negativeReturns,
                           ]}
                         >
-                          {Return ? '+' : '-'}
+                          {Return ? '+' : ''}
                           {portfolioData?.overall?.gainPercent || '0'}%
                         </Text>
                       </View>

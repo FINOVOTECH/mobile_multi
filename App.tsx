@@ -17,7 +17,9 @@ import HandAnimation from "./src/components/handAnimation";
 
 function App() {
   const [appIsReady, setAppIsReady] = useState(false);
-  // console.log = () => {};
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
   useEffect(() => {
     const timeout = setTimeout(() => {
       setAppIsReady(true);
