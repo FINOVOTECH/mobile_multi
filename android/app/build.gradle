@@ -14,14 +14,14 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.jyotimf.mf"
+    namespace "com.mfjyoti.mf"
 
     defaultConfig {
-        applicationId "com.jyotimf.mf"
+        applicationId "com.mfjyoti.mf"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-       versionCode 3          
-        versionName "2.0"         
+       versionCode 6          
+        versionName "2.3"         
     }
 
     signingConfigs {

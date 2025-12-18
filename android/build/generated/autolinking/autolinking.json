@@ -1104,8 +1104,8 @@
     "android": {
       "sourceDir": "/Users/pradhumnnn/Desktop/JyotiPortFolio/android",
       "appName": "app",
-      "packageName": "com.jyotimf.mf",
-      "applicationId": "com.jyotimf.mf",
+      "packageName": "com.mfjyoti.mf",
+      "applicationId": "com.mfjyoti.mf",
       "mainActivity": ".MainActivity",
       "assets": []
     }

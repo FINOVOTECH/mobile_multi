@@ -1,14 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Required for API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Optional: vibration (safe to keep if used) -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Optional: biometric login -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
-    <!-- Scoped storage permissions -->
+    <!-- ❌ REMOVED STORAGE & MEDIA PERMISSIONS -->
+    <!--
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    -->
 
     <application
         android:name=".MainApplication"
@@ -29,7 +36,6 @@
             android:exported="true"
             android:windowLayoutInDisplayCutoutMode="shortEdges">
 
-            <!-- Optional: translucent status bar -->
             <meta-data
                 android:name="android.window.translucentStatus"
                 android:value="true" />
@@ -40,5 +46,7 @@
             </intent-filter>
 
         </activity>
+
     </application>
+
 </manifest>

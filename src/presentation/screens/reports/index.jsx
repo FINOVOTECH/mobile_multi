@@ -9,7 +9,6 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
-  PermissionsAndroid
 } from 'react-native';
 import RNFS from 'react-native-fs';
 import axios from 'axios';
@@ -56,83 +55,25 @@ const ReportsScreen = ({ navigation }) => {
   ];
 
 const requestStoragePermission = async () => {
-  if (Platform.OS === 'android') {
-    try {
-      console.log('Android Version:', Platform.Version);
-      
-      // For Android 13+ (API Level 33+)
-      if (Platform.Version >= 33) {
-        console.log('Requesting Android 13+ permissions');
-        const granted = await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
-          PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
-        ]);
-        
-        console.log('Permission results:', granted);
-        
-        // For downloads, we don't necessarily need all media permissions
-        // We can proceed if at least one is granted or use alternative directory
-        const hasAnyPermission = Object.values(granted).some(
-          result => result === PermissionsAndroid.RESULTS.GRANTED
-        );
-        
-        return hasAnyPermission;
-      }
-      // For Android 6.0 to 12 (API 23 to 32)
-      else if (Platform.Version >= 23) {
-        console.log('Requesting legacy storage permission');
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          {
-            title: 'Storage Permission Required',
-            message: 'This app needs access to your storage to download reports',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          }
-        );
-        
-        console.log('Storage permission result:', granted);
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      }
-      // For Android below 6.0, permissions are granted at install time
-      else {
-        console.log('Android < 6.0, permissions granted at install');
-        return true;
-      }
-    } catch (err) {
-      console.warn('Permission request error:', err);
-      return false;
-    }
-  }
-  // For iOS, return true as they handle file downloads differently
-  console.log('iOS platform, no storage permission needed');
+  // No permission required for app-private storage
   return true;
 };
 
 const downloadFile = async (url, fileName) => {
   try {
     console.log('Starting download process...');
-    
-    // Request storage permission
-    const hasPermission = await requestStoragePermission();
-    
-    if (!hasPermission) {
-      Alert.alert(
-        'Permission Required',
-        'Storage permission is required to download reports. The app will try to download to app storage instead.',
-        [{ text: 'Continue', onPress: () => proceedWithDownload(url, fileName) }]
-      );
-      return;
-    }
+
+    // Always true now
+    await requestStoragePermission();
 
     await proceedWithDownload(url, fileName);
-    
+
   } catch (error) {
     console.error('Download setup error:', error);
-    Alert.alert('Error', 'Failed to setup download. Please try again.');
+    Alert.alert('Error', 'Failed to download report. Please try again.');
   }
 };
+
 
 const proceedWithDownload = async (url, fileName) => {
   try {
@@ -142,8 +83,8 @@ const proceedWithDownload = async (url, fileName) => {
       return;
     }
 
-    let downloadDir = RNFS.DocumentDirectoryPath; // safest folder
-    const localFile = `${downloadDir}/${fileName}`; // MUST add file name
+ let downloadDir = RNFS.DocumentDirectoryPath;
+const localFile = `${downloadDir}/${fileName}`;
 
     console.log('Downloading to:', localFile);
 
