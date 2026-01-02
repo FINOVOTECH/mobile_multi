@@ -4,7 +4,7 @@ import React, {
   useRef,
   useCallback,
   useMemo,
-} from 'react';
+} from "react";
 import {
   View,
   Text,
@@ -22,41 +22,42 @@ import {
   ActivityIndicator,
   BackHandler,
   Image,
-} from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { widthToDp, heightToDp } from '../../helpers/Responsive';
-import * as Config from '../../helpers/Config';
-import { useSelector } from 'react-redux';
-import SInfoSvg from '../svgs';
-import { getData } from '../../helpers/localStorage';
-import Rbutton from '../../components/Rbutton';
-import MandateAlert from '../../components/MandateAlert';
-import LinearGradient from 'react-native-linear-gradient';
-import bgVector from '../../assets/Icons/vector.png';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import EndDatePickerComponent from '../../utils/EndDatePickerComponent';
-import StartDatePickerComponent from '../../utils/StartDatePickerComponent';
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { widthToDp, heightToDp } from "../../helpers/Responsive";
+import * as Config from "../../helpers/Config";
+import { useSelector } from "react-redux";
+import SInfoSvg from "../svgs";
+import { getData } from "../../helpers/localStorage";
+import Rbutton from "../../components/Rbutton";
+import MandateAlert from "../../components/MandateAlert";
+import LinearGradient from "react-native-linear-gradient";
+import bgVector from "../../assets/Icons/vector.png";
+import { SafeAreaView } from "react-native-safe-area-context";
+import EndDatePickerComponent from "../../utils/EndDatePickerComponent";
+import StartDatePickerComponent from "../../utils/StartDatePickerComponent";
+import AmountInput from "../../components/amountInput";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const Invest = ({ navigation }) => {
-  const InvestData = useSelector(state => state.marketWatch.investment);
-  const UserData = useSelector(state => state.login.loginData);
-  const investmentType = useSelector(state => state.marketWatch.investType);
-  console.log('invest_data---=-=-=>', InvestData);
+  const InvestData = useSelector((state) => state.marketWatch.investment);
+  const UserData = useSelector((state) => state.login.loginData);
+  const investmentType = useSelector((state) => state.marketWatch.investType);
+  console.log("invest_data---=-=-=>", InvestData);
 
   const [selectedAmount, setSelectedAmount] = useState(0);
-  const [customAmount, setCustomAmount] = useState('');
+  const [customAmount, setCustomAmount] = useState("");
   const [minimumAmount, setMinimumAmount] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const scrollViewRef = useRef(null);
   const amountInputRef = useRef(null);
-  const [selectedFrequency, setSelectedFrequency] = useState(null);
+  const [selectedFrequency, setSelectedFrequency] = useState("MONTHLY");
   const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [paymentMethod, setPaymentMethod] = useState("UPI");
   const [selectedMandate, setSelectedMandate] = useState(null);
   const [showMandateModal, setShowMandateModal] = useState(false);
   const [mandateData, setMandateData] = useState(null);
@@ -82,8 +83,8 @@ const Invest = ({ navigation }) => {
     };
 
     const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      backAction,
+      "hardwareBackPress",
+      backAction
     );
 
     return () => backHandler.remove();
@@ -93,55 +94,53 @@ const Invest = ({ navigation }) => {
     setIsLoading(true);
     try {
       const Token = await getData(Config.store_key_login_details);
-      console.log('Token', Token);
+      console.log("Token", Token);
       const response = await fetch(
         `${Config.baseUrl}/api/client/registration/mandate/history`,
         {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             clientcode: UserData?.user?.clientCode,
             Authorization: Token,
           },
-        },
+        }
       );
 
       const data = await response.json();
-      console.log('Mandate history response:', data);
+      console.log("Mandate history response:", data);
 
       if (response.ok) {
         const filteredIds = data?.mandates
-          ?.filter(item => item.UMRNNo)
-          .map(item => item);
+          ?.filter((item) => item.UMRNNo)
+          .map((item) => item);
         setMandateOptions(filteredIds || []);
         if (!filteredIds || filteredIds.length === 0) {
-          console.log('No mandate found, showing alert');
-          setMandateData(false);
-          setShowMandateAlert(true);
+          console.log("No mandate found, showing alert");
+          if (investmentType === "SIP") setShowMandateAlert(true);
         } else {
-          console.log('Mandate found, not showing alert');
-          setMandateData(true);
+          console.log("Mandate found, not showing alert");
           setShowMandateAlert(false);
         }
       } else {
-        console.error('Error fetching mandate history:', data?.message);
+        console.error("Error fetching mandate history:", data?.message);
       }
     } catch (error) {
-      console.error('Error fetching mandate history:', error);
+      console.error("Error fetching mandate history:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (InvestData?.allSipOptions?.length > 0 && investmentType === 'SIP') {
+    if (InvestData?.allSipOptions?.length > 0 && investmentType === "SIP") {
       // pick first frequency as default
       const firstFreq = InvestData.allSipOptions[0];
 
       setSelectedFrequency(firstFreq.freq);
       setMinimumAmount(firstFreq.amount);
       setSelectedAmount(firstFreq.amount);
-      setCustomAmount('');
+      setCustomAmount("");
     }
 
     // existing fallback for Lumpsum or missing data
@@ -156,27 +155,27 @@ const Invest = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
     const amount = getCurrentAmount();
-    if (investmentType === 'SIP' && selectedFrequency === 'DAILY') {
+    if (investmentType === "SIP" && selectedFrequency === "DAILY") {
       if (!selectedEndDate) {
-        newErrors.endDate = 'Please select an end date';
+        newErrors.endDate = "Please select an end date";
       } else if (selectedEndDate <= selectedDate) {
-        newErrors.endDate = 'End date must be AFTER start date';
+        newErrors.endDate = "End date must be AFTER start date";
       }
     }
 
     if (amount === 0) {
-      newErrors.amount = 'Please enter an amount';
+      newErrors.amount = "Please enter an amount";
     } else if (amount < minimumAmount) {
       newErrors.amount = `Minimum amount is ₹${minimumAmount}`;
     }
     if (
       !selectedMandate &&
-      !(investmentType === 'LUMPSUM' && paymentMethod === 'UPI')
+      !(investmentType === "LUMPSUM" && paymentMethod === "UPI")
     ) {
-      newErrors.mandate = 'Please select a mandate';
+      newErrors.mandate = "Please select a mandate";
     }
-    if (investmentType === 'SIP' && !selectedDate) {
-      newErrors.date = 'Please select a start date';
+    if (investmentType === "SIP" && !selectedDate) {
+      newErrors.date = "Please select a start date";
     }
 
     setErrors(newErrors);
@@ -216,47 +215,43 @@ const Invest = ({ navigation }) => {
     return minDate;
   };
 
-  const handleAmountSelect = amount => {
+  const handleAmountSelect = (amount) => {
     if (amount < minimumAmount) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         amount: `Minimum amount is ₹${minimumAmount}`,
       }));
       return;
     }
     setSelectedAmount(amount);
-    setCustomAmount('');
-    setErrors(prev => ({ ...prev, amount: '' }));
-    Keyboard.dismiss();
+    setCustomAmount("");
+    setErrors((prev) => ({ ...prev, amount: "" }));
+    // Keyboard.dismiss();
   };
 
-  const handleCustomAmountChange = text => {
-    const numericValue = text.replace(/[^0-9]/g, '');
+  const handleCustomAmountChange = useCallback((text) => {
+    const numericValue = text.replace(/[^0-9]/g, "");
     setCustomAmount(numericValue);
-    setSelectedAmount(0);
-    setErrors(prev => ({ ...prev, amount: '' }));
-  };
+  }, []);
 
   const getCurrentAmount = () => {
     return customAmount ? parseInt(customAmount) || 0 : selectedAmount;
   };
 
   const getQuickAmountButtons = () => {
-    if (investmentType === 'SIP') {
+    if (investmentType === "SIP") {
       return [100, 500, 1000, 1500, 2000, 5000];
     } else {
       return [500, 1000, 2000, 5000, 8000, 10000];
     }
   };
 
-  const handleAmountInputFocus = () => {
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ y: 0, animated: true });
-    }
-  };
+  const handleAmountInputFocus = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
 
   const onDateChange = (event, date) => {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       setShowDatePicker(false);
     }
 
@@ -264,7 +259,7 @@ const Invest = ({ navigation }) => {
       const selectedDay = date.getDate();
 
       // ✅ Restrict SIP date: disable 29, 30, 31
-      if (investmentType === 'SIP' && selectedDay > 28) {
+      if (investmentType === "SIP" && selectedDay > 28) {
         // move to the 1st of next month
         const nextMonth = new Date(date);
         nextMonth.setMonth(date.getMonth() + 1);
@@ -274,8 +269,8 @@ const Invest = ({ navigation }) => {
         setSelectedDate(date);
       }
 
-      setErrors(prev => ({ ...prev, date: '' }));
-      if (Platform.OS === 'ios') {
+      setErrors((prev) => ({ ...prev, date: "" }));
+      if (Platform.OS === "ios") {
         setShowDatePicker(false);
       }
     }
@@ -283,34 +278,34 @@ const Invest = ({ navigation }) => {
 
   const getScheduleText = () => {
     if (!selectedDate) {
-      return 'Select start date';
+      return "Select start date";
     }
 
-    return selectedDate.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
+    return selectedDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
   const getScheduleENDText = () => {
-    console.log('selected ENd Data', selectedEndDate);
+    console.log("selected ENd Data", selectedEndDate);
     if (!selectedEndDate) {
-      return 'Select End date';
+      return "Select End date";
     }
 
-    return selectedEndDate.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
+    return selectedEndDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
   const getButtonText = () => {
-    return investmentType === 'SIP' ? 'Start SIP' : 'Invest Now';
+    return investmentType === "SIP" ? "Start SIP" : "Invest Now";
   };
 
   const getAmountLabel = () => {
-    return investmentType === 'SIP' ? 'Instalment amount' : 'Investment amount';
+    return investmentType === "SIP" ? "Instalment amount" : "Investment amount";
   };
 
   const handleInvestment = async () => {
@@ -321,48 +316,48 @@ const Invest = ({ navigation }) => {
     const amount = getCurrentAmount();
     let payload = {};
 
-    if (investmentType === 'LUMPSUM') {
+    if (investmentType === "LUMPSUM") {
       payload = {
         amount: amount.toString(),
-        buyType: 'FRESH',
-        schemaCode: InvestData?.primarySchemeCode,
+        buyType: "FRESH",
+        schemaCode: InvestData?.schemeCode,
         mandateId:
-          paymentMethod === 'MANDATE' ? selectedMandate?.mandateId : '',
+          paymentMethod === "MANDATE" ? selectedMandate?.mandateId : "",
         paymentMethod: paymentMethod,
       };
-    } else if (investmentType === 'SIP') {
-      const startDate = selectedDate.toLocaleDateString('en-GB');
+    } else if (investmentType === "SIP") {
+      const startDate = selectedDate.toLocaleDateString("en-GB");
 
       payload = {
         installmentAmount: amount.toString(),
-        frequencyType: selectedFrequency || 'MONTHLY',
+        frequencyType: selectedFrequency || "MONTHLY",
         noOfInstallment: 300,
         mandateId: selectedMandate?.mandateId,
-        firstOrderToday: paymentMethod === 'UPI' ? true : false,
+        firstOrderToday: paymentMethod === "UPI" ? true : false,
         startDate: startDate,
         endDate:
-          selectedFrequency === 'DAILY'
-            ? selectedEndDate?.toLocaleDateString('en-GB')
+          selectedFrequency === "DAILY"
+            ? selectedEndDate?.toLocaleDateString("en-GB")
             : null,
-        schemaCode: InvestData?.primarySchemeCode,
-        buyType: 'FRESH',
+        schemaCode: InvestData?.schemeCode,
+        buyType: "FRESH",
         paymentMethod: paymentMethod,
       };
     }
-    console.log('Payload before API call:', payload);
+    console.log("Payload before API call:", payload);
 
     try {
       const Token = await getData(Config.store_key_login_details);
-      console.log('Token', Token);
+      console.log("Token", Token);
       const endpoint =
-        investmentType === 'SIP'
-          ? '/api/v1/purchase/sip/entry'
-          : '/api/v1/purchase/order/entry';
+        investmentType === "SIP"
+          ? "/api/v1/purchase/sip/entry"
+          : "/api/v1/purchase/order/entry";
 
       const response = await fetch(`${Config.baseUrl}${endpoint}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           clientcode: UserData?.user?.clientCode,
           Authorization: Token,
         },
@@ -370,24 +365,24 @@ const Invest = ({ navigation }) => {
       });
 
       const result = await response.json();
-      console.log('Investment Response:', result);
+      console.log("Investment Response:", result);
 
       if (response.ok) {
         setInvestmentResponse(result);
         setShowResponseModal(true);
         setErrors({});
       } else {
-        setErrors({ general: result?.message || 'Something went wrong.' });
+        setErrors({ general: result?.message || "Something went wrong." });
       }
     } catch (error) {
-      console.error('Investment Error:', error);
-      setErrors({ general: 'Network error. Please try again.' });
+      console.error("Investment Error:", error);
+      setErrors({ general: "Network error. Please try again." });
     }
   };
 
   const ResponseModal = () => {
-    const isSuccess = investmentResponse?.status === 'SUCCESS';
-    const isFailed = investmentResponse?.status === 'FAILED';
+    const isSuccess = investmentResponse?.status === "SUCCESS";
+    const isFailed = investmentResponse?.status === "FAILED";
 
     const handleContinueToPayment = () => {
       setShowResponseModal(false);
@@ -404,27 +399,27 @@ const Invest = ({ navigation }) => {
           bseResponseFlag: investmentResponse.resultText?.bseResponseFlag,
           investmentType: investmentType,
           schemeCode: InvestData?.schemeCode,
-          schemeName: InvestData?.description || 'Investment Plan',
+          schemeName: InvestData?.description || "Investment Plan",
           amount: getCurrentAmount(),
           paymentMethod: paymentMethod,
           selectedMandate: selectedMandate,
           startDate:
-            investmentType === 'SIP'
-              ? selectedDate?.toLocaleDateString('en-GB')
+            investmentType === "SIP"
+              ? selectedDate?.toLocaleDateString("en-GB")
               : null,
-          frequency: investmentType === 'SIP' ? 'MONTHLY' : null,
+          frequency: investmentType === "SIP" ? "MONTHLY" : null,
           clientCode: UserData?.user?.clientCode,
           userName: UserData?.user?.name || UserData?.user?.clientName,
           timestamp: new Date().toISOString(),
-          investmentStatus: 'CONFIRMED',
+          investmentStatus: "CONFIRMED",
         };
-        navigation.navigate('PaymentComponent', { paymentData });
+        navigation.navigate("PaymentComponent", { paymentData });
       }
     };
 
     const handleTransactionSuccess = () => {
       setShowResponseModal(false);
-      navigation.navigate('MarketWatch');
+      navigation.navigate("MarketWatch");
     };
 
     const handlePayNow = () => {
@@ -440,21 +435,21 @@ const Invest = ({ navigation }) => {
           bseResponseFlag: investmentResponse.resultText?.bseResponseFlag,
           investmentType: investmentType,
           schemeCode: InvestData?.schemeCode,
-          schemeName: InvestData?.description || 'Investment Plan',
+          schemeName: InvestData?.description || "Investment Plan",
           amount: getCurrentAmount(),
           paymentMethod: paymentMethod,
           selectedMandate: selectedMandate,
           startDate:
-            investmentType === 'SIP'
-              ? selectedDate?.toLocaleDateString('en-GB')
+            investmentType === "SIP"
+              ? selectedDate?.toLocaleDateString("en-GB")
               : null,
-          frequency: investmentType === 'SIP' ? 'MONTHLY' : null,
+          frequency: investmentType === "SIP" ? "MONTHLY" : null,
           clientCode: UserData?.user?.clientCode,
           userName: UserData?.user?.name || UserData?.user?.clientName,
           timestamp: new Date().toISOString(),
-          investmentStatus: 'CONFIRMED',
+          investmentStatus: "CONFIRMED",
         };
-        navigation.navigate('PaymentComponent', { paymentData });
+        navigation.navigate("PaymentComponent", { paymentData });
       }
     };
 
@@ -462,13 +457,13 @@ const Invest = ({ navigation }) => {
       setShowResponseModal(false);
     };
 
-    const formatAmount = amount => {
+    const formatAmount = (amount) => {
       return `₹${parseFloat(amount).toLocaleString()}`;
     };
 
-    const extractSchemeFromRemarks = remarks => {
+    const extractSchemeFromRemarks = (remarks) => {
       const schemeMatch = remarks?.match(/SCHEME:\s*([^T]+)/);
-      return schemeMatch ? schemeMatch[1].trim() : 'Investment';
+      return schemeMatch ? schemeMatch[1].trim() : "Investment";
     };
 
     if (!investmentResponse) return null;
@@ -487,17 +482,17 @@ const Invest = ({ navigation }) => {
                 style={[styles.successIcon, !isSuccess && styles.failedIcon]}
               >
                 <Text style={styles.successIconText}>
-                  {isSuccess ? '✓' : '✕'}
+                  {isSuccess ? "✓" : "✕"}
                 </Text>
               </View>
               <Text style={styles.responseModalTitle}>
                 {isSuccess
-                  ? investmentType === 'SIP'
-                    ? 'SIP Order Confirmed!'
-                    : 'Investment Confirmed!'
-                  : investmentType === 'SIP'
-                  ? 'SIP Order Failed!'
-                  : 'Investment Failed!'}
+                  ? investmentType === "SIP"
+                    ? "SIP Order Confirmed!"
+                    : "Investment Confirmed!"
+                  : investmentType === "SIP"
+                  ? "SIP Order Failed!"
+                  : "Investment Failed!"}
               </Text>
             </View>
 
@@ -529,7 +524,7 @@ const Invest = ({ navigation }) => {
                     <Text style={styles.responseLabel}>Scheme:</Text>
                     <Text style={styles.responseValue}>
                       {extractSchemeFromRemarks(
-                        investmentResponse.resultText?.bseRemarks,
+                        investmentResponse.resultText?.bseRemarks
                       )}
                     </Text>
                   </View>
@@ -576,7 +571,7 @@ const Invest = ({ navigation }) => {
               {investmentResponse.resultText?.bseRemarks && (
                 <View style={styles.remarksContainer}>
                   <Text style={styles.remarksLabel}>
-                    {isFailed ? 'Error Details:' : 'Details:'}
+                    {isFailed ? "Error Details:" : "Details:"}
                   </Text>
                   <Text
                     style={[
@@ -593,7 +588,7 @@ const Invest = ({ navigation }) => {
             <View style={styles.responseModalButtons}>
               {isSuccess && (
                 <>
-                  {paymentMethod === 'UPI' ? (
+                  {paymentMethod === "UPI" ? (
                     <TouchableOpacity
                       style={styles.responseModalButton}
                       onPress={handleContinueToPayment}
@@ -765,7 +760,7 @@ const Invest = ({ navigation }) => {
 
   const Header = () => (
     <LinearGradient
-      colors={['#2B8DF6', '#2B8DF6']}
+      colors={["#2B8DF6", "#2B8DF6"]}
       style={styles.headerGradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
@@ -788,14 +783,14 @@ const Invest = ({ navigation }) => {
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>{investmentType}</Text>
           <Text style={styles.headerSubtitle} numberOfLines={2}>
-            {InvestData?.description || 'Investment Plan'}
+            {InvestData?.description || "Investment Plan"}
           </Text>
         </View>
       </View>
     </LinearGradient>
   );
 
-  const AmountSection = () => (
+  const AmountSection = React.memo(() => (
     <View style={styles.sectionBox}>
       <Text style={styles.sectionTitle}>{getAmountLabel()}</Text>
       <View style={styles.amountContainer}>
@@ -805,7 +800,7 @@ const Invest = ({ navigation }) => {
           style={[styles.amountInput, errors.amount && styles.errorInput]}
           value={
             customAmount ||
-            (selectedAmount > 0 ? selectedAmount.toString() : '')
+            (selectedAmount > 0 ? selectedAmount.toString() : "")
           }
           onChangeText={handleCustomAmountChange}
           onFocus={handleAmountInputFocus}
@@ -814,7 +809,7 @@ const Invest = ({ navigation }) => {
           placeholderTextColor="#999999"
           maxLength={10}
           returnKeyType="done"
-          onSubmitEditing={() => Keyboard.dismiss()}
+          // onSubmitEditing={() => Keyboard.dismiss()}
         />
       </View>
       <Text style={styles.minimumText}>
@@ -822,7 +817,7 @@ const Invest = ({ navigation }) => {
       </Text>
       {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
     </View>
-  );
+  ));
 
   const QuickAmountSection = () => (
     <View style={styles.sectionBox}>
@@ -864,28 +859,28 @@ const Invest = ({ navigation }) => {
           <TouchableOpacity
             style={[
               styles.paymentOption,
-              paymentMethod === 'UPI' && styles.selectedPaymentOption,
+              paymentMethod === "UPI" && styles.selectedPaymentOption,
             ]}
             onPress={() => {
-              setPaymentMethod('UPI');
-              setErrors(prev => ({ ...prev, mandate: '' }));
+              setPaymentMethod("UPI");
+              setErrors((prev) => ({ ...prev, mandate: "" }));
             }}
             activeOpacity={0.7}
           >
             <View
               style={[
                 styles.radioButton,
-                paymentMethod === 'UPI' && styles.selectedRadioButton,
+                paymentMethod === "UPI" && styles.selectedRadioButton,
               ]}
             >
-              {paymentMethod === 'UPI' && (
+              {paymentMethod === "UPI" && (
                 <View style={styles.radioButtonInner} />
               )}
             </View>
             <Text
               style={[
                 styles.paymentOptionText,
-                paymentMethod === 'UPI' && styles.selectedPaymentOptionText,
+                paymentMethod === "UPI" && styles.selectedPaymentOptionText,
               ]}
             >
               Payment via UPI
@@ -895,25 +890,25 @@ const Invest = ({ navigation }) => {
           <TouchableOpacity
             style={[
               styles.paymentOption,
-              paymentMethod === 'MANDATE' && styles.selectedPaymentOption,
+              paymentMethod === "MANDATE" && styles.selectedPaymentOption,
             ]}
-            onPress={() => setPaymentMethod('MANDATE')}
+            onPress={() => setPaymentMethod("MANDATE")}
             activeOpacity={0.7}
           >
             <View
               style={[
                 styles.radioButton,
-                paymentMethod === 'MANDATE' && styles.selectedRadioButton,
+                paymentMethod === "MANDATE" && styles.selectedRadioButton,
               ]}
             >
-              {paymentMethod === 'MANDATE' && (
+              {paymentMethod === "MANDATE" && (
                 <View style={styles.radioButtonInner} />
               )}
             </View>
             <Text
               style={[
                 styles.paymentOptionText,
-                paymentMethod === 'MANDATE' && styles.selectedPaymentOptionText,
+                paymentMethod === "MANDATE" && styles.selectedPaymentOptionText,
               ]}
             >
               Payment via Mandate
@@ -925,10 +920,10 @@ const Invest = ({ navigation }) => {
   };
 
   const MandateSelection = () => {
-    const handleMandateSelect = mandate => {
+    const handleMandateSelect = (mandate) => {
       setSelectedMandate(mandate);
       setShowMandateModal(false);
-      setErrors(prev => ({ ...prev, mandate: '' }));
+      setErrors((prev) => ({ ...prev, mandate: "" }));
     };
 
     return (
@@ -988,7 +983,7 @@ const Invest = ({ navigation }) => {
                     </TouchableOpacity>
                   </View>
                   <ScrollView style={styles.mandateList}>
-                    {mandateOptions?.map(mandate => (
+                    {mandateOptions?.map((mandate) => (
                       <TouchableOpacity
                         key={mandate?.UMRNNo}
                         style={[
@@ -1041,7 +1036,7 @@ const Invest = ({ navigation }) => {
   };
 
   const ScheduleSection = () => {
-    if (investmentType === 'SIP') {
+    if (investmentType === "SIP") {
       return (
         <View style={styles.sectionBox}>
           <Text style={styles.sectionTitle}>SIP Start Date</Text>
@@ -1062,17 +1057,17 @@ const Invest = ({ navigation }) => {
   };
 
   const handleCreateMandate = () => {
-    navigation.navigate('BankMandate');
+    navigation.navigate("BankMandate");
   };
   let minimumDate =
-    investmentType === 'SIP' && paymentMethod === 'UPI'
+    investmentType === "SIP" && paymentMethod === "UPI"
       ? getMinimumDateForSIPUPI()
       : getMinimumDateForMandate();
 
   let maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   return (
     <SafeAreaView style={styles.container}>
-      {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
+      {Platform.OS === "android" && <View style={styles.androidStatusBar} />}
       <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
 
       {isLoading ? (
@@ -1090,14 +1085,26 @@ const Invest = ({ navigation }) => {
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            <AmountSection />
+            {/* <AmountSection /> */}
+            <AmountInput
+              inputRef={amountInputRef}
+              value={
+                customAmount ||
+                (selectedAmount > 0 ? selectedAmount.toString() : "")
+              }
+              minimumAmount={minimumAmount}
+              error={errors.amount}
+              onFocus={handleAmountInputFocus}
+              onChangeText={handleCustomAmountChange}
+            />
+
             <QuickAmountSection />
-            {investmentType === 'SIP' && (
+            {investmentType === "SIP" && (
               <View style={styles.sectionBox}>
                 <Text style={styles.sectionTitle}>SIP Frequency</Text>
 
                 <View
-                  style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}
                 >
                   {InvestData?.allSipOptions?.map(({ freq, amount }) => (
                     <TouchableOpacity
@@ -1110,9 +1117,9 @@ const Invest = ({ navigation }) => {
                         setSelectedFrequency(freq);
                         setMinimumAmount(amount);
                         setSelectedAmount(amount);
-                        setCustomAmount('');
+                        setCustomAmount("");
 
-                        if (freq !== 'DAILY') {
+                        if (freq !== "DAILY") {
                           setSelectedEndDate(null);
                         }
                       }}
@@ -1133,11 +1140,11 @@ const Invest = ({ navigation }) => {
             )}
 
             <PaymentMethodSection />
-            {!(investmentType === 'LUMPSUM' && paymentMethod === 'UPI') && (
+            {!(investmentType === "LUMPSUM" && paymentMethod === "UPI") && (
               <MandateSelection />
             )}
             <ScheduleSection />
-            {investmentType === 'SIP' && selectedFrequency === 'DAILY' && (
+            {investmentType === "SIP" && selectedFrequency === "DAILY" && (
               <View style={styles.sectionBox}>
                 <Text style={styles.sectionTitle}>SIP End Date</Text>
 
@@ -1221,23 +1228,23 @@ const styles = StyleSheet.create({
   },
   androidStatusBar: {
     // height: StatusBar.currentHeight,
-    backgroundColor: '#2B8DF6',
+    backgroundColor: "#2B8DF6",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: Config.Colors.cyan_blue,
   },
 
   // Header Styles
   headerGradient: {
-    backgroundColor: '#2B8DF6',
+    backgroundColor: "#2B8DF6",
     paddingBottom: heightToDp(2),
   },
   headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: widthToDp(4),
     paddingTop: heightToDp(1),
   },
@@ -1247,7 +1254,7 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: widthToDp(8),
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   headerTextContainer: {
     flex: 1,
@@ -1255,12 +1262,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: widthToDp(4.5),
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   headerSubtitle: {
     fontSize: widthToDp(3.5),
-    color: '#E6F3FF',
+    color: "#E6F3FF",
     marginTop: heightToDp(0.5),
   },
 
@@ -1277,11 +1284,11 @@ const styles = StyleSheet.create({
 
   // Section Box Styles
   sectionBox: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: widthToDp(3),
     padding: widthToDp(4),
     marginBottom: heightToDp(2),
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1292,67 +1299,67 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: widthToDp(4.2),
-    fontWeight: '700',
-    color: '#333',
+    fontWeight: "700",
+    color: "#333",
     marginBottom: heightToDp(1.5),
   },
 
   // Amount Section
   amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
     paddingBottom: heightToDp(1),
     marginBottom: heightToDp(0.5),
   },
   rupeeSymbol: {
     fontSize: widthToDp(6),
-    color: '#333333',
-    fontWeight: '300',
+    color: "#333333",
+    fontWeight: "300",
   },
   amountInput: {
     fontSize: widthToDp(6),
-    color: '#333333',
-    fontWeight: '400',
+    color: "#333333",
+    fontWeight: "400",
     marginLeft: widthToDp(2),
     flex: 1,
     paddingVertical: heightToDp(0.5),
   },
   minimumText: {
     fontSize: widthToDp(3.2),
-    color: '#888888',
+    color: "#888888",
   },
 
   // Quick Amount Section
   quickAmountContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: widthToDp(3),
   },
   quickAmountButton: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
     borderRadius: widthToDp(2),
     paddingVertical: heightToDp(1.5),
     paddingHorizontal: widthToDp(3),
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fafafa',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fafafa",
     minWidth: widthToDp(20),
   },
   selectedAmountButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderColor: Config.Colors.primary,
   },
   quickAmountText: {
     fontSize: widthToDp(3.5),
-    color: '#333333',
-    fontWeight: '500',
+    color: "#333333",
+    fontWeight: "500",
   },
   selectedAmountText: {
     color: Config.Colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   // Payment Method Section
@@ -1360,8 +1367,8 @@ const styles = StyleSheet.create({
     gap: heightToDp(2),
   },
   paymentOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: heightToDp(1),
   },
   selectedPaymentOption: {
@@ -1372,10 +1379,10 @@ const styles = StyleSheet.create({
     height: widthToDp(5),
     borderRadius: widthToDp(2.5),
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
     marginRight: widthToDp(3),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   selectedRadioButton: {
     borderColor: Config.Colors.primary,
@@ -1388,20 +1395,20 @@ const styles = StyleSheet.create({
   },
   paymentOptionText: {
     fontSize: widthToDp(3.8),
-    color: '#333333',
-    fontWeight: '500',
+    color: "#333333",
+    fontWeight: "500",
   },
   selectedPaymentOptionText: {
     color: Config.Colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   freqButton: {
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#d0d0d0',
-    backgroundColor: '#fafafa',
+    borderColor: "#d0d0d0",
+    backgroundColor: "#fafafa",
   },
   freqButtonSelected: {
     backgroundColor: Config.Colors.primary,
@@ -1409,63 +1416,63 @@ const styles = StyleSheet.create({
   },
   freqButtonText: {
     fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
+    color: "#333",
+    fontWeight: "500",
   },
   freqButtonTextSelected: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
 
   // Mandate Selection Styles
   mandateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: heightToDp(1.5),
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   mandateLogo: {
     width: widthToDp(8),
     height: widthToDp(8),
     borderRadius: widthToDp(4),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: widthToDp(3),
   },
   mandateLogoText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: widthToDp(3.5),
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   mandateDetails: {
     flex: 1,
   },
   mandateId: {
     fontSize: widthToDp(4),
-    fontWeight: '600',
-    color: '#333333',
+    fontWeight: "600",
+    color: "#333333",
     marginBottom: heightToDp(0.3),
   },
   mandateBankName: {
     fontSize: widthToDp(3.5),
-    color: '#666666',
+    color: "#666666",
   },
   mandatePlaceholder: {
     fontSize: widthToDp(3.8),
-    color: '#999999',
+    color: "#999999",
     flex: 1,
   },
   mandateArrow: {
     fontSize: widthToDp(4),
-    color: '#666666',
+    color: "#666666",
   },
 
   // Schedule Section
   scheduleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: heightToDp(1.5),
   },
   scheduleIcon: {
@@ -1474,44 +1481,44 @@ const styles = StyleSheet.create({
   },
   scheduleText: {
     fontSize: widthToDp(3.8),
-    color: '#333333',
+    color: "#333333",
     flex: 1,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   scheduleArrow: {
     fontSize: widthToDp(4),
-    color: '#666666',
+    color: "#666666",
   },
 
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   mandateModalContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: widthToDp(5),
     borderTopRightRadius: widthToDp(5),
     maxHeight: screenHeight * 0.7,
   },
   mandateModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: widthToDp(4),
     paddingVertical: heightToDp(2),
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   mandateModalTitle: {
     fontSize: widthToDp(4.5),
-    fontWeight: '600',
-    color: '#333333',
+    fontWeight: "600",
+    color: "#333333",
   },
   mandateModalClose: {
     fontSize: widthToDp(5),
-    color: '#666666',
+    color: "#666666",
     paddingHorizontal: widthToDp(2),
     paddingVertical: widthToDp(1),
   },
@@ -1520,50 +1527,50 @@ const styles = StyleSheet.create({
     paddingVertical: heightToDp(1),
   },
   mandateOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: heightToDp(2),
     borderBottomWidth: 1,
-    borderBottomColor: '#f5f5f5',
+    borderBottomColor: "#f5f5f5",
   },
   selectedMandateOption: {
-    backgroundColor: '#f8f9ff',
+    backgroundColor: "#f8f9ff",
   },
   mandateCheckmark: {
     width: widthToDp(5),
     height: widthToDp(5),
     borderRadius: widthToDp(2.5),
     backgroundColor: Config.Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginLeft: widthToDp(2),
   },
   checkmarkText: {
     fontSize: widthToDp(3),
-    color: '#ffffff',
-    fontWeight: 'bold',
+    color: "#ffffff",
+    fontWeight: "bold",
   },
 
   // Date Picker Styles
   iosDatePickerContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: widthToDp(5),
     borderTopRightRadius: widthToDp(5),
     paddingBottom: heightToDp(4),
   },
   datePickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: widthToDp(4),
     paddingVertical: heightToDp(2),
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   datePickerTitle: {
     fontSize: widthToDp(4.5),
-    fontWeight: '600',
-    color: '#333333',
+    fontWeight: "600",
+    color: "#333333",
   },
   datePickerButton: {
     paddingHorizontal: widthToDp(4),
@@ -1574,7 +1581,7 @@ const styles = StyleSheet.create({
     color: Config.Colors.primary,
   },
   doneButton: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   // Error Styles
@@ -1587,7 +1594,7 @@ const styles = StyleSheet.create({
     borderColor: Config.Colors.red,
   },
   generalErrorContainer: {
-    backgroundColor: '#FFE6E6',
+    backgroundColor: "#FFE6E6",
     padding: widthToDp(3),
     borderRadius: widthToDp(2),
     marginHorizontal: widthToDp(4),
@@ -1603,43 +1610,43 @@ const styles = StyleSheet.create({
     paddingVertical: heightToDp(2),
     backgroundColor: Config.Colors.cyan_blue,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: "#f0f0f0",
   },
 
   // Response Modal Styles (keep existing response modal styles)
   responseModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   responseModalContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
-    width: '100%',
-    maxHeight: '80%',
+    width: "100%",
+    maxHeight: "80%",
     padding: 0,
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
   responseModalHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 30,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: "#F0F0F0",
   },
   successIcon: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#4CAF50',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#4CAF50",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 15,
   },
   failedIcon: {
@@ -1647,42 +1654,42 @@ const styles = StyleSheet.create({
   },
   successIconText: {
     fontSize: 30,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontWeight: "bold",
   },
   responseModalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333333',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#333333",
+    textAlign: "center",
   },
   responseContent: {
     padding: 20,
     maxHeight: 300,
   },
   responseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+    borderBottomColor: "#F5F5F5",
   },
   responseLabel: {
     fontSize: 14,
-    color: '#666666',
-    fontWeight: '500',
+    color: "#666666",
+    fontWeight: "500",
     flex: 1,
   },
   responseValue: {
     fontSize: 14,
-    color: '#333333',
-    fontWeight: '600',
+    color: "#333333",
+    fontWeight: "600",
     flex: 2,
-    textAlign: 'right',
+    textAlign: "right",
   },
   successText: {
-    color: '#4CAF50',
+    color: "#4CAF50",
   },
   failedText: {
     color: Config.Colors.red,
@@ -1690,20 +1697,20 @@ const styles = StyleSheet.create({
   remarksContainer: {
     marginTop: 15,
     padding: 15,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
+    borderLeftColor: "#4CAF50",
   },
   remarksLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#333333',
+    fontWeight: "600",
+    color: "#333333",
     marginBottom: 8,
   },
   remarksText: {
     fontSize: 12,
-    color: '#666666',
+    color: "#666666",
     lineHeight: 18,
   },
   failedRemarksText: {
@@ -1712,22 +1719,22 @@ const styles = StyleSheet.create({
   responseModalButtons: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: "#F0F0F0",
   },
   responseModalButton: {
     backgroundColor: Config.Colors.primary,
     paddingVertical: 15,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 10,
   },
   responseModalButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   payNowButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
   },
   failedButton: {
     backgroundColor: Config.Colors.red,
@@ -1736,26 +1743,26 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   iosDatePickerContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: widthToDp(5),
     borderTopRightRadius: widthToDp(5),
     paddingBottom: heightToDp(3),
   },
 
   datePickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: widthToDp(4),
     paddingVertical: heightToDp(1.5),
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
 
   datePickerTitle: {
     fontSize: widthToDp(4.3),
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
   },
 
   datePickerButtonText: {
@@ -1765,7 +1772,7 @@ const styles = StyleSheet.create({
   },
 
   doneButton: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 
