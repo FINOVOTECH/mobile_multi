@@ -1436,7 +1436,7 @@ const SipInterface = ({ navigation }) => {
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>NAV Date</Text>
                 <Text style={styles.summaryValue}>
-                  {Data?.allotmentData?.currentNav}
+                  {Data?.allotmentData?.orderDate}
                 </Text>
               </View>
               <View style={styles.summaryRow}>

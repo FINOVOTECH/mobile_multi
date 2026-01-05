@@ -1,56 +1,43 @@
-import { StyleSheet, View, Text, ActivityIndicator } from "react-native";
-import {
-  NavigationContainer,
-  NavigationContainerRef,
-} from "@react-navigation/native";
-import RootNavigator, { navigationRef } from "./src/navigation";
+import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useEffect, useState } from "react";
-import SplashScreen from "./src/presentation/screens/splash";
+import { NavigationContainer } from "@react-navigation/native";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import RootNavigator, { navigationRef } from "./src/navigation";
+import SplashScreen from "./src/presentation/screens/splash";
+import HandAnimation from "./src/components/handAnimation";
 import { store, persistor } from "./src/store/store";
 import { clearAll } from "./src/helpers/localStorage";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import HandAnimation from "./src/components/handAnimation";
+import { checkAppVersion } from "./src/utils/versionCheck";
 
 function App() {
   const [appIsReady, setAppIsReady] = useState(false);
-  // console.log = () => {};
-  // console.warn = () => {};
-  // console.error = () => {};
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setAppIsReady(true);
-      clearAll();
-    }, 1500);
-    return () => clearTimeout(timeout);
-  }, []);
-  useEffect(() => {
-    logPersistedData();
-  }, []);
-  const logPersistedData = async () => {
-    try {
-      const persistedState = await AsyncStorage.getItem("persist:root");
-      // console.log('Persisted State:', JSON.parse(persistedState));
-    } catch (error) {
-      console.error("Error:", error);
-    }
+
+ useEffect(() => {
+  const prepareApp = async () => {
+    await checkAppVersion(); // 🔥 FIRST
+    clearAll();
+    setAppIsReady(true);     // 🔥 THEN
   };
+
+  prepareApp();
+}, []);
+
+
   if (!appIsReady) return <SplashScreen />;
+
   const LoadingView = () => (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <HandAnimation />
-      <Text>Loading...</Text>
-    </View>
+    <HandAnimation />
   );
 
   return (
     <SafeAreaProvider>
       <Provider store={store}>
         <PersistGate loading={<LoadingView />} persistor={persistor}>
-          <GestureHandlerRootView>
+          <GestureHandlerRootView style={{ flex: 1 }}>
             <NavigationContainer ref={navigationRef}>
               <RootNavigator />
             </NavigationContainer>
@@ -60,11 +47,5 @@ function App() {
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;

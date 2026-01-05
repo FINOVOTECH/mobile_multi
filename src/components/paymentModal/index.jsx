@@ -247,7 +247,7 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
   const getSelectedBankName = () => {
     const allBanks = [...(Direct_Plan || []), ...(UPI_BANKS || [])];
     const bank = allBanks.find(b => b.id === selectedBankId);
-    return bank?.name || (paymentMethod === "UPI" ? "-- Select UPI App --" : "-- Select Your Bank --");
+    return bank?.name || (paymentMethod === "UPI" ? "-- Select Your Bank --" : "-- Select Your Bank --");
   };
 
   const CancelPaymentModal = () => (
@@ -341,7 +341,7 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
         <View style={styles.bankPickerContainer}>
           <View style={styles.bankPickerHeader}>
             <Text style={styles.bankPickerTitle}>
-              {paymentMethod === "UPI" ? "Select UPI App" : "Select Your Bank"}
+              {paymentMethod === "UPI" ? "Select Your Bank" : "Select Your Bank"}
             </Text>
             <TouchableOpacity
               onPress={() => setShowBankPicker(false)}
@@ -641,7 +641,7 @@ const PaymentResponseModal = ({ response, onClose }) => {
                   style={[styles.textInput, loading && styles.disabled]}
                   placeholderTextColor="#9ca3af"
                 />
-                <Text style={[styles.inputLabel, { marginTop: heightToDp(3) }]}>Select UPI App</Text>
+                <Text style={[styles.inputLabel, { marginTop: heightToDp(3) }]}>Select Your Bank</Text>
                 <TouchableOpacity
                   onPress={() => openBankPicker('UPI')}
                   style={styles.bankSelector}

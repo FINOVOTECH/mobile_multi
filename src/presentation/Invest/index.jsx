@@ -67,6 +67,7 @@ const Invest = ({ navigation }) => {
   const [errors, setErrors] = useState({});
   const [investmentResponse, setInvestmentResponse] = useState(null);
   const [showResponseModal, setShowResponseModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchingMandate();
@@ -155,7 +156,7 @@ const Invest = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
     const amount = getCurrentAmount();
-    if (investmentType === "SIP" && selectedFrequency === "DAILY") {
+    if (investmentType === "SIP") {
       if (!selectedEndDate) {
         newErrors.endDate = "Please select an end date";
       } else if (selectedEndDate <= selectedDate) {
@@ -309,46 +310,44 @@ const Invest = ({ navigation }) => {
   };
 
   const handleInvestment = async () => {
+    if (isSubmitting) return;
+
     if (!validateForm()) {
       return;
     }
 
+    setIsSubmitting(true);
+
     const amount = getCurrentAmount();
     let payload = {};
 
-    if (investmentType === "LUMPSUM") {
-      payload = {
-        amount: amount.toString(),
-        buyType: "FRESH",
-        schemaCode: InvestData?.schemeCode,
-        mandateId:
-          paymentMethod === "MANDATE" ? selectedMandate?.mandateId : "",
-        paymentMethod: paymentMethod,
-      };
-    } else if (investmentType === "SIP") {
-      const startDate = selectedDate.toLocaleDateString("en-GB");
-
-      payload = {
-        installmentAmount: amount.toString(),
-        frequencyType: selectedFrequency || "MONTHLY",
-        noOfInstallment: 300,
-        mandateId: selectedMandate?.mandateId,
-        firstOrderToday: paymentMethod === "UPI" ? true : false,
-        startDate: startDate,
-        endDate:
-          selectedFrequency === "DAILY"
-            ? selectedEndDate?.toLocaleDateString("en-GB")
-            : null,
-        schemaCode: InvestData?.schemeCode,
-        buyType: "FRESH",
-        paymentMethod: paymentMethod,
-      };
-    }
-    console.log("Payload before API call:", payload);
-
     try {
+      if (investmentType === "LUMPSUM") {
+        payload = {
+          amount: amount.toString(),
+          buyType: "FRESH",
+          schemaCode: InvestData?.schemeCode,
+          mandateId:
+            paymentMethod === "MANDATE" ? selectedMandate?.mandateId : "",
+          paymentMethod,
+        };
+      } else {
+        payload = {
+          installmentAmount: amount.toString(),
+          frequencyType: selectedFrequency || "MONTHLY",
+          noOfInstallment: null,
+          mandateId: selectedMandate?.mandateId,
+          firstOrderToday: paymentMethod === "UPI",
+          startDate: selectedDate.toLocaleDateString("en-GB"),
+          endDate: selectedEndDate?.toLocaleDateString("en-GB"),
+          schemaCode: InvestData?.schemeCode,
+          buyType: "FRESH",
+          paymentMethod,
+        };
+      }
+
       const Token = await getData(Config.store_key_login_details);
-      console.log("Token", Token);
+      console.log("Investment Payload:", payload);
       const endpoint =
         investmentType === "SIP"
           ? "/api/v1/purchase/sip/entry"
@@ -365,7 +364,6 @@ const Invest = ({ navigation }) => {
       });
 
       const result = await response.json();
-      console.log("Investment Response:", result);
 
       if (response.ok) {
         setInvestmentResponse(result);
@@ -375,8 +373,9 @@ const Invest = ({ navigation }) => {
         setErrors({ general: result?.message || "Something went wrong." });
       }
     } catch (error) {
-      console.error("Investment Error:", error);
       setErrors({ general: "Network error. Please try again." });
+    } finally {
+      setIsSubmitting(false); // ✅ STOP LOADER
     }
   };
 
@@ -1064,7 +1063,18 @@ const Invest = ({ navigation }) => {
       ? getMinimumDateForSIPUPI()
       : getMinimumDateForMandate();
 
-  let maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+ 
+const startDateMax = new Date();
+startDateMax.setFullYear(startDateMax.getFullYear() + 30);
+
+const getMaxEndDate = () => {
+  const base = selectedDate ? new Date(selectedDate) : new Date();
+  const maxDate = new Date(base);
+  maxDate.setFullYear(base.getFullYear() + 30);
+  return maxDate;
+};
+
+
   return (
     <SafeAreaView style={styles.container}>
       {Platform.OS === "android" && <View style={styles.androidStatusBar} />}
@@ -1118,10 +1128,7 @@ const Invest = ({ navigation }) => {
                         setMinimumAmount(amount);
                         setSelectedAmount(amount);
                         setCustomAmount("");
-
-                        if (freq !== "DAILY") {
-                          setSelectedEndDate(null);
-                        }
+                        setSelectedEndDate(null);
                       }}
                     >
                       <Text
@@ -1144,29 +1151,25 @@ const Invest = ({ navigation }) => {
               <MandateSelection />
             )}
             <ScheduleSection />
-            {investmentType === "SIP" && selectedFrequency === "DAILY" && (
-              <View style={styles.sectionBox}>
-                <Text style={styles.sectionTitle}>SIP End Date</Text>
+            <View style={styles.sectionBox}>
+              <Text style={styles.sectionTitle}>SIP End Date</Text>
 
-                <TouchableOpacity
-                  style={[
-                    styles.scheduleButton,
-                    errors.endDate && styles.errorInput,
-                  ]}
-                  onPress={() => setShowEndDatePicker(true)}
-                >
-                  <Text style={styles.scheduleIcon}>📅</Text>
-                  <Text style={styles.scheduleText}>
-                    {getScheduleENDText()}
-                  </Text>
-                  <Text style={styles.scheduleArrow}>⌄</Text>
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.scheduleButton,
+                  errors.endDate && styles.errorInput,
+                ]}
+                onPress={() => setShowEndDatePicker(true)}
+              >
+                <Text style={styles.scheduleIcon}>📅</Text>
+                <Text style={styles.scheduleText}>{getScheduleENDText()}</Text>
+                <Text style={styles.scheduleArrow}>⌄</Text>
+              </TouchableOpacity>
 
-                {errors.endDate && (
-                  <Text style={styles.errorText}>{errors.endDate}</Text>
-                )}
-              </View>
-            )}
+              {errors.endDate && (
+                <Text style={styles.errorText}>{errors.endDate}</Text>
+              )}
+            </View>
             {errors.general && (
               <View style={styles.generalErrorContainer}>
                 <Text style={styles.errorText}>{errors.general}</Text>
@@ -1177,7 +1180,18 @@ const Invest = ({ navigation }) => {
           </ScrollView>
 
           <View style={styles.bottomButtons}>
-            <Rbutton title={getButtonText()} onPress={handleInvestment} />
+            <TouchableOpacity
+              style={[styles.submitButton, isSubmitting && { opacity: 0.6 }]}
+              onPress={handleInvestment}
+              disabled={isSubmitting}
+              activeOpacity={0.8}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>{getButtonText()}</Text>
+              )}
+            </TouchableOpacity>
           </View>
 
           <StartDatePickerComponent
@@ -1186,7 +1200,7 @@ const Invest = ({ navigation }) => {
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             minimumDate={minimumDate}
-            maximumDate={maximumDate}
+       maximumDate={startDateMax}
             investmentType={investmentType}
             setErrors={setErrors}
             // styles
@@ -1203,6 +1217,8 @@ const Invest = ({ navigation }) => {
             selectedEndDate={selectedEndDate}
             setSelectedEndDate={setSelectedEndDate}
             selectedStartDate={selectedDate}
+            minimumDate={selectedDate}
+            maximumDate={getMaxEndDate()}
             setErrors={setErrors}
             investmentType={investmentType}
             styles={styles}
@@ -1772,6 +1788,19 @@ const styles = StyleSheet.create({
   },
 
   doneButton: {
+    fontWeight: "600",
+  },
+  submitButton: {
+    backgroundColor: Config.Colors.primary,
+    paddingVertical: heightToDp(2),
+    borderRadius: widthToDp(2),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  submitButtonText: {
+    color: "#fff",
+    fontSize: widthToDp(4),
     fontWeight: "600",
   },
 });

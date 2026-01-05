@@ -190,7 +190,7 @@
       "platforms": {
         "ios": {
           "podspecPath": "/Users/pradhumnnn/Desktop/JyotiPortFolio/node_modules/react-native-device-info/RNDeviceInfo.podspec",
-          "version": "14.0.4",
+          "version": "14.1.1",
           "configurations": [],
           "scriptPhases": []
         },
@@ -572,6 +572,30 @@
           "libraryName": "RNVectorIconsSpec",
           "componentDescriptors": [],
           "cmakeListsPath": "/Users/pradhumnnn/Desktop/JyotiPortFolio/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "react-native-version-check": {
+      "root": "/Users/pradhumnnn/Desktop/JyotiPortFolio/node_modules/react-native-version-check",
+      "name": "react-native-version-check",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/pradhumnnn/Desktop/JyotiPortFolio/node_modules/react-native-version-check/react-native-version-check.podspec",
+          "version": "3.5.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/pradhumnnn/Desktop/JyotiPortFolio/node_modules/react-native-version-check/android",
+          "packageImportPath": "import io.xogus.reactnative.versioncheck.RNVersionCheckPackage;",
+          "packageInstance": "new RNVersionCheckPackage()",
+          "buildTypes": [],
+          "componentDescriptors": [],
+          "cmakeListsPath": "/Users/pradhumnnn/Desktop/JyotiPortFolio/node_modules/react-native-version-check/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -1095,7 +1119,7 @@
     "ios": {
       "sourceDir": "/Users/pradhumnnn/Desktop/JyotiPortFolio/ios",
       "xcodeProject": {
-        "name": "Jyoti Wealth.xcworkspace",
+        "name": "JyotiMF.xcworkspace",
         "path": ".",
         "isWorkspace": true
       },

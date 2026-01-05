@@ -18,6 +18,7 @@ import SInfoSvg from "../../svgs";
 import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DatePickerModal from "../../../components/DatePickerModal";
 
 const Transaction = ({ navigation }) => {
   const [tabIndex, setTabIndex] = useState(0);
@@ -29,8 +30,14 @@ const Transaction = ({ navigation }) => {
   const [hasMore, setHasMore] = useState(true);
   const [tokenLoaded, setTokenLoaded] = useState(false);
 
-  const [fromDate, setFromDate] = useState(new Date("2025-05-01"));
-  const [toDate, setToDate] = useState(new Date("2025-10-31"));
+  const today = new Date();
+
+  const [fromDate, setFromDate] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1)
+  );
+
+  const [toDate, setToDate] = useState(today);
+
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
 
@@ -63,22 +70,26 @@ const Transaction = ({ navigation }) => {
 
   useEffect(() => {
     if (tokenLoaded && TOKEN) {
+      setPage(1);
+      setHasMore(true);
       FetchTransaction(1, true);
     }
   }, [fromDate, toDate, TOKEN, tokenLoaded]);
 
   const FetchTransaction = async (pageNumber = 1, reset = false) => {
     if (!TOKEN) return;
+
+    // allow fetch if reset=true
     if (!hasMore && !reset) return;
 
     setLoading(true);
     try {
       const from = moment(fromDate).format("DD/MM/YYYY");
       const to = moment(toDate).format("DD/MM/YYYY");
+
       const url = `${Config.baseUrl}/api/v1/user/orderstatus/orderstatus/me?fromDate=${from}&toDate=${to}&page=${pageNumber}&limit=20`;
 
       const response = await fetch(url, {
-        method: "GET",
         headers: {
           Authorization: `Bearer ${TOKEN}`,
           "Content-Type": "application/json",
@@ -87,18 +98,17 @@ const Transaction = ({ navigation }) => {
 
       const data = await response.json();
       const results = data?.data || [];
-console.log("data",data)
+
       if (reset) {
         setTransactionData(results);
       } else {
         setTransactionData((prev) => [...prev, ...results]);
       }
 
-      setHasMore(pageNumber < data?.totalPages);
+      setHasMore(pageNumber < (data?.totalPages || 1));
       setPage(pageNumber);
     } catch (error) {
-      console.error("Transaction fetch error:", error.message);
-      setTransactionData([]);
+      console.error("Transaction fetch error:", error);
       setHasMore(false);
     } finally {
       setLoading(false);
@@ -151,7 +161,7 @@ console.log("data",data)
             </View>
 
             <View style={styles.headerMiddleRow}>
-              <View style={{width:'80%'}}>
+              <View style={{ width: "80%" }}>
                 <Text style={styles.clientCode}>{item?.clientName}</Text>
                 <Text style={styles.schemaCode}>{item?.schemeName}</Text>
               </View>
@@ -265,49 +275,95 @@ console.log("data",data)
         <Text style={styles.pageTitle}>Order Status</Text>
       </View>
 
-      <View style={styles.dateFilterContainer}>
-        <TouchableOpacity
-          onPress={() => setShowFromPicker(true)}
-          style={styles.dateButton}
-        >
-          <Text style={styles.dateTextBtn}>
-            From: {moment(fromDate).format("DD/MM/YYYY")}
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.dateCard}>
+        <Text style={styles.dateTitle}>Date Range</Text>
 
-        <TouchableOpacity
-          onPress={() => setShowToPicker(true)}
-          style={styles.dateButton}
-        >
-          <Text style={styles.dateTextBtn}>
-            To: {moment(toDate).format("DD/MM/YYYY")}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.dateRow}>
+          {/* FROM DATE */}
+          <TouchableOpacity
+            style={styles.dateInput}
+            activeOpacity={0.8}
+            onPress={() => setShowFromPicker(true)}
+          >
+            <Text style={styles.dateLabel}>From</Text>
+            <View style={styles.dateValueRow}>
+              <SInfoSvg.Calender width={16} height={16} />
+              <Text style={styles.dateValue}>
+                {moment(fromDate).format("DD MMM YYYY")}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* TO DATE */}
+          <TouchableOpacity
+            style={styles.dateInput}
+            activeOpacity={0.8}
+            onPress={() => setShowToPicker(true)}
+          >
+            <Text style={styles.dateLabel}>To</Text>
+            <View style={styles.dateValueRow}>
+              <SInfoSvg.Calender width={16} height={16} />
+              <Text style={styles.dateValue}>
+                {moment(toDate).format("DD MMM YYYY")}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* QUICK ACTIONS */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            onPress={() => setToDate(new Date())}
+            style={styles.quickBtn}
+          >
+            <Text style={styles.quickText}>Today</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              const today = new Date();
+              setFromDate(new Date(today.getFullYear(), today.getMonth(), 1));
+              setToDate(today);
+            }}
+            style={styles.quickBtn}
+          >
+            <Text style={styles.quickText}>This Month</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {showFromPicker && (
+      {/* FROM DATE PICKER */}
+      <DatePickerModal
+        visible={showFromPicker}
+        onClose={() => setShowFromPicker(false)}
+      >
         <DateTimePicker
           value={fromDate}
           mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowFromPicker(false);
-            if (selectedDate) setFromDate(selectedDate);
+          display="spinner"
+          maximumDate={toDate}
+          onChange={(event, date) => {
+            if (date) setFromDate(date);
           }}
         />
-      )}
+      </DatePickerModal>
 
-      {showToPicker && (
+      {/* TO DATE PICKER */}
+      <DatePickerModal
+        visible={showToPicker}
+        onClose={() => setShowToPicker(false)}
+      >
         <DateTimePicker
           value={toDate}
           mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowToPicker(false);
-            if (selectedDate) setToDate(selectedDate);
+          display="spinner"
+          minimumDate={fromDate}
+          maximumDate={new Date()}
+          onChange={(event, date) => {
+            if (date) setToDate(date);
           }}
         />
-      )}
+      </DatePickerModal>
 
       {renderScene()}
     </SafeAreaView>
@@ -412,4 +468,71 @@ const styles = StyleSheet.create({
     paddingTop: 100,
   },
   emptyText: { fontSize: 16, color: "#666", textAlign: "center" },
+  dateCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 12,
+    marginBottom: 8,
+    padding: 14,
+    borderRadius: 14,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+
+  dateTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 10,
+  },
+
+  dateRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+
+  dateInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+
+  dateLabel: {
+    fontSize: 11,
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+
+  dateValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  dateValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111827",
+  },
+
+  quickActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 10,
+    gap: 16,
+  },
+
+  quickBtn: {
+    paddingVertical: 6,
+  },
+
+  quickText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Config?.Colors?.primary,
+  },
 });
