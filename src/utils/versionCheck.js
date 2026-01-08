@@ -1,31 +1,17 @@
 import { Alert, Linking, Platform } from "react-native";
 import VersionCheck from "react-native-version-check";
-import DeviceInfo from "react-native-device-info";
 
 let alertShown = false;
 
 export const checkAppVersion = async () => {
   try {
+    // Prevent duplicate alerts
     if (alertShown) return;
 
-    const currentBuild = Number(DeviceInfo.getBuildNumber());
+    const updateNeeded = await VersionCheck.needUpdate();
 
-    // 🔥 Get store build number
-    const latestBuild = Number(
-      await VersionCheck.getLatestBuildNumber({
-        packageName: Platform.select({
-          android: "com.mfjyoti.mf",
-          ios: "com.jyotimf.mf",
-        }),
-      })
-    );
-
-    if (!latestBuild) return;
-
-    if (currentBuild < latestBuild) {
+    if (updateNeeded?.isNeeded) {
       alertShown = true;
-
-      const storeUrl = await VersionCheck.getStoreUrl();
 
       Alert.alert(
         "Update Available 🚀",
@@ -33,14 +19,21 @@ export const checkAppVersion = async () => {
         [
           {
             text: "Update Now",
-            onPress: () => Linking.openURL(storeUrl),
+            onPress: async () => {
+              const url = updateNeeded.storeUrl;
+              const supported = await Linking.canOpenURL(url);
+
+              if (supported) {
+                Linking.openURL(url);
+              }
+            },
           },
         ],
         { cancelable: false }
       );
     }
   } catch (error) {
-    // Silent fail (never block app)
-    console.log("Version check error:", error);
+    // Silent fail – never block user due to version API issue
+    console.log("Version check failed:", error);
   }
 };

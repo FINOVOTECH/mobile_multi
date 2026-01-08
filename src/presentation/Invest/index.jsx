@@ -74,6 +74,24 @@ const Invest = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
+    if (
+      investmentType === "SIP" &&
+      selectedFrequency === "MONTHLY" &&
+      selectedDate
+    ) {
+      const minEndDate = getMonthlyMinEndDate(selectedDate);
+
+      // Auto-set end date if:
+      // 1. End date is not selected
+      // 2. OR selected end date is before minimum allowed
+      if (!selectedEndDate || selectedEndDate < minEndDate) {
+        setSelectedEndDate(minEndDate);
+        setErrors((prev) => ({ ...prev, endDate: "" }));
+      }
+    }
+  }, [selectedDate, selectedFrequency]);
+
+  useEffect(() => {
     const backAction = () => {
       if (navigation.canGoBack()) {
         navigation.goBack();
@@ -181,6 +199,13 @@ const Invest = ({ navigation }) => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const getMonthlyMinEndDate = (startDate) => {
+    if (!startDate) return null;
+    const minEnd = new Date(startDate);
+    minEnd.setFullYear(minEnd.getFullYear() + 1);
+    return minEnd;
   };
 
   const getMinimumDateForMandate = () => {
@@ -335,7 +360,7 @@ const Invest = ({ navigation }) => {
         payload = {
           installmentAmount: amount.toString(),
           frequencyType: selectedFrequency || "MONTHLY",
-          noOfInstallment: null,
+          noOfInstallment: "300",
           mandateId: selectedMandate?.mandateId,
           firstOrderToday: paymentMethod === "UPI",
           startDate: selectedDate.toLocaleDateString("en-GB"),
@@ -350,7 +375,7 @@ const Invest = ({ navigation }) => {
       console.log("Investment Payload:", payload);
       const endpoint =
         investmentType === "SIP"
-          ? "/api/v1/purchase/sip/entry"
+          ? "/api/v1/purchase/sip/entry "
           : "/api/v1/purchase/order/entry";
 
       const response = await fetch(`${Config.baseUrl}${endpoint}`, {
@@ -364,7 +389,7 @@ const Invest = ({ navigation }) => {
       });
 
       const result = await response.json();
-
+      console.log("Investment Response:", result);
       if (response.ok) {
         setInvestmentResponse(result);
         setShowResponseModal(true);
@@ -380,8 +405,10 @@ const Invest = ({ navigation }) => {
   };
 
   const ResponseModal = () => {
-    const isSuccess = investmentResponse?.status === "SUCCESS";
-    const isFailed = investmentResponse?.status === "FAILED";
+    const isSuccess =
+      investmentResponse?.resultText?.bseResponseFlag === "SUCCESS";
+    const isFailed =
+      investmentResponse?.resultText?.bseResponseFlag === "FAILED";
 
     const handleContinueToPayment = () => {
       setShowResponseModal(false);
@@ -572,14 +599,22 @@ const Invest = ({ navigation }) => {
                   <Text style={styles.remarksLabel}>
                     {isFailed ? "Error Details:" : "Details:"}
                   </Text>
-                  <Text
-                    style={[
-                      styles.remarksText,
-                      isFailed && styles.failedRemarksText,
-                    ]}
-                  >
-                    {investmentResponse.resultText.bseRemarks}
-                  </Text>
+
+                  <View style={styles.remarksScrollWrapper}>
+                    <ScrollView
+                      showsVerticalScrollIndicator
+                      nestedScrollEnabled
+                    >
+                      <Text
+                        style={[
+                          styles.remarksText,
+                          isFailed && styles.failedRemarksText,
+                        ]}
+                      >
+                        {investmentResponse?.resultText?.bseRemarks}
+                      </Text>
+                    </ScrollView>
+                  </View>
                 </View>
               )}
             </View>
@@ -641,121 +676,6 @@ const Invest = ({ navigation }) => {
       </Modal>
     );
   };
-
-  // const DatePickerComponent = () => {
-  //   let minimumDate;
-  //   if (investmentType === 'SIP' && paymentMethod === 'UPI') {
-  //     minimumDate = getMinimumDateForSIPUPI();
-  //   } else {
-  //     minimumDate = getMinimumDateForMandate();
-  //   }
-
-  //   const maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-
-  //   // ---------- iOS CUSTOM PICKER ----------
-  //   if (Platform.OS === 'ios') {
-  //     return (
-  //       <Modal
-  //         animationType="slide"
-  //         transparent
-  //         visible={showDatePicker}
-  //         onRequestClose={() => setShowDatePicker(false)}
-  //       >
-  //         {/* Overlay */}
-  //         <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
-  //           <View style={styles.modalOverlay}>
-  //             <TouchableWithoutFeedback>
-  //               <View style={styles.iosDatePickerContainer}>
-  //                 {/* Header */}
-  //                 <View style={styles.datePickerHeader}>
-  //                   <TouchableOpacity
-  //                     onPress={() => {
-  //                       setShowDatePicker(false);
-  //                     }}
-  //                   >
-  //                     <Text style={styles.datePickerButtonText}>Cancel</Text>
-  //                   </TouchableOpacity>
-
-  //                   <Text style={styles.datePickerTitle}>
-  //                     Select Start Date
-  //                   </Text>
-
-  //                   <TouchableOpacity
-  //                     onPress={() => {
-  //                       setShowDatePicker(false);
-  //                     }}
-  //                   >
-  //                     <Text
-  //                       style={[styles.datePickerButtonText, styles.doneButton]}
-  //                     >
-  //                       Done
-  //                     </Text>
-  //                   </TouchableOpacity>
-  //                 </View>
-
-  //                 {/* Picker */}
-  //                 <DateTimePicker
-  //                   value={selectedDate || minimumDate}
-  //                   mode="date"
-  //                   display="spinner"
-  //                   onChange={(event, date) => {
-  //                     if (!date) return;
-
-  //                     const selectedDay = date.getDate();
-
-  //                     // 🚫 Disable 29/30/31 for SIP
-  //                     if (investmentType === 'SIP' && selectedDay > 28) {
-  //                       const nextMonth = new Date(date);
-  //                       nextMonth.setMonth(date.getMonth() + 1);
-  //                       nextMonth.setDate(1);
-  //                       setSelectedDate(nextMonth);
-  //                     } else {
-  //                       setSelectedDate(date);
-  //                     }
-
-  //                     setErrors(prev => ({ ...prev, date: '' }));
-  //                   }}
-  //                   minimumDate={minimumDate}
-  //                   maximumDate={maximumDate}
-  //                 />
-  //               </View>
-  //             </TouchableWithoutFeedback>
-  //           </View>
-  //         </TouchableWithoutFeedback>
-  //       </Modal>
-  //     );
-  //   }
-
-  //   // ---------- ANDROID DEFAULT PICKER ----------
-  //   return (
-  //     showDatePicker && (
-  //       <DateTimePicker
-  //         value={selectedDate || minimumDate}
-  //         mode="date"
-  //         display="default"
-  //         minimumDate={minimumDate}
-  //         maximumDate={maximumDate}
-  //         onChange={(event, date) => {
-  //           setShowDatePicker(false);
-  //           if (!date) return;
-
-  //           const selectedDay = date.getDate();
-
-  //           if (investmentType === 'SIP' && selectedDay > 28) {
-  //             const nextMonth = new Date(date);
-  //             nextMonth.setMonth(date.getMonth() + 1);
-  //             nextMonth.setDate(1);
-  //             setSelectedDate(nextMonth);
-  //           } else {
-  //             setSelectedDate(date);
-  //           }
-
-  //           setErrors(prev => ({ ...prev, date: '' }));
-  //         }}
-  //       />
-  //     )
-  //   );
-  // };
 
   const Header = () => (
     <LinearGradient
@@ -1063,17 +983,15 @@ const Invest = ({ navigation }) => {
       ? getMinimumDateForSIPUPI()
       : getMinimumDateForMandate();
 
- 
-const startDateMax = new Date();
-startDateMax.setFullYear(startDateMax.getFullYear() + 30);
+  const startDateMax = new Date();
+  startDateMax.setFullYear(startDateMax.getFullYear() + 30);
 
-const getMaxEndDate = () => {
-  const base = selectedDate ? new Date(selectedDate) : new Date();
-  const maxDate = new Date(base);
-  maxDate.setFullYear(base.getFullYear() + 30);
-  return maxDate;
-};
-
+  const getMaxEndDate = () => {
+    const base = selectedDate ? new Date(selectedDate) : new Date();
+    const maxDate = new Date(base);
+    maxDate.setFullYear(base.getFullYear() + 30);
+    return maxDate;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1200,7 +1118,7 @@ const getMaxEndDate = () => {
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             minimumDate={minimumDate}
-       maximumDate={startDateMax}
+            maximumDate={startDateMax}
             investmentType={investmentType}
             setErrors={setErrors}
             // styles
@@ -1217,7 +1135,11 @@ const getMaxEndDate = () => {
             selectedEndDate={selectedEndDate}
             setSelectedEndDate={setSelectedEndDate}
             selectedStartDate={selectedDate}
-            minimumDate={selectedDate}
+            minimumDate={
+              selectedFrequency === "MONTHLY" && selectedDate
+                ? getMonthlyMinEndDate(selectedDate)
+                : selectedDate
+            }
             maximumDate={getMaxEndDate()}
             setErrors={setErrors}
             investmentType={investmentType}
@@ -1710,6 +1632,7 @@ const styles = StyleSheet.create({
   failedText: {
     color: Config.Colors.red,
   },
+
   remarksContainer: {
     marginTop: 15,
     padding: 15,
@@ -1724,6 +1647,14 @@ const styles = StyleSheet.create({
     color: "#333333",
     marginBottom: 8,
   },
+  remarksScrollWrapper: {
+    maxHeight: 120, // 🔴 mandatory for scrolling
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 8,
+    padding: 8,
+    backgroundColor: "#FFF",
+  },
   remarksText: {
     fontSize: 12,
     color: "#666666",
@@ -1733,6 +1664,7 @@ const styles = StyleSheet.create({
     color: Config.Colors.red,
   },
   responseModalButtons: {
+    marginTop: 40,
     padding: 20,
     borderTopWidth: 1,
     borderTopColor: "#F0F0F0",
