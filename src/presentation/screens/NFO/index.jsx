@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StatusBar,
+  TextInput,
   Platform,
   Image,
   FlatList,
@@ -33,9 +34,12 @@ const NFO = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+const [filteredData, setFilteredData] = useState([]);
 
   useEffect(() => {
     fetchNFOData();
+  setSearchQuery("");
   }, [activeTab]);
 
   const fetchNFOData = async () => {
@@ -47,7 +51,8 @@ const NFO = ({ navigation }) => {
 
       if (response?.data) {
         const transformedData = transformNFOData(response?.data, activeTab);
-        setNfoData(transformedData);
+       setNfoData(transformedData);
+setFilteredData(transformedData);
       } else {
         setError("Failed to fetch data");
       }
@@ -58,6 +63,25 @@ const NFO = ({ navigation }) => {
     }
   };
 
+  const handleSearch = (text) => {
+  setSearchQuery(text);
+
+  if (!text.trim()) {
+    setFilteredData(nfoData);
+    return;
+  }
+
+  const query = text.toLowerCase();
+
+  const filtered = nfoData.filter(item =>
+    item.schemeName?.toLowerCase().includes(query) ||
+    item.fundHouse?.toLowerCase().includes(query) ||
+    item.schemeCode?.toLowerCase().includes(query)
+  );
+
+  setFilteredData(filtered);
+};
+
   // ✅ FIXED TRANSFORM LOGIC
   const transformNFOData = (apiData, tab) => {
     if (!apiData?.data) return [];
@@ -67,7 +91,7 @@ const NFO = ({ navigation }) => {
     if (tab === "UPCOMING") sourceData = apiData.data.upcoming || [];
     if (tab === "CLOSED") sourceData = apiData.data.recentlyClosed || [];
 
-    return sourceData.map((item, index) => {
+    return sourceData.filter(item => !item?.schemeName.toLowerCase().includes("direct")).map((item, index) => {
       const v = item.variant;
 
       return {
@@ -169,9 +193,7 @@ const NFO = ({ navigation }) => {
     </LinearGradient>
   );
 
-  // ------------------------------------------------------------
-  // CARD COMPONENT (STYLING UNTOUCHED)
-  // ------------------------------------------------------------
+
   const NFOCard = ({ item }) => {
     // console.log("NFO",item)
     return (
@@ -319,13 +341,25 @@ const NFO = ({ navigation }) => {
           onPress={() => setActiveTab("CLOSED")}
         />
       </View>
+      <View style={styles.searchContainer}>
+  <View style={styles.searchBox}>
+    <Text style={styles.searchIcon}>🔍</Text>
+    <TextInput
+      placeholder="Search by scheme, fund house, code"
+      value={searchQuery}
+      onChangeText={handleSearch}
+      placeholderTextColor="#999"
+      style={styles.searchInput}
+    />
+  </View>
+</View>
 
       <View style={styles.content}>
         {loading ? (
           <ActivityIndicator size="large" color="#2B8DF6" />
         ) : (
           <FlatList
-            data={nfoData}
+            data={filteredData}
             renderItem={({ item }) => <NFOCard item={item} />}
             keyExtractor={(item) => item.id}
             refreshControl={
@@ -605,6 +639,28 @@ const styles = StyleSheet.create({
     fontSize: widthToDp(3.5),
     fontWeight: "600",
   },
+  searchContainer: {
+  paddingHorizontal: widthToDp(4),
+  marginTop: heightToDp(2),
+},
+searchBox: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: "#FFFFFF",
+  borderRadius: widthToDp(2),
+  paddingHorizontal: widthToDp(3),
+  paddingVertical: heightToDp(1),
+  elevation: 2,
+},
+searchIcon: {
+  fontSize: widthToDp(4),
+  marginRight: widthToDp(2),
+},
+searchInput: {
+  flex: 1,
+  fontSize: widthToDp(3.5),
+  color: "#333",
+},
 });
 
 export default NFO;

@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: Config.Colors.cyan_blue,
   },
   androidStatusBar: {
-    height: StatusBar.currentHeight,
+    // height: StatusBar.currentHeight,
     // backgroundColor: Config.Colors.cyan_blue,
     backgroundColor: "transparent",
     // backgroundColor: "black",

@@ -325,7 +325,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                               : styles.negativeReturns,
                           ]}
                         >
-                          {Return ? '+' : '-'}
+                          {Return ? '+' : ''}
                           {portfolioData?.overall?.gainPercent || '0'}%
                         </Text>
                       </View>
@@ -362,12 +362,12 @@ const loginData = useSelector(state => state?.login?.loginData);
             </View>
           </Animated.ScrollView>
 
-          <MandateAlert
+          {/* <MandateAlert
             visible={showMandateAlert}
             onClose={handleCloseMandateAlert}
             showCancelButton={true}
             onCreateMandate={handleCreateMandate}
-          />
+          /> */}
           
           {/* Show SetPasswordModal only if password is not set */}
           <SetPasswordModal

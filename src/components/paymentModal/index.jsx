@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,30 +13,45 @@ import {
   BackHandler,
   Dimensions,
   StatusBar,
-} from 'react-native';
-import { useSelector } from 'react-redux';
-import { widthToDp, heightToDp } from '../../helpers/Responsive';
-import { baseUrl, store_key_login_details } from '../../helpers/Config';
-import { Direct_Plan, UPI_BANKS } from '../../constant/mapperConstants';
-import { useNavigation } from '@react-navigation/native';
-import { getData } from '../../helpers/localStorage';
+} from "react-native";
+import { useSelector } from "react-redux";
+import { widthToDp, heightToDp } from "../../helpers/Responsive";
+import { baseUrl, store_key_login_details } from "../../helpers/Config";
+import { Direct_Plan, UPI_BANKS } from "../../constant/mapperConstants";
+import { useNavigation } from "@react-navigation/native";
+import { getData } from "../../helpers/localStorage";
+import { WebView } from "react-native-webview";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 const PAYMENT_METHODS = [
-  { key: "DIRECT", label: "Direct Banking", desc: "Secure bank transfer", icon: "🏦", gradient: ['#3b82f6', '#1d4ed8'] },
-  { key: "UPI", label: "UPI Payment", desc: "Instant UPI transfer", icon: "📱", gradient: ['#10b981', '#059669'] },
+  {
+    key: "DIRECT",
+    label: "Direct Banking",
+    desc: "Secure bank transfer",
+    icon: "🏦",
+    gradient: ["#3b82f6", "#1d4ed8"],
+  },
+  {
+    key: "UPI",
+    label: "UPI Payment",
+    desc: "Instant UPI transfer",
+    icon: "📱",
+    gradient: ["#10b981", "#059669"],
+  },
 ];
 
 const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const paymentData = route?.params?.paymentData;
   console.log("paymentDetails", paymentData);
-  const orderId = paymentData?.investmentResponse?.resultText?.orderNumber ||paymentData?.investmentResponse?.resultText?.orderId;
+  const orderId =
+    paymentData?.investmentResponse?.resultText?.orderNumber ||
+    paymentData?.investmentResponse?.resultText?.orderId;
   const amount = paymentData?.amount || "";
   const investmentType = paymentData?.investmentType || "";
 
-  const LoginDetails = useSelector(state => state.login.loginData);
+  const LoginDetails = useSelector((state) => state.login.loginData);
 
   // State variables
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -50,30 +65,38 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
   const [selectedBankId, setSelectedBankId] = useState("");
   const [modeOfPayment, setModeOfPayment] = useState("");
   const [paymentAttempted, setPaymentAttempted] = useState(false);
-  const [currentStep, setCurrentStep] = useState('form');
+  const [currentStep, setCurrentStep] = useState("form");
   const [showBankPicker, setShowBankPicker] = useState(false);
   const [bankPickerData, setBankPickerData] = useState([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showPaymentCompleteModal, setShowPaymentCompleteModal] = useState(false);
-
+  const [showPaymentCompleteModal, setShowPaymentCompleteModal] =
+    useState(false);
+  const [showWebView, setShowWebView] = useState(false);
+  const [webViewHtml, setWebViewHtml] = useState("");
   // Fallback data
   const [fallbackDetails] = useState({
     user: {
-      accountDetails: [{
-        bankName: "",
-        accountNumber: "",
-        ifscCode: "",
-        bankBranch: ""
-      }]
-    }
+      accountDetails: [
+        {
+          bankName: "",
+          accountNumber: "",
+          ifscCode: "",
+          bankBranch: "",
+        },
+      ],
+    },
   });
 
   // Bank details
   const bankDetails = {
-    name: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]?.bankName,
-    accountNumber: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]?.accountNumber,
-    ifsc: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]?.ifscCode,
-    branch: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]?.bankBranch,
+    name: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]
+      ?.bankName,
+    accountNumber: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]
+      ?.accountNumber,
+    ifsc: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]
+      ?.ifscCode,
+    branch: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]
+      ?.bankBranch,
   };
 
   // Handle back button for Android
@@ -83,7 +106,10 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
       return true;
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
     return () => backHandler.remove();
   }, []);
 
@@ -99,7 +125,7 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
     // navigation.navigate('MarketWatch');
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Profile' }],
+      routes: [{ name: "Profile" }],
     });
   };
 
@@ -109,8 +135,8 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
       // Show payment complete modal instead of alert
       setShowPaymentCompleteModal(true);
     } catch (error) {
-      console.error('Error opening browser:', error);
-      setError('Failed to open payment gateway');
+      console.error("Error opening browser:", error);
+      setError("Failed to open payment gateway");
     }
   };
 
@@ -137,7 +163,7 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
     }
 
     setPaymentAttempted(true);
-    setCurrentStep('processing');
+    setCurrentStep("processing");
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -145,8 +171,10 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
     const payload = {
       modeofpayment: paymentMethod,
       bankid: selectedBankId,
-      accountnumber: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]?.accountNumber,
-      ifsc: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]?.ifscCode,
+      accountnumber: (LoginDetails || fallbackDetails)?.user
+        ?.accountDetails?.[0]?.accountNumber,
+      ifsc: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]
+        ?.ifscCode,
       ordernumber: orderId,
       totalamount: amount,
       NEFTreference: paymentMethod === "NEFT" ? neftReference : "",
@@ -160,11 +188,11 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
     console.log("Token", Token);
     try {
       const response = await fetch(`${baseUrl}/api/v1/payment`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          "clientCode": LoginDetails?.user?.clientCode,
-          "Authorization": Token,
+          "Content-Type": "application/json",
+          clientCode: LoginDetails?.user?.clientCode,
+          Authorization: Token,
         },
         body: JSON.stringify(payload),
       });
@@ -173,33 +201,42 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-   
-  const data = await response.json();
-  console.log("Payment response:", data);
+      const data = await response.json();
+      console.log("Payment response:", data);
 
-  setPaymentResponse(data);
+      setPaymentResponse(data);
 
-  // ✅ Handle new API structure
-  if (data?.success) {
-    setSuccess(true);
-    setCurrentStep('result');
-    setShowPaymentModal(true);
-    if (onSuccess) onSuccess(data);
-  } else {
-    setError(data?.message || "Payment failed. Please try again.");
-    setCurrentStep('result');
-    setShowPaymentModal(true);
-    if (onError) onError(data);
-  }
+      if (data?.success) {
+        // ✅ STOP processing BEFORE opening WebView
+        setLoading(false);
+        setCurrentStep("form");
 
-} catch (err) {
-  console.error("Payment error:", err);
-  setError(err.message || "Payment processing failed. Please try again.");
-  setCurrentStep('result');
-  if (onError) onError(err);
-} finally {
-  setLoading(false);
-}}
+        if (paymentMethod === "DIRECT" && data?.paymentPage) {
+          setWebViewHtml(data.paymentPage);
+          setShowWebView(true);
+          return;
+        }
+
+        // Existing non-DIRECT success flow
+        setSuccess(true);
+        setCurrentStep("result");
+        setShowPaymentModal(true);
+        if (onSuccess) onSuccess(data);
+      } else {
+        setError(data?.message || "Payment failed. Please try again.");
+        setCurrentStep("result");
+        setShowPaymentModal(true);
+        if (onError) onError(data);
+      }
+    } catch (err) {
+      console.error("Payment error:", err);
+      setError(err.message || "Payment processing failed. Please try again.");
+      setCurrentStep("result");
+      if (onError) onError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Reset form function
   const resetForm = () => {
@@ -211,7 +248,7 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
     setShowPaymentModal(false);
     setPaymentResponse(null);
     setPaymentAttempted(false);
-    setCurrentStep('form');
+    setCurrentStep("form");
     setSelectedBankId("");
     if (onClose) onClose();
   };
@@ -220,12 +257,13 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
   const closePaymentModal = () => {
     setShowPaymentModal(false);
     setPaymentResponse(null);
-    setCurrentStep('form');
+    setCurrentStep("form");
     setPaymentAttempted(false);
   };
 
   // Submit disabled logic
-  const isSubmitDisabled = !paymentMethod ||
+  const isSubmitDisabled =
+    !paymentMethod ||
     loading ||
     (paymentMethod === "UPI" && (!upiId.trim() || !selectedBankId)) ||
     (paymentMethod === "NEFT" && !neftReference.trim()) ||
@@ -233,7 +271,7 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
 
   // Bank picker functions
   const openBankPicker = (type) => {
-    const data = type === 'DIRECT' ? Direct_Plan : UPI_BANKS;
+    const data = type === "DIRECT" ? Direct_Plan : UPI_BANKS;
     setBankPickerData(data || []);
     setShowBankPicker(true);
   };
@@ -246,8 +284,13 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
 
   const getSelectedBankName = () => {
     const allBanks = [...(Direct_Plan || []), ...(UPI_BANKS || [])];
-    const bank = allBanks.find(b => b.id === selectedBankId);
-    return bank?.name || (paymentMethod === "UPI" ? "-- Select UPI App --" : "-- Select Your Bank --");
+    const bank = allBanks.find((b) => b.id === selectedBankId);
+    return (
+      bank?.name ||
+      (paymentMethod === "UPI"
+        ? "-- Select Your Bank --"
+        : "-- Select Your Bank --")
+    );
   };
 
   const CancelPaymentModal = () => (
@@ -266,15 +309,16 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
           <Text style={styles.cancelModalMessage}>
             {investmentType === "SIP"
               ? "If you cancel now, your SIP will still be activated and future payments will be debited through mandate on the selected dates."
-              : "Are you sure you want to cancel this payment? You can complete it later from your orders section."
-            }
+              : "Are you sure you want to cancel this payment? You can complete it later from your orders section."}
           </Text>
           <View style={styles.cancelModalButtons}>
             <TouchableOpacity
               onPress={() => setShowCancelModal(false)}
               style={styles.cancelModalSecondaryButton}
             >
-              <Text style={styles.cancelModalSecondaryText}>Continue Payment</Text>
+              <Text style={styles.cancelModalSecondaryText}>
+                Continue Payment
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={navigateToMarketWatch}
@@ -303,7 +347,8 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
           </View>
           <Text style={styles.paymentCompleteTitle}>Complete Your Payment</Text>
           <Text style={styles.paymentCompleteMessage}>
-            You will be redirected to your bank's secure payment gateway. Please complete the payment process and return to the app.
+            You will be redirected to your bank's secure payment gateway. Please
+            complete the payment process and return to the app.
           </Text>
           <View style={styles.paymentCompleteInfo}>
             <View style={styles.paymentInfoRow}>
@@ -322,7 +367,9 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
             }}
             style={styles.paymentCompleteButton}
           >
-            <Text style={styles.paymentCompleteButtonText}>Complete Process</Text>
+            <Text style={styles.paymentCompleteButtonText}>
+              Complete Process
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -341,7 +388,9 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
         <View style={styles.bankPickerContainer}>
           <View style={styles.bankPickerHeader}>
             <Text style={styles.bankPickerTitle}>
-              {paymentMethod === "UPI" ? "Select UPI App" : "Select Your Bank"}
+              {paymentMethod === "UPI"
+                ? "Select Your Bank"
+                : "Select Your Bank"}
             </Text>
             <TouchableOpacity
               onPress={() => setShowBankPicker(false)}
@@ -350,7 +399,10 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
               <Text style={styles.headerCloseText}>✕</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView style={styles.bankList} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.bankList}
+            showsVerticalScrollIndicator={false}
+          >
             {bankPickerData.map((bank) => (
               <TouchableOpacity
                 key={bank.id}
@@ -372,94 +424,98 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
     </Modal>
   );
 
+  const PaymentResponseModal = ({ response, onClose }) => {
+    const isSuccess = response?.success === true;
+    const messageText = response?.message || "Something went wrong.";
 
-const PaymentResponseModal = ({ response, onClose }) => {
-  const isSuccess = response?.success === true;
-  const messageText = response?.message || "Something went wrong.";
-
-  return (
-    <Modal
-      visible={true}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.responseModalContainer}>
-          <View style={styles.responseModalContent}>
-            {/* Status Icon */}
-            <View style={[
-              styles.statusIconContainer,
-              { backgroundColor: isSuccess ? '#dcfce7' : '#fef2f2' }
-            ]}>
-              <Text style={[
-                styles.statusIcon,
-                { color: isSuccess ? '#16a34a' : '#dc2626' }
-              ]}>
-                {isSuccess ? '✓' : '✕'}
-              </Text>
-            </View>
-
-            {/* Status Text */}
-            <View style={styles.statusTextContainer}>
-              <Text style={styles.statusTitle}>
-                {isSuccess ? "Payment Initiated!" : "Payment Failed"}
-              </Text>
-              <Text style={styles.statusMessage}>
-                {messageText}
-              </Text>
-            </View>
-
-            {/* Order Summary Card */}
-            <View style={styles.orderSummaryCard}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Order ID:</Text>
-                <Text style={styles.summaryValue}>{orderId}</Text>
+    return (
+      <Modal
+        visible={true}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.responseModalContainer}>
+            <View style={styles.responseModalContent}>
+              {/* Status Icon */}
+              <View
+                style={[
+                  styles.statusIconContainer,
+                  { backgroundColor: isSuccess ? "#dcfce7" : "#fef2f2" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusIcon,
+                    { color: isSuccess ? "#16a34a" : "#dc2626" },
+                  ]}
+                >
+                  {isSuccess ? "✓" : "✕"}
+                </Text>
               </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Amount:</Text>
-                <Text style={[styles.summaryValue, styles.amountHighlight]}>₹{amount}</Text>
+
+              {/* Status Text */}
+              <View style={styles.statusTextContainer}>
+                <Text style={styles.statusTitle}>
+                  {isSuccess ? "Payment Initiated!" : "Payment Failed"}
+                </Text>
+                <Text style={styles.statusMessage}>{messageText}</Text>
               </View>
-              {response?.internalRefNo && (
+
+              {/* Order Summary Card */}
+              <View style={styles.orderSummaryCard}>
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Reference:</Text>
-                  <Text style={styles.summaryValue}>{response.internalRefNo}</Text>
+                  <Text style={styles.summaryLabel}>Order ID:</Text>
+                  <Text style={styles.summaryValue}>{orderId}</Text>
                 </View>
-              )}
-            </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Amount:</Text>
+                  <Text style={[styles.summaryValue, styles.amountHighlight]}>
+                    ₹{amount}
+                  </Text>
+                </View>
+                {response?.internalRefNo && (
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Reference:</Text>
+                    <Text style={styles.summaryValue}>
+                      {response.internalRefNo}
+                    </Text>
+                  </View>
+                )}
+              </View>
 
-            {/* Continue Button */}
-            <TouchableOpacity
-              onPress={() => {
-                onClose();
-                navigateToMarketWatch();
-              }}
-              style={[
-                styles.continueButton,
-                { backgroundColor: isSuccess ? '#16a34a' : '#dc2626' }
-              ]}
-            >
-              <Text style={styles.continueButtonText}>Continue</Text>
-            </TouchableOpacity>
+              {/* Continue Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  onClose();
+                  navigateToMarketWatch();
+                }}
+                style={[
+                  styles.continueButton,
+                  { backgroundColor: isSuccess ? "#16a34a" : "#dc2626" },
+                ]}
+              >
+                <Text style={styles.continueButtonText}>Continue</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
-  );
-};
-
+      </Modal>
+    );
+  };
 
   // Processing Animation Component
   const ProcessingAnimation = () => (
-    <Modal
-      visible={true}
-      transparent={true}
-      animationType="fade"
-    >
+    <Modal visible={true} transparent={true} animationType="fade">
       <View style={styles.processingOverlay}>
         <View style={styles.processingContent}>
           <View style={styles.processingIconContainer}>
-            <ActivityIndicator size="large" color="#6366f1" style={styles.processingSpinner} />
+            <ActivityIndicator
+              size="large"
+              color="#6366f1"
+              style={styles.processingSpinner}
+            />
             <Text style={styles.lockIcon}>🔒</Text>
           </View>
           <Text style={styles.processingTitle}>Processing Your Payment</Text>
@@ -467,17 +523,79 @@ const PaymentResponseModal = ({ response, onClose }) => {
             Please wait while we securely process your transaction...
           </Text>
           <View style={styles.processingDots}>
-            <View style={[styles.dot, { backgroundColor: '#6366f1' }]} />
-            <View style={[styles.dot, { backgroundColor: '#6366f1', opacity: 0.7 }]} />
-            <View style={[styles.dot, { backgroundColor: '#6366f1', opacity: 0.4 }]} />
+            <View style={[styles.dot, { backgroundColor: "#6366f1" }]} />
+            <View
+              style={[styles.dot, { backgroundColor: "#6366f1", opacity: 0.7 }]}
+            />
+            <View
+              style={[styles.dot, { backgroundColor: "#6366f1", opacity: 0.4 }]}
+            />
           </View>
         </View>
       </View>
     </Modal>
   );
+  const PaymentWebViewModal = () => (
+    <Modal
+      visible={showWebView}
+      animationType="slide"
+      onRequestClose={() => {
+        setShowWebView(false);
+        navigateToMarketWatch();
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <StatusBar barStyle="dark-content" />
 
+        {/* Close Button */}
+        <View
+          style={{
+            height: 50,
+            backgroundColor: "#ffffff",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            paddingHorizontal: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: "#e5e7eb",
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => {
+              setShowWebView(false);
+              navigateToMarketWatch();
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: "600", color: "#dc2626" }}>
+              Close
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* BillDesk WebView */}
+        <WebView
+          originWhitelist={["*"]}
+          source={{ html: webViewHtml }}
+          javaScriptEnabled
+          domStorageEnabled
+          onNavigationStateChange={(navState) => {
+            // ✅ Auto-close once bank redirects back / finishes
+            if (
+              navState.url.includes("success") ||
+              navState.url.includes("failure") ||
+              navState.url.includes("response")
+            ) {
+              setTimeout(() => {
+                setShowWebView(false);
+                navigateToMarketWatch();
+              }, 1500);
+            }
+          }}
+        />
+      </View>
+    </Modal>
+  );
   // Show processing animation if in processing step
-  if (currentStep === 'processing') {
+  if (currentStep === "processing") {
     return <ProcessingAnimation />;
   }
 
@@ -500,17 +618,25 @@ const PaymentResponseModal = ({ response, onClose }) => {
                 </View>
                 <View>
                   <Text style={styles.headerTitle}>Secure Payment</Text>
-                  <Text style={styles.headerSubtitle}>256-bit SSL encrypted</Text>
+                  <Text style={styles.headerSubtitle}>
+                    256-bit SSL encrypted
+                  </Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={handleCancelPayment} style={styles.headerCloseButton}>
+              <TouchableOpacity
+                onPress={handleCancelPayment}
+                style={styles.headerCloseButton}
+              >
                 <Text style={styles.headerCloseText}>✕</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.content}>
             {/* Status Messages - Only show after payment attempt */}
             {paymentAttempted && (
@@ -521,8 +647,12 @@ const PaymentResponseModal = ({ response, onClose }) => {
                       <Text style={styles.successIconSmallText}>✓</Text>
                     </View>
                     <View style={styles.alertTextContainer}>
-                      <Text style={styles.alertTitle}>Payment Initiated Successfully!</Text>
-                      <Text style={styles.alertMessage}>Your payment is being processed</Text>
+                      <Text style={styles.alertTitle}>
+                        Payment Initiated Successfully!
+                      </Text>
+                      <Text style={styles.alertMessage}>
+                        Your payment is being processed
+                      </Text>
                     </View>
                   </View>
                 ) : error ? (
@@ -558,7 +688,9 @@ const PaymentResponseModal = ({ response, onClose }) => {
               <View style={styles.investmentTypeContainer}>
                 <Text style={styles.investmentTypeLabel}>Investment Type:</Text>
                 <View style={styles.investmentTypeBadge}>
-                  <Text style={styles.investmentTypeText}>{investmentType}</Text>
+                  <Text style={styles.investmentTypeText}>
+                    {investmentType}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -578,21 +710,27 @@ const PaymentResponseModal = ({ response, onClose }) => {
                     style={[
                       styles.paymentMethodCard,
                       paymentMethod === key && styles.paymentMethodCardSelected,
-                      loading && styles.disabled
+                      loading && styles.disabled,
                     ]}
                   >
                     <View style={styles.paymentMethodContent}>
-                      <View style={[
-                        styles.paymentMethodIcon,
-                        paymentMethod === key && styles.paymentMethodIconSelected
-                      ]}>
+                      <View
+                        style={[
+                          styles.paymentMethodIcon,
+                          paymentMethod === key &&
+                            styles.paymentMethodIconSelected,
+                        ]}
+                      >
                         <Text style={styles.paymentMethodIconText}>{icon}</Text>
                       </View>
                       <View style={styles.paymentMethodTextContainer}>
-                        <Text style={[
-                          styles.paymentMethodLabel,
-                          paymentMethod === key && styles.paymentMethodLabelSelected
-                        ]}>
+                        <Text
+                          style={[
+                            styles.paymentMethodLabel,
+                            paymentMethod === key &&
+                              styles.paymentMethodLabelSelected,
+                          ]}
+                        >
                           {label}
                         </Text>
                         <Text style={styles.paymentMethodDesc}>{desc}</Text>
@@ -613,15 +751,17 @@ const PaymentResponseModal = ({ response, onClose }) => {
               <View style={styles.section}>
                 <Text style={styles.inputLabel}>Select Your Bank</Text>
                 <TouchableOpacity
-                  onPress={() => openBankPicker('DIRECT')}
+                  onPress={() => openBankPicker("DIRECT")}
                   style={styles.bankSelector}
                 >
                   <View style={styles.bankSelectorContent}>
                     <Text style={styles.bankSelectorIcon}>🏦</Text>
-                    <Text style={[
-                      styles.bankSelectorText,
-                      selectedBankId && styles.bankSelectorTextSelected
-                    ]}>
+                    <Text
+                      style={[
+                        styles.bankSelectorText,
+                        selectedBankId && styles.bankSelectorTextSelected,
+                      ]}
+                    >
                       {getSelectedBankName()}
                     </Text>
                   </View>
@@ -641,17 +781,21 @@ const PaymentResponseModal = ({ response, onClose }) => {
                   style={[styles.textInput, loading && styles.disabled]}
                   placeholderTextColor="#9ca3af"
                 />
-                <Text style={[styles.inputLabel, { marginTop: heightToDp(3) }]}>Select UPI App</Text>
+                <Text style={[styles.inputLabel, { marginTop: heightToDp(3) }]}>
+                  Select Your Bank
+                </Text>
                 <TouchableOpacity
-                  onPress={() => openBankPicker('UPI')}
+                  onPress={() => openBankPicker("UPI")}
                   style={styles.bankSelector}
                 >
                   <View style={styles.bankSelectorContent}>
                     <Text style={styles.bankSelectorIcon}>📱</Text>
-                    <Text style={[
-                      styles.bankSelectorText,
-                      selectedBankId && styles.bankSelectorTextSelected
-                    ]}>
+                    <Text
+                      style={[
+                        styles.bankSelectorText,
+                        selectedBankId && styles.bankSelectorTextSelected,
+                      ]}
+                    >
                       {getSelectedBankName()}
                     </Text>
                   </View>
@@ -679,24 +823,34 @@ const PaymentResponseModal = ({ response, onClose }) => {
               <View style={styles.bankDetailsCard}>
                 <View style={styles.bankDetailsHeader}>
                   <Text style={styles.bankDetailsIcon}>💼</Text>
-                  <Text style={styles.bankDetailsTitle}>Bank Details for NEFT Transfer</Text>
+                  <Text style={styles.bankDetailsTitle}>
+                    Bank Details for NEFT Transfer
+                  </Text>
                 </View>
                 <View style={styles.bankDetailsGrid}>
                   <View style={styles.bankDetailRow}>
                     <Text style={styles.bankDetailLabel}>Bank Name</Text>
-                    <Text style={styles.bankDetailValue}>{bankDetails.name}</Text>
+                    <Text style={styles.bankDetailValue}>
+                      {bankDetails.name}
+                    </Text>
                   </View>
                   <View style={styles.bankDetailRow}>
                     <Text style={styles.bankDetailLabel}>Account Number</Text>
-                    <Text style={styles.bankDetailValue}>{bankDetails.accountNumber}</Text>
+                    <Text style={styles.bankDetailValue}>
+                      {bankDetails.accountNumber}
+                    </Text>
                   </View>
                   <View style={styles.bankDetailRow}>
                     <Text style={styles.bankDetailLabel}>IFSC Code</Text>
-                    <Text style={styles.bankDetailValue}>{bankDetails.ifsc}</Text>
+                    <Text style={styles.bankDetailValue}>
+                      {bankDetails.ifsc}
+                    </Text>
                   </View>
                   <View style={styles.bankDetailRow}>
                     <Text style={styles.bankDetailLabel}>Branch</Text>
-                    <Text style={styles.bankDetailValue}>{bankDetails.branch}</Text>
+                    <Text style={styles.bankDetailValue}>
+                      {bankDetails.branch}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -714,7 +868,10 @@ const PaymentResponseModal = ({ response, onClose }) => {
               <TouchableOpacity
                 onPress={handleSubmit}
                 disabled={isSubmitDisabled}
-                style={[styles.submitButton, isSubmitDisabled && styles.submitButtonDisabled]}
+                style={[
+                  styles.submitButton,
+                  isSubmitDisabled && styles.submitButtonDisabled,
+                ]}
               >
                 {loading ? (
                   <View style={styles.loadingButtonContent}>
@@ -724,7 +881,9 @@ const PaymentResponseModal = ({ response, onClose }) => {
                 ) : (
                   <View style={styles.submitButtonContent}>
                     <Text style={styles.lockIconSmall}>🔒</Text>
-                    <Text style={styles.submitButtonText}>Pay Securely ₹{amount}</Text>
+                    <Text style={styles.submitButtonText}>
+                      Pay Securely ₹{amount}
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -753,6 +912,7 @@ const PaymentResponseModal = ({ response, onClose }) => {
           onClose={closePaymentModal}
         />
       )}
+      {showWebView && <PaymentWebViewModal />}
     </Modal>
   );
 };
@@ -763,14 +923,14 @@ const styles = StyleSheet.create({
   // Main Container
   mainContainer: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
   },
 
   // Header Styles
   header: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: "#4f46e5",
     paddingTop: heightToDp(6),
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -783,23 +943,23 @@ const styles = StyleSheet.create({
   },
 
   headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   shieldContainer: {
     width: widthToDp(10),
     height: widthToDp(10),
     borderRadius: widthToDp(5),
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: widthToDp(3),
   },
 
@@ -809,30 +969,30 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: widthToDp(4.5),
-    fontWeight: '700',
-    color: '#ffffff',
+    fontWeight: "700",
+    color: "#ffffff",
     marginBottom: heightToDp(0.5),
   },
 
   headerSubtitle: {
     fontSize: widthToDp(3),
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '500',
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: "500",
   },
 
   headerCloseButton: {
     width: widthToDp(8),
     height: widthToDp(8),
     borderRadius: widthToDp(4),
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   headerCloseText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: widthToDp(4),
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   // Scroll Container
@@ -851,20 +1011,20 @@ const styles = StyleSheet.create({
   },
 
   successAlert: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#dcfce7',
-    borderColor: '#16a34a',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#dcfce7",
+    borderColor: "#16a34a",
     borderWidth: 1,
     borderRadius: widthToDp(3),
     padding: widthToDp(4),
   },
 
   errorAlert: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    borderColor: '#dc2626',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fef2f2",
+    borderColor: "#dc2626",
     borderWidth: 1,
     borderRadius: widthToDp(3),
     padding: widthToDp(4),
@@ -874,32 +1034,32 @@ const styles = StyleSheet.create({
     width: widthToDp(8),
     height: widthToDp(8),
     borderRadius: widthToDp(4),
-    backgroundColor: '#16a34a',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#16a34a",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: widthToDp(3),
   },
 
   successIconSmallText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   errorIconSmall: {
     width: widthToDp(8),
     height: widthToDp(8),
     borderRadius: widthToDp(4),
-    backgroundColor: '#dc2626',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#dc2626",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: widthToDp(3),
   },
 
   errorIconSmallText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   alertTextContainer: {
@@ -908,14 +1068,14 @@ const styles = StyleSheet.create({
 
   alertTitle: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: heightToDp(0.5),
   },
 
   alertMessage: {
     fontSize: widthToDp(3),
-    color: '#6b7280',
+    color: "#6b7280",
   },
 
   // Section Styles
@@ -924,8 +1084,8 @@ const styles = StyleSheet.create({
   },
 
   sectionTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: heightToDp(2),
   },
 
@@ -936,17 +1096,17 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: widthToDp(4),
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
 
   // Order Summary
   orderSummarySection: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: widthToDp(4),
     padding: widthToDp(4),
     marginBottom: heightToDp(3),
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -954,52 +1114,52 @@ const styles = StyleSheet.create({
   },
 
   orderSummaryGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: heightToDp(2),
   },
 
   orderSummaryItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   orderSummaryLabel: {
     fontSize: widthToDp(3),
-    color: '#6b7280',
+    color: "#6b7280",
     marginBottom: heightToDp(1),
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
   orderSummaryValue: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
 
   orderSummaryAmount: {
     fontSize: widthToDp(4.5),
-    fontWeight: '700',
-    color: '#16a34a',
+    fontWeight: "700",
+    color: "#16a34a",
   },
 
   investmentTypeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: heightToDp(2),
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: "#f3f4f6",
   },
 
   investmentTypeLabel: {
     fontSize: widthToDp(3),
-    color: '#6b7280',
+    color: "#6b7280",
     marginRight: widthToDp(2),
   },
 
   investmentTypeBadge: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: "#f3f4f6",
     paddingHorizontal: widthToDp(3),
     paddingVertical: heightToDp(0.5),
     borderRadius: widthToDp(2),
@@ -1007,8 +1167,8 @@ const styles = StyleSheet.create({
 
   investmentTypeText: {
     fontSize: widthToDp(3),
-    fontWeight: '600',
-    color: '#4f46e5',
+    fontWeight: "600",
+    color: "#4f46e5",
   },
 
   // Payment Methods
@@ -1017,12 +1177,12 @@ const styles = StyleSheet.create({
   },
 
   paymentMethodCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: widthToDp(4),
     padding: widthToDp(4),
     borderWidth: 2,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
+    borderColor: "#e5e7eb",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1030,27 +1190,27 @@ const styles = StyleSheet.create({
   },
 
   paymentMethodCardSelected: {
-    borderColor: '#4f46e5',
-    backgroundColor: '#f8faff',
+    borderColor: "#4f46e5",
+    backgroundColor: "#f8faff",
   },
 
   paymentMethodContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   paymentMethodIcon: {
     width: widthToDp(12),
     height: widthToDp(12),
     borderRadius: widthToDp(6),
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: widthToDp(3),
   },
 
   paymentMethodIconSelected: {
-    backgroundColor: '#e0e7ff',
+    backgroundColor: "#e0e7ff",
   },
 
   paymentMethodIconText: {
@@ -1063,70 +1223,70 @@ const styles = StyleSheet.create({
 
   paymentMethodLabel: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: heightToDp(0.5),
   },
 
   paymentMethodLabelSelected: {
-    color: '#4f46e5',
+    color: "#4f46e5",
   },
 
   paymentMethodDesc: {
     fontSize: widthToDp(3),
-    color: '#6b7280',
+    color: "#6b7280",
   },
 
   selectedCheck: {
     width: widthToDp(6),
     height: widthToDp(6),
     borderRadius: widthToDp(3),
-    backgroundColor: '#4f46e5',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#4f46e5",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   selectedCheckText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: widthToDp(3),
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   // Input Styles
   inputLabel: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: "600",
+    color: "#374151",
     marginBottom: heightToDp(1),
   },
 
   textInput: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: widthToDp(3),
     paddingHorizontal: widthToDp(4),
     paddingVertical: heightToDp(2),
     fontSize: widthToDp(3.5),
-    color: '#111827',
+    color: "#111827",
   },
 
   // Bank Selector
   bankSelector: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: widthToDp(3),
     paddingHorizontal: widthToDp(4),
     paddingVertical: heightToDp(2),
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 
   bankSelectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
 
@@ -1137,28 +1297,28 @@ const styles = StyleSheet.create({
 
   bankSelectorText: {
     fontSize: widthToDp(3.5),
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
 
   bankSelectorTextSelected: {
-    color: '#111827',
-    fontWeight: '500',
+    color: "#111827",
+    fontWeight: "500",
   },
 
   bankSelectorArrow: {
     fontSize: widthToDp(3),
-    color: '#6b7280',
+    color: "#6b7280",
   },
 
   // Bank Details Card
   bankDetailsCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: widthToDp(4),
     padding: widthToDp(4),
     marginBottom: heightToDp(3),
     borderLeftWidth: 4,
-    borderLeftColor: '#4f46e5',
-    shadowColor: '#000',
+    borderLeftColor: "#4f46e5",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1166,8 +1326,8 @@ const styles = StyleSheet.create({
   },
 
   bankDetailsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: heightToDp(2),
   },
 
@@ -1178,8 +1338,8 @@ const styles = StyleSheet.create({
 
   bankDetailsTitle: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
 
   bankDetailsGrid: {
@@ -1187,30 +1347,30 @@ const styles = StyleSheet.create({
   },
 
   bankDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: heightToDp(0.5),
   },
 
   bankDetailLabel: {
     fontSize: widthToDp(3),
-    color: '#6b7280',
-    fontWeight: '500',
+    color: "#6b7280",
+    fontWeight: "500",
   },
 
   bankDetailValue: {
     fontSize: widthToDp(3),
-    color: '#111827',
-    fontWeight: '600',
-    textAlign: 'right',
+    color: "#111827",
+    fontWeight: "600",
+    textAlign: "right",
     flex: 1,
     marginLeft: widthToDp(2),
   },
 
   // Action Buttons
   actionButtonsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: widthToDp(3),
     marginTop: heightToDp(4),
     marginBottom: heightToDp(3),
@@ -1218,30 +1378,30 @@ const styles = StyleSheet.create({
 
   cancelButton: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderWidth: 2,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: widthToDp(3),
     paddingVertical: heightToDp(2.5),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   cancelButtonText: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
   },
 
   submitButton: {
     flex: 2,
-    backgroundColor: '#4f46e5',
+    backgroundColor: "#4f46e5",
     borderRadius: widthToDp(3),
     paddingVertical: heightToDp(2.5),
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    shadowColor: '#4f46e5',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    shadowColor: "#4f46e5",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1249,20 +1409,20 @@ const styles = StyleSheet.create({
   },
 
   submitButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: "#9ca3af",
     shadowOpacity: 0,
     elevation: 0,
   },
 
   submitButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   submitButtonText: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#ffffff',
+    fontWeight: "600",
+    color: "#ffffff",
   },
 
   lockIconSmall: {
@@ -1271,19 +1431,19 @@ const styles = StyleSheet.create({
   },
 
   loadingButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: widthToDp(2),
   },
 
   // Security Badge
   securityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f0fdf4',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0fdf4",
     borderWidth: 1,
-    borderColor: '#bbf7d0',
+    borderColor: "#bbf7d0",
     borderRadius: widthToDp(3),
     paddingVertical: heightToDp(1.5),
     paddingHorizontal: widthToDp(4),
@@ -1296,36 +1456,36 @@ const styles = StyleSheet.create({
 
   securityText: {
     fontSize: widthToDp(3),
-    color: '#16a34a',
-    fontWeight: '500',
+    color: "#16a34a",
+    fontWeight: "500",
   },
 
   // Modal Overlay
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: widthToDp(4),
   },
 
   // Cancel Modal
   cancelModalContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: widthToDp(4),
     padding: widthToDp(6),
-    width: '100%',
+    width: "100%",
     maxWidth: widthToDp(85),
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   cancelIconContainer: {
     width: widthToDp(16),
     height: widthToDp(16),
     borderRadius: widthToDp(8),
-    backgroundColor: '#fef3cd',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fef3cd",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: heightToDp(2),
   },
 
@@ -1335,71 +1495,71 @@ const styles = StyleSheet.create({
 
   cancelModalTitle: {
     fontSize: widthToDp(4.5),
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#111827",
+    textAlign: "center",
     marginBottom: heightToDp(1),
   },
 
   cancelModalMessage: {
     fontSize: widthToDp(3.5),
-    color: '#6b7280',
-    textAlign: 'center',
+    color: "#6b7280",
+    textAlign: "center",
     lineHeight: widthToDp(5),
     marginBottom: heightToDp(3),
   },
 
   cancelModalButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: widthToDp(3),
-    width: '100%',
+    width: "100%",
   },
 
   cancelModalSecondaryButton: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: "#f3f4f6",
     borderRadius: widthToDp(3),
     paddingVertical: heightToDp(2),
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   cancelModalSecondaryText: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: "600",
+    color: "#374151",
   },
 
   cancelModalPrimaryButton: {
     flex: 1,
-    backgroundColor: '#dc2626',
+    backgroundColor: "#dc2626",
     borderRadius: widthToDp(3),
     paddingVertical: heightToDp(2),
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   cancelModalPrimaryText: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#ffffff',
+    fontWeight: "600",
+    color: "#ffffff",
   },
 
   // Payment Complete Modal
   paymentCompleteContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: widthToDp(4),
     padding: widthToDp(6),
-    width: '100%',
+    width: "100%",
     maxWidth: widthToDp(85),
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   paymentCompleteIconContainer: {
     width: widthToDp(16),
     height: widthToDp(16),
     borderRadius: widthToDp(8),
-    backgroundColor: '#dbeafe',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#dbeafe",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: heightToDp(2),
   },
 
@@ -1409,83 +1569,83 @@ const styles = StyleSheet.create({
 
   paymentCompleteTitle: {
     fontSize: widthToDp(4.5),
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#111827",
+    textAlign: "center",
     marginBottom: heightToDp(1),
   },
 
   paymentCompleteMessage: {
     fontSize: widthToDp(3.5),
-    color: '#6b7280',
-    textAlign: 'center',
+    color: "#6b7280",
+    textAlign: "center",
     lineHeight: widthToDp(5),
     marginBottom: heightToDp(3),
   },
 
   paymentCompleteInfo: {
-    width: '100%',
-    backgroundColor: '#f9fafb',
+    width: "100%",
+    backgroundColor: "#f9fafb",
     borderRadius: widthToDp(3),
     padding: widthToDp(4),
     marginBottom: heightToDp(3),
   },
 
   paymentInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: heightToDp(1),
   },
 
   paymentInfoLabel: {
     fontSize: widthToDp(3),
-    color: '#6b7280',
-    fontWeight: '500',
+    color: "#6b7280",
+    fontWeight: "500",
   },
 
   paymentInfoValue: {
     fontSize: widthToDp(3),
-    color: '#111827',
-    fontWeight: '600',
+    color: "#111827",
+    fontWeight: "600",
   },
 
   paymentCompleteButton: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: "#4f46e5",
     borderRadius: widthToDp(3),
     paddingVertical: heightToDp(2.5),
     paddingHorizontal: widthToDp(8),
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   paymentCompleteButtonText: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#ffffff',
+    fontWeight: "600",
+    color: "#ffffff",
   },
 
   // Bank Picker Modal
   bankPickerContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: widthToDp(4),
-    width: '100%',
+    width: "100%",
     maxWidth: widthToDp(90),
     maxHeight: heightToDp(70),
   },
 
   bankPickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: widthToDp(4),
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: "#f3f4f6",
   },
 
   bankPickerTitle: {
     fontSize: widthToDp(4),
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
 
   bankList: {
@@ -1496,21 +1656,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: widthToDp(4),
     paddingVertical: heightToDp(2),
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: "#f3f4f6",
   },
 
   bankItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   bankItemIcon: {
     width: widthToDp(10),
     height: widthToDp(10),
     borderRadius: widthToDp(5),
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: widthToDp(3),
   },
 
@@ -1521,128 +1681,128 @@ const styles = StyleSheet.create({
   bankItemText: {
     flex: 1,
     fontSize: widthToDp(3.5),
-    color: '#111827',
-    fontWeight: '500',
+    color: "#111827",
+    fontWeight: "500",
   },
 
   bankItemArrow: {
     fontSize: widthToDp(4),
-    color: '#6b7280',
+    color: "#6b7280",
   },
 
   // Payment Response Modal
   responseModalContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: widthToDp(4),
-    width: '100%',
+    width: "100%",
     maxWidth: widthToDp(90),
     maxHeight: heightToDp(80),
   },
 
   responseModalContent: {
     padding: widthToDp(6),
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   statusIconContainer: {
     width: widthToDp(20),
     height: widthToDp(20),
     borderRadius: widthToDp(10),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: heightToDp(3),
   },
 
   statusIcon: {
     fontSize: widthToDp(10),
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   statusTextContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: heightToDp(3),
   },
 
   statusTitle: {
     fontSize: widthToDp(4.5),
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#111827",
+    textAlign: "center",
     marginBottom: heightToDp(1),
   },
 
   statusMessage: {
     fontSize: widthToDp(3.5),
-    color: '#6b7280',
-    textAlign: 'center',
+    color: "#6b7280",
+    textAlign: "center",
     lineHeight: widthToDp(5),
   },
 
   orderSummaryCard: {
-    width: '100%',
-    backgroundColor: '#f9fafb',
+    width: "100%",
+    backgroundColor: "#f9fafb",
     borderRadius: widthToDp(3),
     padding: widthToDp(4),
     marginBottom: heightToDp(3),
   },
 
   summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: heightToDp(1.5),
   },
 
   summaryLabel: {
     fontSize: widthToDp(3),
-    color: '#6b7280',
-    fontWeight: '500',
+    color: "#6b7280",
+    fontWeight: "500",
   },
 
   summaryValue: {
     fontSize: widthToDp(3),
-    color: '#111827',
-    fontWeight: '600',
+    color: "#111827",
+    fontWeight: "600",
   },
 
   amountHighlight: {
     fontSize: widthToDp(3.5),
-    color: '#16a34a',
-    fontWeight: '700',
+    color: "#16a34a",
+    fontWeight: "700",
   },
 
   continueButton: {
     borderRadius: widthToDp(3),
     paddingVertical: heightToDp(2.5),
     paddingHorizontal: widthToDp(8),
-    alignItems: 'center',
+    alignItems: "center",
     minWidth: widthToDp(40),
   },
 
   continueButtonText: {
     fontSize: widthToDp(3.5),
-    fontWeight: '600',
-    color: '#ffffff',
+    fontWeight: "600",
+    color: "#ffffff",
   },
 
   // Processing Animation
   processingOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   processingContent: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: widthToDp(4),
     padding: widthToDp(8),
-    alignItems: 'center',
+    alignItems: "center",
     width: widthToDp(80),
   },
 
   processingIconContainer: {
-    position: 'relative',
+    position: "relative",
     marginBottom: heightToDp(3),
   },
 
@@ -1651,30 +1811,30 @@ const styles = StyleSheet.create({
   },
 
   lockIcon: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
+    position: "absolute",
+    top: "50%",
+    left: "50%",
     transform: [{ translateX: -widthToDp(2) }, { translateY: -widthToDp(2) }],
     fontSize: widthToDp(4),
   },
 
   processingTitle: {
     fontSize: widthToDp(4.5),
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#111827",
+    textAlign: "center",
     marginBottom: heightToDp(1),
   },
 
   processingMessage: {
     fontSize: widthToDp(3.5),
-    color: '#6b7280',
-    textAlign: 'center',
+    color: "#6b7280",
+    textAlign: "center",
     marginBottom: heightToDp(3),
   },
 
   processingDots: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: widthToDp(2),
   },
 

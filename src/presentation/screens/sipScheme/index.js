@@ -25,13 +25,13 @@ const API_BASE_URL = `${Config.baseUrl}/api/v1/mutualfund/filter/universal`;
 const LIMIT = 50;
 
 const tabs = [
-  { id: "all", title: "All Funds", priority: "All", key: "all" },
+  // { id: "all", title: "All Funds", priority: "All", key: "all" },
   { id: "large", title: "Large Cap", priority: "LARGE", key: "large" },
   { id: "mid", title: "Mid Cap", priority: "MID", key: "mid" },
   { id: "small", title: "Small Cap", priority: "SMALL", key: "small" },
-  { id: "hybrid", title: "Hybrid Funds", priority: "HYBRID", key: "hybrid" },
-  { id: "liquid", title: "Liquid Funds", priority: "LIQUID", key: "liquid" },
-  { id: "gold", title: "Gold Funds", priority: "GOLD", key: "gold" },
+  { id: "hybrid", title: "Hybrid", priority: "HYBRID", key: "hybrid" },
+  { id: "liquid", title: "Liquid", priority: "LIQUID", key: "liquid" },
+  { id: "gold", title: "Gold", priority: "GOLD", key: "gold" },
   { id: "debt", title: "DEBT", priority: "DEBT", key: "debt" },
   { id: "elss", title: "ELSS", priority: "ELSS", key: "elss" },
 ];
@@ -116,8 +116,8 @@ const SipScheme = React.memo(({ navigation }) => {
 
       const respData = resp || {};
       const items = Array.isArray(respData.data) ? respData.data : [];
-      
-      let fetched = items.map((it) => ({
+      const filter = items.filter((a)=>a.schemePlan !=="DIRECT")
+      let fetched = filter.map((it) => ({
         ...it,
         variantFamilyName: it.variantFamilyName || it.schemeName || "",
         amcCode: it.amcCode || it.amc || "N/A",
@@ -170,7 +170,8 @@ const SipScheme = React.memo(({ navigation }) => {
 
   const renderScene = useCallback(
     ({ route }) => (
-      <TabContent
+      <>
+       <TabContent
         data={data}
         isLoading={isLoading}
         isLoadingMore={isLoadingMore}
@@ -178,6 +179,9 @@ const SipScheme = React.memo(({ navigation }) => {
         error={error}
         searchQuery={searchQuery}
       />
+      {/* {console.log("Data_with_tabcontent", data)} */}
+      </>
+     
     ),
     [data, isLoading, isLoadingMore, handleLoadMore, error, searchQuery]
   );
@@ -206,7 +210,14 @@ const FundCard = React.memo(({ dispatch, navigation, fund, index }) => {
   const holdingMode = loginDetails?.user?.holdingMode; 
   // "PHYSICAL" or "DEMAT"
 
-const sipList = fund?.sipDetails || [];
+// Ensure sipDetails is ALWAYS an array
+const sipList = Array.isArray(fund?.sipDetails)
+  ? fund.sipDetails
+  : fund?.sipDetails
+  ? [fund.sipDetails]
+  : [];
+// console.log(sipList,"siplis");
+
 
 // FILTER BY HOLDING MODE
 const validByMode = sipList.filter((item) => {
@@ -236,7 +247,7 @@ const groupedSip = Object.entries(
   dispatch(
     setMarketData({
       ...fund,
-      allSipOptions: groupedSip,  // 💥 Attach cleaned SIP data
+      allSipOptions: groupedSip,  
     })
   );
   navigation.navigate("MarketWatch");
@@ -291,7 +302,7 @@ const groupedSip = Object.entries(
             flexDirection: "row",
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: "600", marginRight: 4 }}>
+          <Text style={{ fontSize: 11, fontWeight: "600", marginRight: 4 ,color: "#010101ff"}}>
             {freq}
           </Text>
           <Text style={{ fontSize: 11, fontWeight: "700", color: "#1E88E5" }}>

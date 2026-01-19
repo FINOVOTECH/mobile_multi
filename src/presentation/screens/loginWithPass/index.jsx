@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,36 +16,37 @@ import {
   BackHandler,
   Image,
   Alert,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
-import * as Config from '../../../helpers/Config';
-import { widthToDp, heightToDp } from '../../../helpers/Responsive';
-import { apiPostService } from '../../../helpers/services';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import * as Config from "../../../helpers/Config";
+import { widthToDp, heightToDp } from "../../../helpers/Responsive";
+import { apiPostService } from "../../../helpers/services";
 import {
   setLoginData,
   setRegi,
   setRegiId,
-} from '../../../store/slices/loginSlice';
-import { getData, storeData } from '../../../helpers/localStorage';
-import SInfoSvg from '../../svgs';
-import * as Icons from '../../../helpers/Icons';
-import ReactNativeBiometrics from 'react-native-biometrics';
-import BiometricLogin from '../BiometricLogin';
-import Rbutton from '../../../components/Rbutton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setPassData } from '../../../store/slices/passSlice';
+} from "../../../store/slices/loginSlice";
+import { getData, storeData } from "../../../helpers/localStorage";
+import SInfoSvg from "../../svgs";
+import * as Icons from "../../../helpers/Icons";
+import ReactNativeBiometrics from "react-native-biometrics";
+import BiometricLogin from "../BiometricLogin";
+import Rbutton from "../../../components/Rbutton";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setPass, setPassData } from "../../../store/slices/passSlice";
 
 export default function LoginWithPass() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const LoginData = useSelector(state => state.login.loginData);
-  const DATA = useSelector(state => state.login);
-  
-  const [clientCode, setClientCode] = useState('');
-  const [password, setPassword] = useState('');
+  const LoginData = useSelector((state) => state.login.loginData);
+  const DATA = useSelector((state) => state.login);
+const PIN_LENGTH = 4;
+const pinInputRef = useRef(null);
+  const [clientCode, setClientCode] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -62,25 +63,25 @@ export default function LoginWithPass() {
       const { available } = await rnBiometrics.isSensorAvailable();
 
       if (!available) {
-        Alert.alert('Biometrics not available', 'Please login normally');
+        Alert.alert("Biometrics not available", "Please login normally");
         return;
       }
 
       const { success, error } = await rnBiometrics.simplePrompt({
-        promptMessage: 'Sign in using biometric authentication',
-        cancelButtonText: 'Cancel'
+        promptMessage: "Sign in using biometric authentication",
+        cancelButtonText: "Cancel",
       });
 
       if (success) {
         await verifyWithServer();
       } else {
-        console.log('Biometric authentication cancelled or failed:', error);
+        console.log("Biometric authentication cancelled or failed:", error);
       }
     } catch (error) {
-      console.error('Biometric authentication error:', error);
+      console.error("Biometric authentication error:", error);
       Alert.alert(
-        'Biometric auth failed',
-        error.message || 'Please try again or login normally.'
+        "Biometric auth failed",
+        error.message || "Please try again or login normally."
       );
     } finally {
       setIsLoading(false);
@@ -89,47 +90,47 @@ export default function LoginWithPass() {
 
   const verifyWithServer = async () => {
     try {
-      const response = await fetch(`${Config.baseUrl}/api/v1/user/function/verify/refresh`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'refreshToken': `${LoginData.refreshToken}`,
+      const response = await fetch(
+        `${Config.baseUrl}/api/v1/user/function/verify/refresh`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            refreshToken: `${LoginData.refreshToken}`,
+          },
         }
-      });
+      );
 
       const result = await response.json();
 
       if (response.ok && result?.accessToken) {
-        await storeData(
-          Config.store_key_login_details,
-          result.accessToken,
-        );
+        await storeData(Config.store_key_login_details, result.accessToken);
         await storeData(Config.clientCode, LoginData?.user?.clientCode);
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Profile' }],
+          routes: [{ name: "Profile" }],
         });
       } else {
-        Alert.alert('Authentication Failed', 'Please login normally');
+        Alert.alert("Authentication Failed", "Please login normally");
       }
     } catch (error) {
-      console.error('Server verification error:', error);
-      Alert.alert('Error', 'Failed to authenticate. Please login normally.');
+      console.error("Server verification error:", error);
+      Alert.alert("Error", "Failed to authenticate. Please login normally.");
     }
   };
 
   useEffect(() => {
     const backAction = () => {
-      Alert.alert('Exit App', 'Are you sure you want to exit?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Exit', onPress: () => BackHandler.exitApp() },
+      Alert.alert("Exit App", "Are you sure you want to exit?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Exit", onPress: () => BackHandler.exitApp() },
       ]);
       return true;
     };
 
     const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      backAction,
+      "hardwareBackPress",
+      backAction
     );
 
     return () => backHandler.remove();
@@ -137,7 +138,7 @@ export default function LoginWithPass() {
 
   useEffect(() => {
     if (clientCode || password) {
-      setErrorMessage('');
+      setErrorMessage("");
       setValidationErrors({});
     }
   }, [clientCode, password]);
@@ -146,17 +147,17 @@ export default function LoginWithPass() {
     const errors = {};
 
     if (!clientCode.trim()) {
-      errors.clientCode = 'Client code is required';
+      errors.clientCode = "Client code is required";
     } else if (!/^[A-Za-z0-9]+$/.test(clientCode.trim())) {
-      errors.clientCode = 'Client code should contain only letters and numbers';
+      errors.clientCode = "Client code should contain only letters and numbers";
     } else if (clientCode.trim().length < 4) {
-      errors.clientCode = 'Client code should be at least 4 characters';
+      errors.clientCode = "Client code should be at least 4 characters";
     }
 
     if (!password.trim()) {
-      errors.password = 'Password is required';
+      errors.password = "Password is required";
     } else if (password.trim().length < 4) {
-      errors.password = 'Password must be at least 4 characters';
+      errors.password = "Password must be at least 4 characters";
     }
 
     return errors;
@@ -171,34 +172,44 @@ export default function LoginWithPass() {
     }
 
     setIsLoading(true);
-    setErrorMessage('');
+    setErrorMessage("");
 
     try {
       const payload = {
         referenceId: clientCode.trim(),
-        password: password.trim()
+        password: password.trim(),
       };
 
-      const response = await apiPostService('/api/v1/user/onboard/login-pwd/verify', payload);
+      const response = await apiPostService(
+        "/api/v1/user/onboard/login-pwd/verify",
+        payload
+      );
 
       if (response?.status === 200 && response?.data?.accessToken) {
-        await storeData(Config.store_key_login_details, response?.data?.accessToken);
+        await storeData(
+          Config.store_key_login_details,
+          response?.data?.accessToken
+        );
 
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
         }
-
+        dispatch(setPass(response?.data?.user?.passwordPlain));
         dispatch(setLoginData(response?.data));
 
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Profile' }],
+          routes: [{ name: "Profile" }],
         });
       } else if (
         response?.status === 200 &&
-        (response?.data?.nextStep === 'REGISTRATION' || response?.data?.nextStep)
+        (response?.data?.nextStep === "REGISTRATION" ||
+          response?.data?.nextStep)
       ) {
-        await storeData(Config.store_key_login_details, response?.data?.accessToken);
+        await storeData(
+          Config.store_key_login_details,
+          response?.data?.accessToken
+        );
 
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
@@ -209,26 +220,31 @@ export default function LoginWithPass() {
         if (response?.data?.nextStep) {
           dispatch(setRegiId(response?.data?.registeredData?.registrationId));
           dispatch(setRegi(response?.data?.nextStep));
-          navigation.navigate('Registration');
+          navigation.navigate("Registration");
         } else {
           navigation.reset({
             index: 0,
-            routes: [{ name: 'Profile' }],
+            routes: [{ name: "Profile" }],
           });
         }
       } else {
-        throw new Error(response?.data?.message || 'Login failed');
+        throw new Error(response?.data?.message || "Login failed");
       }
     } catch (err) {
-      console.log('Login Error:', err.response?.data || err.message);
+      console.log("Login Error:", err.response?.data || err.message);
 
       const errorMsg = err.response?.data?.message || err.message;
-      if (errorMsg.toLowerCase().includes('invalid') || errorMsg.toLowerCase().includes('incorrect')) {
-        setErrorMessage('Invalid client code or password. Please check your credentials.');
-      } else if (errorMsg.toLowerCase().includes('not found')) {
-        setErrorMessage('Client code not found. Please check your input.');
+      if (
+        errorMsg.toLowerCase().includes("invalid") ||
+        errorMsg.toLowerCase().includes("incorrect")
+      ) {
+        setErrorMessage(
+          "Invalid client code or password. Please check your credentials."
+        );
+      } else if (errorMsg.toLowerCase().includes("not found")) {
+        setErrorMessage("Client code not found. Please check your input.");
       } else {
-        setErrorMessage('Login failed. Please try again.');
+        setErrorMessage("Login failed. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -236,7 +252,7 @@ export default function LoginWithPass() {
   };
 
   const handleLoginWithOtp = () => {
-    navigation.navigate('Home'); 
+    navigation.navigate("Home");
   };
 
   const isFormValid = () => {
@@ -245,23 +261,23 @@ export default function LoginWithPass() {
 
   const renderLoginScreen = () => (
     <View style={simpleStyles.container}>
-      <Text style={simpleStyles.mainTitle}>
-        Login with Client Code
-      </Text>
+      <Text style={simpleStyles.mainTitle}>Login with Client Code</Text>
 
       <View style={simpleStyles.inputGroup}>
-        <Text style={simpleStyles.inputLabel}>
-          Client Code
-        </Text>
-        
-        <View style={[
-          simpleStyles.inputOuterContainer,
-          validationErrors.clientCode && simpleStyles.inputOuterError
-        ]}>
-          <View style={[
-            simpleStyles.inputInnerContainer,
-            validationErrors.clientCode && simpleStyles.inputInnerError
-          ]}>
+        <Text style={simpleStyles.inputLabel}>Client Code</Text>
+
+        <View
+          style={[
+            simpleStyles.inputOuterContainer,
+            validationErrors.clientCode && simpleStyles.inputOuterError,
+          ]}
+        >
+          <View
+            style={[
+              simpleStyles.inputInnerContainer,
+              validationErrors.clientCode && simpleStyles.inputInnerError,
+            ]}
+          >
             <TextInput
               style={simpleStyles.input}
               placeholder="Enter your client code"
@@ -276,7 +292,7 @@ export default function LoginWithPass() {
             />
           </View>
         </View>
-        
+
         {validationErrors.clientCode && (
           <Text style={simpleStyles.fieldErrorText}>
             {validationErrors.clientCode}
@@ -285,39 +301,78 @@ export default function LoginWithPass() {
       </View>
 
       <View style={simpleStyles.inputGroup}>
-        <Text style={simpleStyles.inputLabel}>
-          Password
-        </Text>
-        
-        <View style={[
-          simpleStyles.inputOuterContainer,
-          validationErrors.password && simpleStyles.inputOuterError
-        ]}>
-          <View style={[
-            simpleStyles.inputInnerContainer,
-            validationErrors.password && simpleStyles.inputInnerError
-          ]}>
-            <TextInput
-              style={simpleStyles.input}
-              placeholder="Enter your password"
-              placeholderTextColor="#AAB7B8"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              returnKeyType="done"
-              onSubmitEditing={isFormValid() ? handleLoginWithPassword : undefined}
-            />
-            <TouchableOpacity 
+        <View style={{ flexDirection: "row", justifyContent: "space-between",alignItems: "center" }}>
+          
+        <Text style={simpleStyles.inputLabel}>Password</Text>
+         <TouchableOpacity
               style={simpleStyles.eyeIcon}
               onPress={() => setShowPassword(!showPassword)}
             >
               <Text style={simpleStyles.eyeIconText}>
-                {showPassword ? '👁️' : '🔒'}
+                {showPassword ? "HIDE" : "SHOW"}
               </Text>
             </TouchableOpacity>
+        </View>
+
+        <View
+          style={[
+            // simpleStyles.inputOuterContainer,
+            validationErrors.password && simpleStyles.inputOuterError,
+          ]}
+        >
+          <View
+            style={[
+              // simpleStyles.inputInnerContainer,
+              validationErrors.password && simpleStyles.inputInnerError,{ backgroundColor: "white" },
+            ]}
+          >
+           <TouchableOpacity
+  activeOpacity={1}
+  onPress={() => pinInputRef.current?.focus()}
+  style={simpleStyles.pinContainer}
+>
+  {Array.from({ length: PIN_LENGTH }).map((_, index) => {
+    const digit = password[index] || "";
+    return (
+      <View
+        key={index}
+        style={[
+          simpleStyles.pinBox,
+          validationErrors.password && simpleStyles.pinBoxError,
+        ]}
+      >
+        <Text style={simpleStyles.pinText}>
+          {digit ? (showPassword ? digit : "●") : ""}
+        </Text>
+      </View>
+    );
+  })}
+
+  {/* Hidden TextInput */}
+  <TextInput
+    ref={pinInputRef}
+    value={password}
+    onChangeText={(text) => {
+      if (/^\d*$/.test(text) && text.length <= PIN_LENGTH) {
+        setPassword(text);
+      }
+    }}
+    keyboardType="number-pad"
+    maxLength={PIN_LENGTH}
+    secureTextEntry={!showPassword}
+    style={simpleStyles.hiddenInput}
+    autoFocus={false}
+    onSubmitEditing={
+      password.length === PIN_LENGTH
+        ? handleLoginWithPassword
+        : undefined
+    }
+  />
+</TouchableOpacity>
+           
           </View>
         </View>
-        
+
         {validationErrors.password && (
           <Text style={simpleStyles.fieldErrorText}>
             {validationErrors.password}
@@ -333,14 +388,9 @@ export default function LoginWithPass() {
 
       <View style={simpleStyles.footer}>
         <Text style={simpleStyles.policyText}>
-          By proceeding, you agree with Jyoti's{' '}
-          <Text style={simpleStyles.policyLink}>
-            terms and conditions
-          </Text>{' '}
-          and{' '}
-          <Text style={simpleStyles.policyLink}>
-            privacy policy.
-          </Text>
+          By proceeding, you agree with Jyoti's{" "}
+          <Text style={simpleStyles.policyLink}>terms and conditions</Text> and{" "}
+          <Text style={simpleStyles.policyLink}>privacy policy.</Text>
         </Text>
 
         <Rbutton
@@ -351,23 +401,22 @@ export default function LoginWithPass() {
         />
 
         {/* Login with OTP Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={simpleStyles.otpLoginButton}
           onPress={handleLoginWithOtp}
         >
-          <Text style={simpleStyles.otpLoginText}>
-            Login with OTP instead
-          </Text>
+          <Text style={simpleStyles.otpLoginText}>Login with OTP instead</Text>
         </TouchableOpacity>
 
         <View style={simpleStyles.trustBadge}>
           <Text style={simpleStyles.trustIcon}>✔️</Text>
-          <Text style={simpleStyles.trustText}>
-            Trusted by many Brokers
-          </Text>
+          <Text style={simpleStyles.trustText}>Trusted by many Brokers</Text>
         </View>
-        
-        <TouchableOpacity style={simpleStyles.registerContainer} onPress={() => navigation?.navigate('Registration')}>
+
+        <TouchableOpacity
+          style={simpleStyles.registerContainer}
+          onPress={() => navigation?.navigate("Registration")}
+        >
           <Text style={simpleStyles.registerText}>
             Don't have an account?
             <Text style={simpleStyles.registerLink}> Register Now</Text>
@@ -382,7 +431,7 @@ export default function LoginWithPass() {
   ) : (
     <SafeAreaView style={simpleStyles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={simpleStyles.keyboardContainer}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -402,7 +451,7 @@ export default function LoginWithPass() {
 const simpleStyles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: "#FFFFFF",
   },
   keyboardContainer: {
     flex: 1,
@@ -414,57 +463,57 @@ const simpleStyles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: widthToDp(6),
     paddingTop: heightToDp(5),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   mainTitle: {
     fontSize: widthToDp(6.5),
-    fontWeight: 'bold',
-    color: '#1C1C1C', 
+    fontWeight: "bold",
+    color: "#1C1C1C",
     marginBottom: heightToDp(4),
-    fontFamily: Config.fontFamilys?.Poppins_ExtraBold || 'System',
-    textAlign: 'center',
+    fontFamily: Config.fontFamilys?.Poppins_ExtraBold || "System",
+    textAlign: "center",
   },
   inputGroup: {
     marginBottom: heightToDp(3),
   },
   inputLabel: {
     fontSize: widthToDp(3.5),
-    color: '#7A7A7A',
+    color: "#7A7A7A",
     marginBottom: heightToDp(1),
-    fontFamily: Config.fontFamilys?.Poppins_Medium || 'System',
+    fontFamily: Config.fontFamilys?.Poppins_Medium || "System",
   },
   inputOuterContainer: {
     padding: 2,
     borderRadius: 8,
-    backgroundColor: '#000000',
-    alignSelf: 'stretch',
+    backgroundColor: "#000000",
+    alignSelf: "stretch",
   },
   inputOuterError: {
-    backgroundColor: '#A0A0A0',
+    backgroundColor: "#A0A0A0",
   },
   inputInnerContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: widthToDp(4),
     paddingVertical: heightToDp(1.5),
     borderRadius: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 3,
   },
   inputInnerError: {
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
   },
   input: {
     flex: 1,
     height: heightToDp(4),
     padding: 0,
     fontSize: widthToDp(4.5),
-    color: '#1C1C1C',
-    fontFamily: Config.fontFamilys?.Poppins_SemiBold || 'System',
+    color: "#1C1C1C",
+    fontFamily: Config.fontFamilys?.Poppins_SemiBold || "System",
   },
   eyeIcon: {
     padding: widthToDp(1),
@@ -472,21 +521,24 @@ const simpleStyles = StyleSheet.create({
   },
   eyeIconText: {
     fontSize: widthToDp(4),
+    textAlign: "right",
+    color: "#7A7A7A",
+    marginTop:10
   },
   fieldErrorText: {
-    color: '#E74C3C',
+    color: "#E74C3C",
     fontSize: widthToDp(3.5),
     marginTop: heightToDp(1),
     marginLeft: widthToDp(1),
-    fontFamily: Config.fontFamilys?.Poppins_Medium || 'System',
+    fontFamily: Config.fontFamilys?.Poppins_Medium || "System",
   },
   errorText: {
-    color: '#E74C3C',
+    color: "#E74C3C",
     fontSize: widthToDp(3.5),
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: heightToDp(2),
-    fontWeight: '500',
-    fontFamily: Config.fontFamilys?.Poppins_Medium || 'System',
+    fontWeight: "500",
+    fontFamily: Config.fontFamilys?.Poppins_Medium || "System",
   },
   spacer: {
     flex: 1,
@@ -496,60 +548,94 @@ const simpleStyles = StyleSheet.create({
   },
   policyText: {
     fontSize: widthToDp(3.2),
-    color: '#7A7A7A',
-    textAlign: 'center',
+    color: "#7A7A7A",
+    textAlign: "center",
     marginBottom: heightToDp(3),
-    fontFamily: Config.fontFamilys?.Poppins_Regular || 'System',
+    fontFamily: Config.fontFamilys?.Poppins_Regular || "System",
   },
   policyLink: {
-    color: '#1C1C1C',
-    fontWeight: 'bold',
-    fontFamily: Config.fontFamilys?.Poppins_SemiBold || 'System',
+    color: "#1C1C1C",
+    fontWeight: "bold",
+    fontFamily: Config.fontFamilys?.Poppins_SemiBold || "System",
   },
   otpLoginButton: {
     marginTop: heightToDp(2),
     marginBottom: heightToDp(2),
     paddingVertical: heightToDp(1.5),
-    alignItems: 'center',
+    alignItems: "center",
   },
   otpLoginText: {
     fontSize: widthToDp(3.8),
-    color: '#000000',
-    fontWeight: '600',
-    fontFamily: Config.fontFamilys?.Poppins_SemiBold || 'System',
-    textDecorationLine: 'underline',
+    color: "#000000",
+    fontWeight: "600",
+    fontFamily: Config.fontFamilys?.Poppins_SemiBold || "System",
+    textDecorationLine: "underline",
   },
   trustBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: heightToDp(1),
     marginBottom: heightToDp(2),
   },
   trustIcon: {
     fontSize: widthToDp(3.5),
-    color: '#5CB85C',
+    color: "#5CB85C",
     marginRight: widthToDp(1.5),
   },
   trustText: {
     fontSize: widthToDp(3.5),
-    color: '#7A7A7A',
-    fontWeight: '500',
-    fontFamily: Config.fontFamilys?.Poppins_Medium || 'System',
+    color: "#7A7A7A",
+    fontWeight: "500",
+    fontFamily: Config.fontFamilys?.Poppins_Medium || "System",
   },
   registerContainer: {
     marginTop: heightToDp(2),
     marginBottom: heightToDp(6),
   },
   registerText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: widthToDp(3.5),
-    color: '#7F8C8D',
-    fontFamily: Config.fontFamilys?.Poppins_Regular || 'System',
+    color: "#7F8C8D",
+    fontFamily: Config.fontFamilys?.Poppins_Regular || "System",
   },
   registerLink: {
-    color: '#000000',
-    fontWeight: '700',
-    fontFamily: Config.fontFamilys?.Poppins_Bold || 'System',
+    color: "#000000",
+    fontWeight: "700",
+    fontFamily: Config.fontFamilys?.Poppins_Bold || "System",
   },
+  pinContainer: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  marginTop: heightToDp(1),
+},
+
+pinBox: {
+  width: widthToDp(14),
+  height: heightToDp(6),
+  borderRadius: 8,
+  borderBottomWidth: 1,
+  borderColor: "#000",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#FFFFFF",
+},
+
+pinBoxError: {
+  borderColor: "#E74C3C",
+},
+
+pinText: {
+  fontSize: widthToDp(6),
+  fontFamily: Config.fontFamilys?.Poppins_Bold || "System",
+  color: "#000",
+},
+
+hiddenInput: {
+  position: "absolute",
+  opacity: 0,
+  height: 0,
+  width: 0,
+},
+
 });

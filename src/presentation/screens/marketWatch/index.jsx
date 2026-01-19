@@ -249,7 +249,7 @@ const MarketWatch = ({ navigation }) => {
         }}
       >
         <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-          {/* <View
+          <View
             style={{
               width: 40,
               height: 40,
@@ -260,7 +260,7 @@ const MarketWatch = ({ navigation }) => {
             }}
           >
             <SInfoSvg.WhiteBackButton onPress={() => navigation.goBack()}/>
-          </View> */}
+          </View>
           <View
             style={{
               width: 40,

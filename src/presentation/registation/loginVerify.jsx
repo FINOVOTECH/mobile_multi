@@ -22,6 +22,7 @@ const LoginVerify = ({
   mobile,
 }) => {
   const navigation = useNavigation();
+  const [name, setName] = useState('');
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinStep, setPinStep] = useState(1);
   const [pin, setPin] = useState('');
@@ -47,6 +48,10 @@ const LoginVerify = ({
     const otpRegex = /^\d{4}$/;
     return otpRegex.test(otp);
   };
+  const validateName = (value) => {
+  return value?.length >= 2;
+};
+
 
   const handleMobileChange = (text) => {
     const numericText = text.replace(/[^0-9]/g, '');
@@ -188,11 +193,13 @@ const LoginVerify = ({
     }
   };
 
-  const isFormValid = () => {
-    const isEmailOtpValid = validateOtp(emailOtp);
-    const isMobileOtpValid = validateOtp(mobileOtp);
-    return isEmailOtpValid && isMobileOtpValid;
-  };
+ const isFormValid = () => {
+  const isEmailOtpValid = validateOtp(emailOtp);
+  const isMobileOtpValid = validateOtp(mobileOtp);
+  const isNameValid = validateName(name);
+
+  return isEmailOtpValid && isMobileOtpValid && isNameValid;
+};
 
   const handlePinChange = (text) => {
     const numericText = text.replace(/\D/g, '');
@@ -212,7 +219,9 @@ const LoginVerify = ({
     if (!emailOtp || !validateOtp(emailOtp)) {
       newErrors.email = 'Please enter a valid 4-digit Email OTP';
     }
-
+    if (!name || !validateName(name)) {
+  newErrors.name = 'Please enter your full name';
+}
     if (!mobileOtp || !validateOtp(mobileOtp)) {
       newErrors.mobile = 'Please enter a valid 4-digit Mobile OTP';
     }
@@ -227,6 +236,7 @@ const LoginVerify = ({
 
     try {
       const payload = {
+         name: name,
         email: email,
         mobile: mobile,
         emailBelongsTo: "SELF",
@@ -246,7 +256,7 @@ const LoginVerify = ({
       const data = await response.json();
       console.log("OTP Verification DATA:::", data);
 
-      if (data.status === "SUCCESS") {
+         if (data.status === "SUCCESS"||"IN_PROGRESS") {
         if (data?.passwordResetToken) {
           showPinModalWithAnimation();
           setPinVerify(data?.registrationId);
@@ -312,13 +322,36 @@ const LoginVerify = ({
                 style={styles.logo}
                 resizeMode='contain'
               />
-              <Text style={styles.logoText}>Jyoti MF</Text>
+              <Text style={styles.logoText}>Jyoti Wealth</Text>
             </View>
 
             {/* Title */}
             <View style={styles.titleContainer}>
               <Text style={styles.subtitleText}>Enter the 4-digit OTP sent to your email and mobile</Text>
             </View>
+<View style={styles.inputContainer}>
+  <Text style={styles.label}>FULL NAME</Text>
+  <TextInput
+    style={[
+      styles.input,
+      errors.name && styles.inputError
+    ]}
+    placeholder="Enter your full name"
+    value={name}
+    onChangeText={(text) => {
+      setName(text);
+      if (!validateName(text)) {
+        setErrors(prev => ({ ...prev, name: 'Please enter a valid name' }));
+      } else {
+        setErrors(prev => ({ ...prev, name: '' }));
+      }
+    }}
+    placeholderTextColor="#999"
+    autoCapitalize="words"
+    returnKeyType="next"
+  />
+  {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+</View>
 
             {/* Form Section */}
             <View style={styles.formContainer}>

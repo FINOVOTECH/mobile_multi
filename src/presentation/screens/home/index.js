@@ -574,10 +574,10 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
           <Text style={simpleStyles.otpLoginText}>Login with Password</Text>
         </TouchableOpacity>
 
-        <View style={simpleStyles.trustBadge}>
+        {/* <View style={simpleStyles.trustBadge}>
           <Text style={simpleStyles.trustIcon}>✔️</Text>
           <Text style={simpleStyles.trustText}>Trusted by many Brokers</Text>
-        </View>
+        </View> */}
 
         <TouchableOpacity
           style={simpleStyles.registerContainer}

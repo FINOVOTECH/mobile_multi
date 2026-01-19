@@ -17,10 +17,11 @@ const EndDatePickerComponent = ({
   selectedStartDate,
   setErrors,
   investmentType,
+  maximumDate,
   styles,
 }) => {
   let minimumDate = selectedStartDate ? new Date(selectedStartDate) : new Date();
-  let maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  // let maximumDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
   // ---------------- iOS Custom Picker ----------------
   if (Platform.OS === 'ios') {
@@ -59,7 +60,7 @@ const EndDatePickerComponent = ({
                   mode="date"
                   display="spinner"
                   minimumDate={minimumDate}
-                  maximumDate={maximumDate}
+                    maximumDate={maximumDate} 
                   onChange={(event, date) => {
                     if (!date) return;
 

@@ -187,7 +187,7 @@ const BiometricLogin = () => {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.headerContainer}>
-          <Text style={styles.subtitle}>Enter your Jyoti MF PIN</Text>
+          <Text style={styles.subtitle}>Enter your Jyoti Wealth PIN</Text>
         </View>
 
         <View style={styles.pinContainer}>
