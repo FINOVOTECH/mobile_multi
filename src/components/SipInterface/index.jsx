@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
   Platform,
@@ -26,6 +25,7 @@ import CustomSlider from "../CustomSlider";
 import { apiPostService } from "../../helpers/services";
 import { getData } from "../../helpers/localStorage";
 import Rbutton from "../Rbutton";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height: screenHeight } = Dimensions.get("window");
 
@@ -1578,7 +1578,7 @@ const getStyles = (isDarkTheme) =>
       backgroundColor: isDarkTheme ? "#1a1a1a" : Config.Colors.cyan_blue,
     },
     androidStatusBar: {
-      height: StatusBar.currentHeight,
+      // height: StatusBar.currentHeight,
       backgroundColor: "transparent",
     },
     header: {

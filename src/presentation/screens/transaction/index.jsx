@@ -6,7 +6,7 @@ import {
   View,
   FlatList,
   Platform,
-  Dimensions,
+    Dimensions,
   TouchableOpacity,
   ActivityIndicator,
   BackHandler,
@@ -21,8 +21,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import DatePickerModal from "../../../components/DatePickerModal";
 
 const Transaction = ({ navigation }) => {
-  const [tabIndex, setTabIndex] = useState(0);
-  const [transactionData, setTransactionData] = useState([]);
+    const [tabIndex, setTabIndex] = useState(0);
+    const [transactionData, setTransactionData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [page, setPage] = useState(1);
@@ -35,13 +35,12 @@ const Transaction = ({ navigation }) => {
   const [fromDate, setFromDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
   );
-
   const [toDate, setToDate] = useState(today);
 
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     const fetchToken = async () => {
       try {
         const storedToken = await AsyncStorage.getItem("token");
@@ -56,6 +55,7 @@ const Transaction = ({ navigation }) => {
     fetchToken();
   }, []);
 
+  /* -------------------- BACK HANDLER -------------------- */
   useEffect(() => {
     const backAction = () => {
       navigation.goBack();
@@ -68,6 +68,7 @@ const Transaction = ({ navigation }) => {
     return () => backHandler.remove();
   }, []);
 
+  /* -------------------- FETCH ON DATE CHANGE -------------------- */
   useEffect(() => {
     if (tokenLoaded && TOKEN) {
       setPage(1);
@@ -76,10 +77,9 @@ const Transaction = ({ navigation }) => {
     }
   }, [fromDate, toDate, TOKEN, tokenLoaded]);
 
+  /* -------------------- FETCH API -------------------- */
   const FetchTransaction = async (pageNumber = 1, reset = false) => {
     if (!TOKEN) return;
-
-    // allow fetch if reset=true
     if (!hasMore && !reset) return;
 
     setLoading(true);
@@ -99,37 +99,46 @@ const Transaction = ({ navigation }) => {
       const data = await response.json();
       const results = data?.data || [];
 
-      if (reset) {
-        setTransactionData(results);
-      } else {
-        setTransactionData((prev) => [...prev, ...results]);
-      }
-
+     setTransactionData(prev =>
+  reset ? results : [...prev, ...results]
+);
       setHasMore(pageNumber < (data?.totalPages || 1));
       setPage(pageNumber);
-    } catch (error) {
-      console.error("Transaction fetch error:", error);
-      setHasMore(false);
+    } catch (err) {
+      console.error(err);
+       setHasMore(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleExpanded = (orderNo) => {
+  /* -------------------- DATE PICKER HANDLERS -------------------- */
+  const onFromDateChange = (event, date) => {
+    if (Platform.OS === "android") setShowFromPicker(false);
+    if (date) setFromDate(date);
+  };
+
+  const onToDateChange = (event, date) => {
+    if (Platform.OS === "android") setShowToPicker(false);
+    if (date) setToDate(date);
+  };
+
+   const toggleExpanded = (orderNo) => {
     setExpandedItems((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(orderNo)) newSet.delete(orderNo);
       else newSet.add(orderNo);
       return newSet;
-    });
-  };
+    });}
 
+  /* -------------------- LOAD MORE -------------------- */
   const loadMoreData = useCallback(() => {
     if (!loading && hasMore) {
-      FetchTransaction(page + 1, false);
+      FetchTransaction(page + 1 ,false);
     }
   }, [page, loading, hasMore]);
 
+  /* -------------------- LIST ITEM -------------------- */
   const renderTransactionItem = ({ item }) => {
     const isExpanded = expandedItems.has(item?.orderNo);
     const statusColor =
@@ -141,7 +150,7 @@ const Transaction = ({ navigation }) => {
         ? "#FFEEEE"
         : "#EEFFEE";
 
-    return (
+     return (
       <View style={styles.accordionContainer}>
         <TouchableOpacity
           style={styles.accordionHeader}
@@ -262,8 +271,9 @@ const Transaction = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {Platform.OS === "android" && <View style={styles.androidStatusBar} />}
+        {Platform.OS === "android" && <View style={styles.androidStatusBar} />}
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
 
       <View style={styles.headerSection}>
         <TouchableOpacity
@@ -275,7 +285,8 @@ const Transaction = ({ navigation }) => {
         <Text style={styles.pageTitle}>Order Status</Text>
       </View>
 
-      <View style={styles.dateCard}>
+      {/* -------------------- DATE RANGE -------------------- */}
+       <View style={styles.dateCard}>
         <Text style={styles.dateTitle}>Date Range</Text>
 
         <View style={styles.dateRow}>
@@ -312,66 +323,92 @@ const Transaction = ({ navigation }) => {
 
         {/* QUICK ACTIONS */}
         <View style={styles.quickActions}>
-          <TouchableOpacity
-            onPress={() => setToDate(new Date())}
-            style={styles.quickBtn}
-          >
-            <Text style={styles.quickText}>Today</Text>
-          </TouchableOpacity>
+  {/* TODAY */}
+  <TouchableOpacity
+    onPress={() => {
+      const today = new Date();
+      setFromDate(today);
+      setToDate(today);
+    }}
+    style={styles.quickBtn}
+  >
+    <Text style={styles.quickText}>Today</Text>
+  </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => {
-              const today = new Date();
-              setFromDate(new Date(today.getFullYear(), today.getMonth(), 1));
-              setToDate(today);
-            }}
-            style={styles.quickBtn}
-          >
-            <Text style={styles.quickText}>This Month</Text>
-          </TouchableOpacity>
-        </View>
+  {/* THIS MONTH */}
+  <TouchableOpacity
+    onPress={() => {
+      const today = new Date();
+      setFromDate(new Date(today.getFullYear(), today.getMonth(), 1));
+      setToDate(today);
+    }}
+    style={styles.quickBtn}
+  >
+    <Text style={styles.quickText}>This Month</Text>
+  </TouchableOpacity>
+</View>
       </View>
 
-      {/* FROM DATE PICKER */}
-      <DatePickerModal
-        visible={showFromPicker}
-        onClose={() => setShowFromPicker(false)}
-      >
+      {/* -------------------- FROM PICKER -------------------- */}
+      {showFromPicker && Platform.OS === "ios" && (
+        <DatePickerModal
+          visible={showFromPicker}
+          onClose={() => setShowFromPicker(false)}
+        >
+          <DateTimePicker
+            value={fromDate}
+            mode="date"
+            display="spinner"
+            maximumDate={toDate}
+            onChange={onFromDateChange}
+          />
+        </DatePickerModal>
+      )}
+
+      {showFromPicker && Platform.OS === "android" && (
         <DateTimePicker
           value={fromDate}
           mode="date"
-          display="spinner"
+          display="default"
           maximumDate={toDate}
-          onChange={(event, date) => {
-            if (date) setFromDate(date);
-          }}
+          onChange={onFromDateChange}
         />
-      </DatePickerModal>
+      )}
 
-      {/* TO DATE PICKER */}
-      <DatePickerModal
-        visible={showToPicker}
-        onClose={() => setShowToPicker(false)}
-      >
+      {/* -------------------- TO PICKER -------------------- */}
+      {showToPicker && Platform.OS === "ios" && (
+        <DatePickerModal
+          visible={showToPicker}
+          onClose={() => setShowToPicker(false)}
+        >
+          <DateTimePicker
+            value={toDate}
+            mode="date"
+            display="spinner"
+            minimumDate={fromDate}
+            maximumDate={new Date()}
+            onChange={onToDateChange}
+          />
+        </DatePickerModal>
+      )}
+
+      {showToPicker && Platform.OS === "android" && (
         <DateTimePicker
           value={toDate}
           mode="date"
-          display="spinner"
+          display="default"
           minimumDate={fromDate}
           maximumDate={new Date()}
-          onChange={(event, date) => {
-            if (date) setToDate(date);
-          }}
+          onChange={onToDateChange}
         />
-      </DatePickerModal>
+      )}
 
-      {renderScene()}
+        {renderScene()}
     </SafeAreaView>
   );
 };
 
 export default Transaction;
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Config?.Colors?.white },
   androidStatusBar: {

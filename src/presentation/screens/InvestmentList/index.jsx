@@ -35,6 +35,7 @@ const InvestmentList = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState("all");
   const [expandedSchemes, setExpandedSchemes] = useState({});
   const [activeView, setActiveView] = useState("SIP");
+  const [expandedProvisionals, setExpandedProvisionals] = useState({});
 
   useEffect(() => {
     const backAction = () => {
@@ -100,7 +101,7 @@ const InvestmentList = ({ navigation }) => {
     const matching = investmentData.bseAllotments.find(
       (a) => a.SIPRegnNo === sipRegnNo
     );
-    return matching ? parseFloat(matching.originalAllottedUnits) || 0 : 0;
+    return matching ? parseFloat(matching.originalAllottedUnits.toFixed(2)) || 0 : 0;
   };
   const getAllotmentData = (sipRegnNo) => {
     if (!investmentData?.bseAllotments || !sipRegnNo) return null;
@@ -117,6 +118,14 @@ const InvestmentList = ({ navigation }) => {
       },
     }));
   };
+
+  const toggleProvisionalExpand = (index) => {
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  setExpandedProvisionals((prev) => ({
+    ...prev,
+    [index]: !prev[index],
+  }));
+};
 
   const isSIPActive = (sip) =>
     sip?.status === "SUCCESS" ||
@@ -192,13 +201,13 @@ const InvestmentList = ({ navigation }) => {
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Units</Text>
               <Text style={styles.detailValue}>
-                {numberOrZero(item.originalAllottedUnits)}
+                {numberOrZero(item.originalAllottedUnits.toFixed(2))}
               </Text>
             </View>
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Amount</Text>
               <Text style={styles.detailValue}>
-                ₹{numberOrZero(item.investedAmount)}
+                ₹{numberOrZero(item.investedAmount.toFixed(2))}
               </Text>
             </View>
             <View style={styles.detailItem}>
@@ -217,22 +226,22 @@ const InvestmentList = ({ navigation }) => {
     <View style={styles.schemeCard}>
       <View style={styles.schemeCardHeader}>
         <View style={styles.schemeHeaderContent}>
-          <Text style={styles.schemeCardTitle}>{scheme.schemeName}</Text>
-          <Text style={styles.schemeCardSubtitle}>{scheme.schemeCode}</Text>
+          <Text style={styles.schemeCardTitle}>{scheme?.schemeName}</Text>
+          <Text style={styles.schemeCardSubtitle}>{scheme?.schemeCode}</Text>
         </View>
       </View>
 
-      {scheme.orders.map((order, i) => (
+      {scheme?.orders.map((order, i) => (
         <View key={i} style={styles.orderCard}>
           <View style={styles.orderHeader}>
-            <Text style={styles.orderTitle}>Order: {order.orderNo}</Text>
+            <Text style={styles.orderTitle}>Order: {order?.orderNo}</Text>
           </View>
 
           <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Units</Text>
               <Text style={styles.detailValue}>
-                {numberOrZero(order.allottedUnit)}
+                {numberOrZero(order?.allottedUnit)}
               </Text>
             </View>
             {/* <View style={styles.detailItem}>
@@ -361,7 +370,7 @@ const InvestmentList = ({ navigation }) => {
                   <View style={styles.sipDetailItem}>
                     <Text style={styles.sipDetailLabel}>Amount</Text>
                     <Text style={styles.sipDetailValue}>
-                      {allotmentData?.investedAmount ?? "--"}
+                      ₹{allotmentData?.investedAmount? allotmentData?.investedAmount.toFixed(2) : "-"}
                     </Text>
                   </View>
                 </View>
@@ -433,6 +442,141 @@ const InvestmentList = ({ navigation }) => {
       </View>
     </View>
   );
+
+const ProvisionalOrderCard = ({ order, index }) => {
+  const expanded = !!expandedProvisionals[index];
+
+  return (
+    <View style={styles.schemeCard}>
+      {/* Header */}
+      <TouchableOpacity
+        style={styles.schemeCardHeader}
+        activeOpacity={0.7}
+        onPress={() => toggleProvisionalExpand(index)}
+      >
+        <View style={styles.schemeHeaderContent}>
+          <Text style={styles.schemeCardTitle}>
+            {order.schemeName || "Unknown Scheme"}
+          </Text>
+
+          <Text style={styles.schemeCardSubtitle}>
+            {order.schemaCode||order?.schemeCode || "--"}
+          </Text>
+
+          {/* <Text style={styles.schemeCardSubtitleSmall}>
+            Reg No: {order.registrationId || "--"}
+          </Text> */}
+        </View>
+
+        <View style={{ alignItems: "flex-end" }}>
+          <View style={[styles.statusPill, styles.provisional]}>
+            <Text style={styles.statusPillText}>Provisional</Text>
+          </View>
+
+          <Text style={styles.arrowIcon}>
+            {expanded ? "▲" : "▼"}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* Collapsed quick info */}
+      {!expanded && (
+        <View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
+        {(order.orderValue || order.frequencyType) && (
+  <View style={styles.detailsGrid}>
+    {order.orderValue && (
+      <View style={styles.detailItem}>
+        <Text style={styles.detailLabel}>Order Value</Text>
+        <Text style={styles.detailValue}>₹{order.orderValue}</Text>
+      </View>
+    )}
+
+    {order.frequencyType && (
+      <View style={styles.detailItem}>
+        <Text style={styles.detailLabel}>Frequency</Text>
+        <Text style={styles.detailValue}>{order.frequencyType}</Text>
+      </View>
+    )}
+  </View>
+)}
+
+        </View>
+      )}
+
+      {/* Expanded details */}
+      {expanded && (
+        <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Order ID</Text>
+              <Text style={styles.detailValue}>{order.orderId}</Text>
+            </View>
+
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>SIP Start Date</Text>
+              <Text style={styles.detailValue}>{order.sipStartDate}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Installments</Text>
+              <Text style={styles.detailValue}>
+                {order.noOfInstallment || "NA"}
+              </Text>
+            </View>
+
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Pending</Text>
+              <Text style={styles.detailValue}>
+                {order.pendingInstallments}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Completed</Text>
+              <Text style={styles.detailValue}>
+                {order.completedInstallments}
+              </Text>
+            </View>
+
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Reference</Text>
+              <Text style={styles.detailValue}>
+                {order.referenceNumber}
+              </Text>
+            </View>
+          </View>
+
+          {order.bseRemarks && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={styles.detailLabel}>BSE Remarks</Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: "#374151",
+                  fontWeight: "500",
+                }}
+              >
+                {order.bseRemarks}
+              </Text>
+            </View>
+          )}
+
+          <View style={{ marginTop: 8 }}>
+            <Text style={styles.detailLabel}>Created At</Text>
+            <Text style={styles.detailValue}>
+              {new Date(order.createdAt).toLocaleString()}
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+};
+
 
   const TabHeader = () => {
     const tabs = [
@@ -564,27 +708,35 @@ const InvestmentList = ({ navigation }) => {
         <Text style={styles.navbarTitle}>My Investments</Text>
         <Text style={styles.navbarSubtitle}>SIP Portfolio</Text>
       </View>
-      <View style={styles.viewToggleRow}>
-        {["SIP", "ALLOTMENTS", "LUMPSUM"].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.viewToggleBtn,
-              activeView === tab && styles.viewToggleBtnActive,
-            ]}
-            onPress={() => setActiveView(tab)}
-          >
-            <Text
-              style={[
-                styles.viewToggleTxt,
-                activeView === tab && styles.viewToggleTxtActive,
-              ]}
-            >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+    <View style={styles.viewToggleRow}>
+  <ScrollView
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.viewToggleScroll}
+  >
+    {["SIP", "ALLOTMENTS", "PROVISIONAL", "LUMPSUM"].map((tab) => (
+      <TouchableOpacity
+        key={tab}
+        style={[
+          styles.viewToggleBtn,
+          activeView === tab && styles.viewToggleBtnActive,
+        ]}
+        onPress={() => setActiveView(tab)}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={[
+            styles.viewToggleTxt,
+            activeView === tab && styles.viewToggleTxtActive,
+          ]}
+        >
+          {tab}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
+</View>
+
 
       <ScrollView
         style={styles.scrollContainer}
@@ -645,6 +797,27 @@ const InvestmentList = ({ navigation }) => {
             )}
           </View>
         )}
+
+       {activeView === "PROVISIONAL" && (
+  <View style={styles.contentContainer}>
+    {Array.isArray(investmentData?.provisionalOrders) &&
+    investmentData.provisionalOrders.length > 0 ? (
+      investmentData.provisionalOrders.map((order, idx) => (
+        <ProvisionalOrderCard
+          key={order._id || idx}
+          order={order}
+          index={idx}
+        />
+      ))
+    ) : (
+      <View style={styles.emptyTabState}>
+        <Text style={styles.emptyTabStateText}>
+          No provisional orders found
+        </Text>
+      </View>
+    )}
+  </View>
+)}
       </ScrollView>
     </SafeAreaView>
   );
@@ -1080,6 +1253,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
+  viewToggleScroll: {
+  paddingHorizontal: 8,
+  alignItems: "center",
+},
 });
 
 export default InvestmentList;

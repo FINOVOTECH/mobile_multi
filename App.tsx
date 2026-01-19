@@ -17,16 +17,23 @@ function App() {
   const [appIsReady, setAppIsReady] = useState(false);
 
  useEffect(() => {
-  const prepareApp = async () => {
-    await checkAppVersion(); // 🔥 FIRST
-    clearAll();
-    setAppIsReady(true);     // 🔥 THEN
-  };
+    const prepare = async () => {
+      setAppIsReady(true);
+    };
 
-  prepareApp();
-}, []);
+    prepare();
+  }, []);
 
+  useEffect(() => {
+    if (!appIsReady) return;
 
+    // ✅ Delay version check until UI is mounted
+    const timeout = setTimeout(() => {
+      checkAppVersion();
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [appIsReady]);
   if (!appIsReady) return <SplashScreen />;
 
   const LoadingView = () => (

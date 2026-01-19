@@ -41,7 +41,8 @@ export default function LoginWithPass() {
   const dispatch = useDispatch();
   const LoginData = useSelector((state) => state.login.loginData);
   const DATA = useSelector((state) => state.login);
-
+const PIN_LENGTH = 4;
+const pinInputRef = useRef(null);
   const [clientCode, setClientCode] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -300,40 +301,75 @@ export default function LoginWithPass() {
       </View>
 
       <View style={simpleStyles.inputGroup}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between",alignItems: "center" }}>
+          
         <Text style={simpleStyles.inputLabel}>Password</Text>
+         <TouchableOpacity
+              style={simpleStyles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Text style={simpleStyles.eyeIconText}>
+                {showPassword ? "HIDE" : "SHOW"}
+              </Text>
+            </TouchableOpacity>
+        </View>
 
         <View
           style={[
-            simpleStyles.inputOuterContainer,
+            // simpleStyles.inputOuterContainer,
             validationErrors.password && simpleStyles.inputOuterError,
           ]}
         >
           <View
             style={[
-              simpleStyles.inputInnerContainer,
-              validationErrors.password && simpleStyles.inputInnerError,
+              // simpleStyles.inputInnerContainer,
+              validationErrors.password && simpleStyles.inputInnerError,{ backgroundColor: "white" },
             ]}
           >
-            <TextInput
-              style={simpleStyles.input}
-              placeholder="Enter your password"
-              placeholderTextColor="#AAB7B8"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              returnKeyType="done"
-              onSubmitEditing={
-                isFormValid() ? handleLoginWithPassword : undefined
-              }
-            />
-            <TouchableOpacity
-              style={simpleStyles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Text style={simpleStyles.eyeIconText}>
-                {showPassword ? "👁️" : "🔒"}
-              </Text>
-            </TouchableOpacity>
+           <TouchableOpacity
+  activeOpacity={1}
+  onPress={() => pinInputRef.current?.focus()}
+  style={simpleStyles.pinContainer}
+>
+  {Array.from({ length: PIN_LENGTH }).map((_, index) => {
+    const digit = password[index] || "";
+    return (
+      <View
+        key={index}
+        style={[
+          simpleStyles.pinBox,
+          validationErrors.password && simpleStyles.pinBoxError,
+        ]}
+      >
+        <Text style={simpleStyles.pinText}>
+          {digit ? (showPassword ? digit : "●") : ""}
+        </Text>
+      </View>
+    );
+  })}
+
+  {/* Hidden TextInput */}
+  <TextInput
+    ref={pinInputRef}
+    value={password}
+    onChangeText={(text) => {
+      if (/^\d*$/.test(text) && text.length <= PIN_LENGTH) {
+        setPassword(text);
+      }
+    }}
+    keyboardType="number-pad"
+    maxLength={PIN_LENGTH}
+    secureTextEntry={!showPassword}
+    style={simpleStyles.hiddenInput}
+    autoFocus={false}
+    onSubmitEditing={
+      password.length === PIN_LENGTH
+        ? handleLoginWithPassword
+        : undefined
+    }
+  />
+</TouchableOpacity>
+           
           </View>
         </View>
 
@@ -485,6 +521,9 @@ const simpleStyles = StyleSheet.create({
   },
   eyeIconText: {
     fontSize: widthToDp(4),
+    textAlign: "right",
+    color: "#7A7A7A",
+    marginTop:10
   },
   fieldErrorText: {
     color: "#E74C3C",
@@ -565,4 +604,38 @@ const simpleStyles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: Config.fontFamilys?.Poppins_Bold || "System",
   },
+  pinContainer: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  marginTop: heightToDp(1),
+},
+
+pinBox: {
+  width: widthToDp(14),
+  height: heightToDp(6),
+  borderRadius: 8,
+  borderBottomWidth: 1,
+  borderColor: "#000",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#FFFFFF",
+},
+
+pinBoxError: {
+  borderColor: "#E74C3C",
+},
+
+pinText: {
+  fontSize: widthToDp(6),
+  fontFamily: Config.fontFamilys?.Poppins_Bold || "System",
+  color: "#000",
+},
+
+hiddenInput: {
+  position: "absolute",
+  opacity: 0,
+  height: 0,
+  width: 0,
+},
+
 });
