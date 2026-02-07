@@ -340,7 +340,7 @@ const PanVerification = ({
                 style={styles.logo}
                 resizeMode="contain"
               />
-              <Text style={styles.logoText}>TaurusFund</Text>
+              <Text style={styles.logoText}>Jyoti Wealth</Text>
             </View>
 
             <View style={styles.titleContainer}>
@@ -453,7 +453,7 @@ const PanVerification = ({
                 ) : null}
               </View>
 
-              {/* Date of Birth field - now uncommented and active */}
+              
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>DATE OF BIRTH *</Text>
                 <TextInput

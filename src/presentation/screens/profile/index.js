@@ -51,7 +51,7 @@ const loginData = useSelector(state => state?.login?.loginData);
   const { portfolioData } = useGetPortfolioData();
   const Return = portfolioData?.overall?.gainAmount > 0;
   
-  // console.log('Password status:', portfolioData);
+  console.log('Password status:', portfolioData);
   // console.log('Login data structure:', loginData);
 
 
@@ -221,7 +221,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                     PORTFOLIO BALANCE
                   </Text>
                   <Text style={styles.stickyPortfolioAmount}>
-                    ₹{portfolioData?.overall?.currentValue || '0'}
+                    ₹{portfolioData?.bse?.overall?.currentValue || '0'}
                   </Text>
                 </View>
               </View>
@@ -270,7 +270,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                     </Text>
                     <Text style={styles.portfolioBalanceAmount}>
                       ₹
-                      {portfolioData?.overall?.currentValue?.toLocaleString() ||
+                      {portfolioData?.bse?.overall?.currentValue?.toLocaleString() ||
                         '0'}
                     </Text>
                   </View>
@@ -290,7 +290,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                         <Text style={styles.metricLabel}>Invested</Text>
                         <Text style={styles.metricValue}>
                           ₹{' '}
-                          {portfolioData?.overall?.invested?.toLocaleString() ||
+                          {portfolioData?.bse?.overall?.invested?.toLocaleString() ||
                             '00'}
                         </Text>
                       </View>
@@ -310,7 +310,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                             (portfolioData?.totals?.totalCurrentValue || 0) -
                               (portfolioData?.totals?.totalInvested || 0),
                           )?.toFixed(2) || '0.00'} */}
-                           {portfolioData?.overall?.currentValue?.toLocaleString() ||
+                           {portfolioData?.bse?.overall?.currentValue?.toLocaleString() ||
                             '00'}
                         </Text>
                       </View>
@@ -326,7 +326,7 @@ const loginData = useSelector(state => state?.login?.loginData);
                           ]}
                         >
                           {Return ? '+' : ''}
-                          {portfolioData?.overall?.gainPercent || '0'}%
+                          {portfolioData?.bse?.overall?.gainPercent || '0'}%
                         </Text>
                       </View>
                     </View>

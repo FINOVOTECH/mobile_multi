@@ -69,7 +69,7 @@ const InvestmentList = ({ navigation }) => {
   const totalLumpsums = lumpsumSummary?.totalLumpsums || 0;
   const totalSIPs = sipSummary?.totalSIPs || 0;
 
-  const totals = investmentData?.portfolioSummary?.overall || {};
+  const totals = investmentData?.portfolioSummary?.bse?.overall || {};
   const totalInvested = parseFloat(totals?.invested || 0);
   const totalCurrentValue = parseFloat(totals?.currentValue || 0);
   const totalGainLoss = parseFloat(totals?.gainAmount || 0);

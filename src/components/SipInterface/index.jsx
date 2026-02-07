@@ -385,6 +385,7 @@ const SipInterface = ({ navigation }) => {
         allUnitsFlag: "N",
         redemptionAmount: "",
         redemptionUnits: redemptionForm.redemptionUnits,
+        registrationId: Data?.allotmentData?.SIPRegnNo || "",
       };
 
       console.log("🛰️ Redemption Payload:", payload);
