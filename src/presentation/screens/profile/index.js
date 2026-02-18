@@ -36,21 +36,41 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function Profile({}) {
+export default function Profile({ }) {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const Alert = useSelector(state => state.marketWatch.mandateAlert);
-const loginData = useSelector(state => state?.login?.loginData);
+  const loginData = useSelector(state => state?.login?.loginData);
   const hasPassword = useSelector(state => {
-    return  state?.hassPass?.hassPass?.hassPass||state?.hassPass?.hassPass ;
+    return state?.hassPass?.hassPass?.hassPass || state?.hassPass?.hassPass;
   });
   const [isLoading, setIsLoading] = useState(true);
   const [mandateData, setMandateData] = useState(null);
   const [showMandateAlert, setShowMandateAlert] = useState(false);
   const [showSetPasswordModal, setShowSetPasswordModal] = useState(false);
   const { portfolioData } = useGetPortfolioData();
-  const Return = portfolioData?.overall?.gainAmount > 0;
-  
+  const [dataSource, setDataSource] = useState('BSE'); // 'BSE' | 'BACKOFFICE'
+
+  const getDisplayData = () => {
+    const backofficeOverall = portfolioData?.backoffice?.overall;
+
+    if (dataSource === 'BACKOFFICE') {
+      return {
+        currentValue: backofficeOverall?.totalAUM || 0,
+        invested: 0,
+        gainAmount: 0,
+        gainPercent: 0,
+        camsAUM: backofficeOverall?.camsAUM || 0,
+        kfintechAUM: backofficeOverall?.kfintechAUM || 0,
+        totalAUM: backofficeOverall?.totalAUM || 0,
+      };
+    }
+    return portfolioData?.bse?.overall || {};
+  };
+
+  const displayData = getDisplayData();
+  const Return = (displayData?.gainAmount || 0) > 0;
+
   console.log('Password status:', portfolioData);
   // console.log('Login data structure:', loginData);
 
@@ -72,7 +92,7 @@ const loginData = useSelector(state => state?.login?.loginData);
 
   const stickyHeaderTranslateY = scrollY.interpolate({
     inputRange: [0, stickyThreshold],
-    outputRange: [50, 0],
+    outputRange: [-heightToDp(10), 0],
     extrapolate: 'clamp',
   });
 
@@ -158,7 +178,7 @@ const loginData = useSelector(state => state?.login?.loginData);
     setIsLoading(true);
     try {
       // console.log('Checking password status:', hasPassword);
-      
+
       // If password is not set, show the modal
       if (!hasPassword) {
         // console.log('Password not set, showing modal');
@@ -217,11 +237,26 @@ const loginData = useSelector(state => state?.login?.loginData);
                   </Text>
                 </View>
                 <View style={styles.stickyPortfolioSection}>
+                  {/* Switch for Sticky Header */}
+                  <View style={styles.stickySwitchContainer}>
+                    <TouchableOpacity
+                      style={[styles.miniSwitchButton, dataSource === 'BSE' && styles.miniSwitchActive]}
+                      onPress={() => setDataSource('BSE')}
+                    >
+                      <Text style={[styles.miniSwitchText, dataSource === 'BSE' && styles.miniSwitchTextActive]}>BSE</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.miniSwitchButton, dataSource === 'BACKOFFICE' && styles.miniSwitchActive]}
+                      onPress={() => setDataSource('BACKOFFICE')}
+                    >
+                      <Text style={[styles.miniSwitchText, dataSource === 'BACKOFFICE' && styles.miniSwitchTextActive]}>BackOffice</Text>
+                    </TouchableOpacity>
+                  </View>
                   <Text style={styles.stickyPortfolioText}>
                     PORTFOLIO BALANCE
                   </Text>
                   <Text style={styles.stickyPortfolioAmount}>
-                    ₹{portfolioData?.bse?.overall?.currentValue || '0'}
+                    ₹{displayData?.currentValue?.toLocaleString() || '0'}
                   </Text>
                 </View>
               </View>
@@ -270,16 +305,31 @@ const loginData = useSelector(state => state?.login?.loginData);
                     </Text>
                     <Text style={styles.portfolioBalanceAmount}>
                       ₹
-                      {portfolioData?.bse?.overall?.currentValue?.toLocaleString() ||
-                        '0'}
+                      {displayData?.currentValue?.toLocaleString() || '0'}
                     </Text>
+                  </View>
+                  <View style={styles.portfolioRight}>
+                    <View style={styles.mainSwitchContainer}>
+                      <TouchableOpacity
+                        style={[styles.mainSwitchButton, dataSource === 'BSE' && styles.mainSwitchActive]}
+                        onPress={() => setDataSource('BSE')}
+                      >
+                        <Text style={[styles.mainSwitchText, dataSource === 'BSE' && styles.mainSwitchTextActive]}>BSE</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.mainSwitchButton, dataSource === 'BACKOFFICE' && styles.mainSwitchActive]}
+                        onPress={() => setDataSource('BACKOFFICE')}
+                      >
+                        <Text style={[styles.mainSwitchText, dataSource === 'BACKOFFICE' && styles.mainSwitchTextActive]}>BackOffice</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               </View>
 
               {/* Collapsing Portfolio Info */}
               <Animated.View
-                style={{ opacity: contentOpacity, marginTop: heightToDp(2),marginBottom:heightToDp(2)}}
+                style={{ opacity: contentOpacity, marginTop: heightToDp(2), marginBottom: heightToDp(2) }}
               >
                 <TouchableOpacity
                   onPress={() => navigation?.navigate('Dashboard')}
@@ -287,46 +337,46 @@ const loginData = useSelector(state => state?.login?.loginData);
                   <View style={styles.portfolioBalanceCard}>
                     <View style={styles.metricsContainer}>
                       <View style={styles.metricItem}>
-                        <Text style={styles.metricLabel}>Invested</Text>
+                        <Text style={styles.metricLabel}>{dataSource === 'BACKOFFICE' ? 'CAMS AUM' : 'Invested'}</Text>
                         <Text style={styles.metricValue}>
                           ₹{' '}
-                          {portfolioData?.bse?.overall?.invested?.toLocaleString() ||
-                            '00'}
+                          {dataSource === 'BACKOFFICE'
+                            ? displayData?.camsAUM?.toLocaleString() || '00'
+                            : displayData?.invested?.toLocaleString() || '00'}
                         </Text>
                       </View>
 
                       <View style={styles.metricItem}>
-                        <Text style={styles.metricLabel}>Current Returns</Text>
+                        <Text style={styles.metricLabel}>{dataSource === 'BACKOFFICE' ? 'KFintech AUM' : 'Current Returns'}</Text>
                         <Text
                           style={[
                             styles.metricValue,
-                            Return
+                            dataSource !== 'BACKOFFICE' && (Return
                               ? styles.positiveReturns
-                              : styles.negativeReturns,
+                              : styles.negativeReturns),
                           ]}
                         >
-                          {Return ? '+' : '-'} ₹
-                          {/* {Math.abs(
-                            (portfolioData?.totals?.totalCurrentValue || 0) -
-                              (portfolioData?.totals?.totalInvested || 0),
-                          )?.toFixed(2) || '0.00'} */}
-                           {portfolioData?.bse?.overall?.currentValue?.toLocaleString() ||
-                            '00'}
+                          {dataSource !== 'BACKOFFICE' && (Return ? '+' : '-')} ₹
+                          {dataSource === 'BACKOFFICE'
+                            ? displayData?.kfintechAUM?.toLocaleString() || '00'
+                            : displayData?.gainAmount?.toLocaleString() || '00'}
                         </Text>
                       </View>
 
                       <View style={styles.metricItem}>
-                        <Text style={styles.metricLabel}>Returns %</Text>
+                        <Text style={styles.metricLabel}>{dataSource === 'BACKOFFICE' ? 'Total AUM' : 'Returns %'}</Text>
                         <Text
                           style={[
                             styles.metricValue,
-                            Return
+                            dataSource !== 'BACKOFFICE' && (Return
                               ? styles.positiveReturns
-                              : styles.negativeReturns,
+                              : styles.negativeReturns),
                           ]}
                         >
-                          {Return ? '+' : ''}
-                          {portfolioData?.bse?.overall?.gainPercent || '0'}%
+                          {dataSource !== 'BACKOFFICE' && (Return ? '+' : '')}
+                          {dataSource === 'BACKOFFICE'
+                            ? `₹ ${displayData?.totalAUM?.toLocaleString() || '00'}`
+                            : `${displayData?.gainPercent || '0'}%`}
                         </Text>
                       </View>
                     </View>
@@ -351,7 +401,7 @@ const loginData = useSelector(state => state?.login?.loginData);
               onStartInvesting={() => navigation.navigate('SipScheme')}
             />
             <Collection />
-            <QuickLinksSection onViewAll={() => {}} />
+            <QuickLinksSection onViewAll={() => { }} />
             <SIPCalculator />
 
             <View style={styles.footer}>
@@ -368,7 +418,7 @@ const loginData = useSelector(state => state?.login?.loginData);
             showCancelButton={true}
             onCreateMandate={handleCreateMandate}
           /> */}
-          
+
           {/* Show SetPasswordModal only if password is not set */}
           <SetPasswordModal
             visible={showSetPasswordModal && !hasPassword}
@@ -412,7 +462,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-     
+
   },
   stickyLeftSection: {
     flexDirection: 'row',
@@ -437,7 +487,7 @@ const styles = StyleSheet.create({
   },
   stickyPortfolioSection: {
     alignItems: 'flex-center',
-    marginRight:widthToDp(2)
+    marginRight: widthToDp(2)
   },
   stickyPortfolioText: {
     color: Config.Colors.white,
@@ -468,7 +518,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     paddingHorizontal: widthToDp(4),
-    paddingVertical:widthToDp(2)
+    paddingVertical: widthToDp(2)
   },
   headerTopRow: {
     flexDirection: 'row',
@@ -519,7 +569,7 @@ const styles = StyleSheet.create({
     fontSize: widthToDp(7),
   },
   portfolioBalanceCard: {
-    
+
     marginHorizontal: widthToDp(4),
     borderRadius: widthToDp(1),
     padding: Platform.OS === 'ios' ? widthToDp(5) : widthToDp(3),
@@ -571,9 +621,59 @@ const styles = StyleSheet.create({
     marginTop: heightToDp(2),
   },
   footerText: {
-    fontSize: widthToDp(2.5),
     color: Config.Colors.textColor.textColor_5,
     textAlign: 'center',
     marginBottom: heightToDp(0.5),
+  },
+  // Switch Styles
+  stickySwitchContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    padding: 2,
+    marginBottom: 2,
+    alignSelf: 'flex-end',
+  },
+  miniSwitchButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 18,
+  },
+  miniSwitchActive: {
+    backgroundColor: Config.Colors.white,
+  },
+  miniSwitchText: {
+    color: Config.Colors.white,
+    fontSize: widthToDp(2.5),
+    fontWeight: '600',
+    fontFamily: Config.fontFamilys.Poppins_Medium,
+  },
+  miniSwitchTextActive: {
+    color: '#2B8DF6',
+  },
+  mainSwitchContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 25,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  mainSwitchButton: {
+    paddingHorizontal: widthToDp(3),
+    paddingVertical: heightToDp(0.5),
+    borderRadius: 22,
+  },
+  mainSwitchActive: {
+    backgroundColor: Config.Colors.white,
+  },
+  mainSwitchText: {
+    color: Config.Colors.white,
+    fontSize: widthToDp(3.2),
+    fontWeight: '600',
+    fontFamily: Config.fontFamilys.Poppins_Medium,
+  },
+  mainSwitchTextActive: {
+    color: '#2B8DF6',
   },
 });

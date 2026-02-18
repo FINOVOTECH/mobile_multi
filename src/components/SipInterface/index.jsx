@@ -22,7 +22,7 @@ import SInfoSvg from "../../presentation/svgs";
 import { heightToDp, widthToDp } from "../../helpers/Responsive";
 import * as Config from "../../helpers/Config";
 import CustomSlider from "../CustomSlider";
-import { apiPostService } from "../../helpers/services";
+import { apiPostService, apiGetService } from "../../helpers/services";
 import { getData } from "../../helpers/localStorage";
 import Rbutton from "../Rbutton";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -47,6 +47,8 @@ const SipInterface = ({ navigation }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [otherReason, setOtherReason] = useState("");
   const [loader, setLoading] = useState(false);
+  const [transactionHistory, setTransactionHistory] = useState(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState("");
@@ -97,8 +99,8 @@ const SipInterface = ({ navigation }) => {
   useEffect(() => {
     console.log(
       "ALLTTED UNITS",
-      Data?.allotmentData?.originalAllottedUnits ||
-        Data?.allotmentData?.allottedUnit,
+      Data?.allotmentData?.netUnits ||
+      Data?.allotmentData?.allottedUnit,
       Data?.allotmentData?.allottedUnit
     );
     if (Data?.allotmentData) {
@@ -111,7 +113,7 @@ const SipInterface = ({ navigation }) => {
         allUnitsFlag: "N",
         redemptionAmount: "",
         redemptionUnits:
-          Data?.allotmentData?.originalAllottedUnits ||
+          Data?.allotmentData?.netUnits ||
           Data?.allotmentData?.allottedUnit ||
           "",
       }));
@@ -124,6 +126,42 @@ const SipInterface = ({ navigation }) => {
       }));
     }
   }, []);
+
+  useEffect(() => {
+    fetchTransactionHistory();
+  }, [Data?.allotmentData?.SIPRegnNo, Data?.allotmentData?.ISIN, Data?.investmentType]);
+
+  const fetchTransactionHistory = async () => {
+    const isLumpsum = Data?.investmentType === "LUMPSUM";
+    const sipRegNo = Data?.sip?.SIPRegnNo || Data?.allotmentData?.SIPRegnNo;
+    const isin = Data?.allotmentData?.ISIN;
+    const clientCode = await getData("clientCode");
+
+    if (isLumpsum) {
+      if (!isin) return;
+    } else {
+      if (!sipRegNo || !clientCode) return;
+    }
+
+    setLoadingHistory(true);
+    try {
+      const endpoint = isLumpsum
+        ? "/api/v1/lumpsum/transactions"
+        : "/api/v1/sip/transactions";
+      const params = isLumpsum
+        ? { isin }
+        : { sipRegNo, clientcode: clientCode };
+
+      const response = await apiGetService(endpoint, params);
+      if (response?.status === 200) {
+        setTransactionHistory(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching transaction history:", error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -213,9 +251,8 @@ const SipInterface = ({ navigation }) => {
         showResponseMessage(
           "Success",
           response?.data?.message ||
-            `SIP paused successfully for ${pauseDuration} month${
-              pauseDuration > 1 ? "s" : ""
-            }`
+          `SIP paused successfully for ${pauseDuration} month${pauseDuration > 1 ? "s" : ""
+          }`
         );
         handleCloseModal();
       } else {
@@ -230,7 +267,7 @@ const SipInterface = ({ navigation }) => {
       showResponseMessage(
         "Error",
         error?.response?.data?.message ||
-          "Network error. Please check your connection and try again.",
+        "Network error. Please check your connection and try again.",
         false
       );
     } finally {
@@ -301,7 +338,7 @@ const SipInterface = ({ navigation }) => {
       showResponseMessage(
         "Error",
         error?.response?.data?.message ||
-          "Network error. Please check your connection and try again.",
+        "Network error. Please check your connection and try again.",
         false
       );
     } finally {
@@ -360,7 +397,7 @@ const SipInterface = ({ navigation }) => {
       showResponseMessage(
         "Error",
         error?.response?.data?.message ||
-          "Network error. Please check your connection and try again.",
+        "Network error. Please check your connection and try again.",
         false
       );
     } finally {
@@ -382,10 +419,10 @@ const SipInterface = ({ navigation }) => {
         clientCode: clientCode,
         schemeCode: Data?.allotmentData?.schemeCode,
         folioNo: Data?.allotmentData?.folioNo || Data?.allotmentData?.FolioNo,
-        allUnitsFlag: "N",
+        allUnitsFlag: redemptionForm.redemptionUnits === Data?.sip?.netUnits ? "Y" : "N",
         redemptionAmount: "",
         redemptionUnits: redemptionForm.redemptionUnits,
-        registrationId: Data?.allotmentData?.SIPRegnNo || "",
+        registrationId: Data?.allotmentData?.SIPRegnNo || "0",
       };
 
       console.log("🛰️ Redemption Payload:", payload);
@@ -404,7 +441,7 @@ const SipInterface = ({ navigation }) => {
         showResponseMessage(
           "Success",
           response?.data?.message ||
-            `Redemption of ${payload.redemptionUnits} units submitted successfully!`
+          `Redemption of ${payload.redemptionUnits} units submitted successfully!`
         );
         handleCloseModal();
         setRedemptionForm((prev) => ({
@@ -423,7 +460,7 @@ const SipInterface = ({ navigation }) => {
       showResponseMessage(
         "Error",
         error?.response?.data?.message ||
-          "Network error. Please check your connection and try again.",
+        "Network error. Please check your connection and try again.",
         false
       );
     } finally {
@@ -507,7 +544,7 @@ const SipInterface = ({ navigation }) => {
         showResponseMessage(
           "Error",
           response?.data?.message ||
-            "Failed to activate SIP Step-up. Please try again.",
+          "Failed to activate SIP Step-up. Please try again.",
           false
         );
       }
@@ -516,7 +553,7 @@ const SipInterface = ({ navigation }) => {
       showResponseMessage(
         "Error",
         error?.response?.data?.message ||
-          "Network error. Please check your connection and try again.",
+        "Network error. Please check your connection and try again.",
         false
       );
     } finally {
@@ -634,14 +671,14 @@ const SipInterface = ({ navigation }) => {
   // ========== CUSTOMIZE OPTION CONDITIONAL LOGIC ==========
   const sipStatus =
     Data?.allotmentData?.orderStatus ||
-    Data?.allotmentData?.status === "VALID" ||
-    "SUCCESS"
+      Data?.allotmentData?.status === "VALID" ||
+      "SUCCESS"
       ? "active"
       : "cancelled";
   const allottedUnits = parseFloat(
-    Data?.allotmentData?.originalAllottedUnits ||
-      Data?.allotmentData?.allottedUnit ||
-      0
+    Data?.allotmentData?.netUnits ||
+    Data?.allotmentData?.allottedUnit ||
+    0
   );
 
   let customizeOptions = [];
@@ -650,14 +687,14 @@ const SipInterface = ({ navigation }) => {
     customizeOptions =
       allottedUnits > 0
         ? [
-            {
-              key: "redemption",
-              icon: "💰",
-              title: "Investment Redemption",
-              description: "Redeem units from your investment",
-              color: "#2196F3",
-            },
-          ]
+          {
+            key: "redemption",
+            icon: "💰",
+            title: "Investment Redemption",
+            description: "Redeem units from your investment",
+            color: "#2196F3",
+          },
+        ]
         : "NO_UNITS";
   } else if (sipStatus === "cancelled" && allottedUnits > 0) {
     // Case 1 → SIP Cancelled + has units → Only Redemption
@@ -704,13 +741,13 @@ const SipInterface = ({ navigation }) => {
         description: "Redeem units from your SIP investment",
         color: "#2196F3",
       },
-      {
-        key: "switch",
-        icon: "🔄",
-        title: "Switch SIP",
-        description: "Switch your SIP to another scheme",
-        color: "#9C27B0",
-      },
+      // {
+      //   key: "switch",
+      //   icon: "🔄",
+      //   title: "Switch SIP",
+      //   description: "Switch your SIP to another scheme",
+      //   color: "#9C27B0",
+      // },
     ];
   }
 
@@ -983,7 +1020,7 @@ const SipInterface = ({ navigation }) => {
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>
                 Redemption Units * (alloted Units:{" "}
-                {Data?.allotmentData?.originalAllottedUnits ||
+                {Data?.allotmentData?.netUnits ||
                   Data?.allotmentData?.allottedUnit ||
                   0}
                 )
@@ -996,9 +1033,9 @@ const SipInterface = ({ navigation }) => {
                 keyboardType="numeric"
                 onChangeText={(value) => {
                   const maxUnits = parseFloat(
-                    Data?.allotmentData?.originalAllottedUnits ||
-                      Data?.allotmentData?.allottedUnit ||
-                      0
+                    Data?.allotmentData?.netUnits ||
+                    Data?.allotmentData?.allottedUnit ||
+                    0
                   );
 
                   if (value === "") {
@@ -1086,7 +1123,7 @@ const SipInterface = ({ navigation }) => {
                     style={[
                       styles.durationButton,
                       stepUpForm.duration === duration &&
-                        styles.durationButtonActive,
+                      styles.durationButtonActive,
                     ]}
                     onPress={() => updateStepUpForm("duration", duration)}
                   >
@@ -1094,7 +1131,7 @@ const SipInterface = ({ navigation }) => {
                       style={[
                         styles.durationButtonText,
                         stepUpForm.duration === duration &&
-                          styles.durationButtonTextActive,
+                        styles.durationButtonTextActive,
                       ]}
                     >
                       {duration === "HALFYEARLY" ? "Half Yearly" : "Yearly"}
@@ -1111,7 +1148,7 @@ const SipInterface = ({ navigation }) => {
                   style={[
                     styles.incrementTypeButton,
                     stepUpForm.incrementType === "percentage" &&
-                      styles.incrementTypeButtonActive,
+                    styles.incrementTypeButtonActive,
                   ]}
                   onPress={() =>
                     updateStepUpForm("incrementType", "percentage")
@@ -1121,7 +1158,7 @@ const SipInterface = ({ navigation }) => {
                     style={[
                       styles.incrementTypeButtonText,
                       stepUpForm.incrementType === "percentage" &&
-                        styles.incrementTypeButtonTextActive,
+                      styles.incrementTypeButtonTextActive,
                     ]}
                   >
                     By Percentage (%)
@@ -1131,7 +1168,7 @@ const SipInterface = ({ navigation }) => {
                   style={[
                     styles.incrementTypeButton,
                     stepUpForm.incrementType === "amount" &&
-                      styles.incrementTypeButtonActive,
+                    styles.incrementTypeButtonActive,
                   ]}
                   onPress={() => updateStepUpForm("incrementType", "amount")}
                 >
@@ -1139,7 +1176,7 @@ const SipInterface = ({ navigation }) => {
                     style={[
                       styles.incrementTypeButtonText,
                       stepUpForm.incrementType === "amount" &&
-                        styles.incrementTypeButtonTextActive,
+                      styles.incrementTypeButtonTextActive,
                     ]}
                   >
                     By Amount (₹)
@@ -1315,7 +1352,7 @@ const SipInterface = ({ navigation }) => {
                     style={[
                       styles.durationButton,
                       switchForm.allUnitsFlag === flag &&
-                        styles.durationButtonActive,
+                      styles.durationButtonActive,
                     ]}
                     onPress={() => updateSwitchForm("allUnitsFlag", flag)}
                   >
@@ -1323,7 +1360,7 @@ const SipInterface = ({ navigation }) => {
                       style={[
                         styles.durationButtonText,
                         switchForm.allUnitsFlag === flag &&
-                          styles.durationButtonTextActive,
+                        styles.durationButtonTextActive,
                       ]}
                     >
                       {flag === "Y" ? "Yes (All Units)" : "No (Partial)"}
@@ -1342,7 +1379,7 @@ const SipInterface = ({ navigation }) => {
                     style={[
                       styles.durationButton,
                       switchForm.buySellType === type &&
-                        styles.durationButtonActive,
+                      styles.durationButtonActive,
                     ]}
                     onPress={() => updateSwitchForm("buySellType", type)}
                   >
@@ -1350,7 +1387,7 @@ const SipInterface = ({ navigation }) => {
                       style={[
                         styles.durationButtonText,
                         switchForm.buySellType === type &&
-                          styles.durationButtonTextActive,
+                        styles.durationButtonTextActive,
                       ]}
                     >
                       {type}
@@ -1456,8 +1493,8 @@ const SipInterface = ({ navigation }) => {
                   sipStatus === "active"
                     ? "#065F46"
                     : sipStatus === "cancelled"
-                    ? "#991B1B"
-                    : "#333",
+                      ? "#991B1B"
+                      : "#333",
                 overflow: "hidden",
                 alignSelf: "flex-end",
               }}
@@ -1465,8 +1502,8 @@ const SipInterface = ({ navigation }) => {
               {sipStatus === "active"
                 ? "Active"
                 : sipStatus === "cancelled"
-                ? "Cancelled"
-                : "Unknown"}
+                  ? "Cancelled"
+                  : "Unknown"}
             </Text>
           </View>
         </View>
@@ -1492,7 +1529,7 @@ const SipInterface = ({ navigation }) => {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total Units</Text>
             <Text style={styles.summaryValue}>
-              {Data?.allotmentData?.originalAllottedUnits ||
+              {Data?.allotmentData?.netUnits ||
                 Data?.allotmentData?.allottedUnit ||
                 "N/A"}
             </Text>
@@ -1516,12 +1553,12 @@ const SipInterface = ({ navigation }) => {
                   </Text>
                 </View>
               )}
-              <View style={styles.summaryRow}>
+              {!Data?.investmentType === "LUMPSUM" && <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>NAV Date</Text>
                 <Text style={styles.summaryValue}>
                   {Data?.allotmentData?.orderDate}
                 </Text>
-              </View>
+              </View>}
               {!Data?.investmentType === "LUMPSUM" && (
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Registration Number</Text>
@@ -1530,12 +1567,13 @@ const SipInterface = ({ navigation }) => {
                   </Text>
                 </View>
               )}
-              <View style={styles.summaryRow}>
+
+              {!Data?.investmentType === "LUMPSUM" && <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Registration Date</Text>
                 <Text style={styles.summaryValue}>
                   {formatDate(Data?.allotmentData?.actualTrxnDate) || "N/A"}
                 </Text>
-              </View>
+              </View>}
             </>
           )}
 
@@ -1555,6 +1593,139 @@ const SipInterface = ({ navigation }) => {
             />
           </TouchableOpacity>
         </View>
+
+        {loadingHistory ? (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Text style={{ color: "#666" }}>Loading transaction history...</Text>
+          </View>
+        ) : (transactionHistory?.transactions?.length > 0 || transactionHistory?.data?.length > 0) ? (
+          <View style={styles.historySection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Transaction History</Text>
+              <View style={styles.sectionBadge}>
+                <Text style={styles.sectionBadgeText}>
+                  {transactionHistory.totalTransactions} Transactions
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.historySummary}>
+              <View style={styles.historySummaryCard}>
+                <Text style={styles.historySummaryLabel}>Total Invested</Text>
+                <Text style={styles.historySummaryValue}>
+                  ₹{transactionHistory.totals.totalPurchaseAmount}
+                </Text>
+              </View>
+              <View style={styles.historySummaryCard}>
+                <Text style={styles.historySummaryLabel}>
+                  {Data?.investmentType === "LUMPSUM" ? "Net Units" : "Total Units"}
+                </Text>
+                <Text style={styles.historySummaryValue}>
+                  {(transactionHistory.totals.totalPurchaseUnits || transactionHistory.totals.netUnits || 0).toFixed(4)}
+                </Text>
+              </View>
+            </View>
+
+            {Data?.investmentType === "LUMPSUM" && transactionHistory.totals.gainAmount !== undefined && (
+              <View style={[styles.historySummary, { marginTop: -heightToDp(1) }]}>
+                <View style={styles.historySummaryCard}>
+                  <Text style={styles.historySummaryLabel}>Current Value</Text>
+                  <Text style={styles.historySummaryValue}>
+                    ₹{transactionHistory.totals.currentValue}
+                  </Text>
+                </View>
+                <View style={[styles.historySummaryCard]}>
+                  <Text style={styles.historySummaryLabel}>Total Gain/Loss</Text>
+                  <Text
+                    style={[
+                      styles.historySummaryValue,
+                      { color: transactionHistory.totals.gainAmount >= 0 ? "#065F46" : "#991B1B" }
+                    ]}
+                  >
+                    ₹{transactionHistory.totals.gainAmount}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.transactionList}>
+              {(Data?.investmentType === "LUMPSUM" ? transactionHistory.data : transactionHistory.transactions).map((item, index) => (
+                <View key={item._id || item.orderNo || index} style={styles.instalmentItem}>
+                  <View style={styles.instalmentLeft}>
+                    <View style={styles.instalmentHeader}>
+                      <Text style={styles.instalmentNumber}>
+                        {Data?.investmentType === "LUMPSUM"
+                          ? `Order: ${item.orderType || "Purchase"}`
+                          : `${index + 1}${getOrdinalSuffix(index + 1)} SIP Instalment`}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.statusText,
+                          {
+                            color:
+                              item.status === "ALLOTTED" || item.status === "SUCCESS" || item.status === "VALID"
+                                ? "#065F46"
+                                : "#991B1B",
+                          },
+                        ]}
+                      >
+                        {item.status || "SUCCESS"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.instalmentDetails}>
+                      <View style={styles.detailColumn}>
+                        <Text style={styles.detailLabel}>Date</Text>
+                        <Text style={styles.detailValue}>
+                          {item.orderDate || item.date ? formatDate(item.date || item.orderDate) : formatDate(item.actualTrxnDate)}
+                        </Text>
+                      </View>
+                      <View style={styles.detailColumn}>
+                        <Text style={styles.detailLabel}>NAV</Text>
+                        <Text style={styles.detailValue}>
+                          ₹{parseFloat(item.allottedNav || item.nav || 0).toFixed(2)}
+                        </Text>
+                      </View>
+                      <View style={styles.detailColumn}>
+                        <Text style={styles.detailLabel}>Amount</Text>
+                        <Text style={styles.detailValue}>
+                          {formatCurrency(item.amount || item.actualAmount)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.instalmentDetails}>
+                      <View style={styles.detailColumn}>
+                        <Text style={styles.detailLabel}>Order No</Text>
+                        <Text style={styles.detailValue}>{item.orderNo || "N/A"}</Text>
+                      </View>
+                      <View style={styles.detailColumn}>
+                        <Text style={styles.detailLabel}>Units</Text>
+                        <Text style={styles.detailValue}>
+                          {parseFloat(item.allottedUnit || item.actualUnits || item.units || 0).toFixed(4)}
+                        </Text>
+                      </View>
+                      <View style={styles.detailColumn}>
+                        <Text style={styles.detailLabel}>
+                          {Data?.investmentType === "LUMPSUM" ? "Folio No" : "Settlement"}
+                        </Text>
+                        <Text style={styles.detailValue}>
+                          {Data?.investmentType === "LUMPSUM" ? (item.folioNo || "N/A") : (item.settType || "N/A")}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : (
+          !loadingHistory && (
+            <View style={{ padding: 20, alignItems: "center" }}>
+              <Text style={{ color: "#666" }}>No transaction history found</Text>
+            </View>
+          )
+        )}
       </ScrollView>
 
       <View style={styles.buttonContainer}>
@@ -1599,6 +1770,109 @@ const getStyles = (isDarkTheme) =>
     },
     themeToggleText: {
       fontSize: widthToDp(6),
+    },
+    historySection: {
+      paddingHorizontal: widthToDp(4),
+      marginTop: heightToDp(2),
+      marginBottom: heightToDp(10),
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: heightToDp(1.5),
+    },
+    sectionTitle: {
+      fontSize: widthToDp(4.5),
+      fontWeight: "700",
+      color: isDarkTheme ? "#FFFFFF" : "#333",
+    },
+    sectionBadge: {
+      backgroundColor: "#EEF2FF",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    sectionBadgeText: {
+      fontSize: widthToDp(3),
+      color: "#4F46E5",
+      fontWeight: "600",
+    },
+    historySummary: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: heightToDp(2),
+    },
+    historySummaryCard: {
+      backgroundColor: isDarkTheme ? "#2A2A2A" : "#FFFFFF",
+      padding: 12,
+      borderRadius: 12,
+      width: "48%",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    historySummaryLabel: {
+      fontSize: widthToDp(3.2),
+      color: "#666",
+      marginBottom: 4,
+    },
+    historySummaryValue: {
+      fontSize: widthToDp(4),
+      fontWeight: "700",
+      color: isDarkTheme ? "#FFFFFF" : "#111",
+    },
+    transactionList: {
+      gap: 12,
+    },
+    instalmentItem: {
+      backgroundColor: isDarkTheme ? "#2A2A2A" : "#FFFFFF",
+      borderRadius: 12,
+      padding: 12,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+      marginBottom: 12,
+    },
+    instalmentLeft: {
+      flex: 1,
+    },
+    instalmentHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    instalmentNumber: {
+      fontSize: widthToDp(3.8),
+      fontWeight: "600",
+      color: isDarkTheme ? "#FFFFFF" : "#111",
+    },
+    statusText: {
+      fontSize: widthToDp(3.2),
+      fontWeight: "700",
+    },
+    instalmentDetails: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    detailColumn: {
+      flex: 1,
+    },
+    detailLabel: {
+      fontSize: widthToDp(2.8),
+      color: "#888",
+      marginBottom: 2,
+    },
+    detailValue: {
+      fontSize: widthToDp(3.2),
+      fontWeight: "600",
+      color: isDarkTheme ? "#E0E0E0" : "#444",
     },
     scrollView: {
       flex: 1,

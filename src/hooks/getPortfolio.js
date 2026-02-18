@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { apiGetService } from '../helpers/services'; 
+import { useState, useEffect, useCallback } from 'react';
+import { apiGetService } from '../helpers/services';
+import { useFocusEffect } from '@react-navigation/native';
 
 const useGetPortfolioData = () => {
   const [portfolioData, setPortfolioData] = useState(null);
@@ -9,7 +10,7 @@ const useGetPortfolioData = () => {
   const fetchPortfolioData = async () => {
     try {
       setLoading(true);
-      const response = await apiGetService('/api/v1/allotement/order/units');
+      const response = await apiGetService('/api/v1/allotement/order/units/aggregated');
       console.log('Portfolio Data Response:', response.data);
       setPortfolioData(response?.data?.portfolioSummary || []);
     } catch (err) {
@@ -20,9 +21,12 @@ const useGetPortfolioData = () => {
     }
   };
 
-  useEffect(() => {
-    fetchPortfolioData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchPortfolioData();
+    }, [])
+  );
+
 
   return { portfolioData, loading, error, refetch: fetchPortfolioData };
 };

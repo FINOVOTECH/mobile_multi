@@ -13,12 +13,14 @@ import {
   Dimensions,
 } from "react-native";
 import { useDispatch } from "react-redux";
+import LinearGradient from "react-native-linear-gradient";
 import InvestedPorfolio from "../../../hooks/investedPortfolio";
 import { setSipInterface } from "../../../store/slices/marketSlice";
 import Loader from "../../../components/handAnimation";
 import * as Config from "../../../helpers/Config";
-import { heightToDp } from "../../../helpers/Responsive";
+import { heightToDp, widthToDp } from "../../../helpers/Responsive";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SInfoSvg from "../../svgs";
 
 const { width } = Dimensions.get("window");
 
@@ -36,6 +38,17 @@ const InvestmentList = ({ navigation }) => {
   const [expandedSchemes, setExpandedSchemes] = useState({});
   const [activeView, setActiveView] = useState("SIP");
   const [expandedProvisionals, setExpandedProvisionals] = useState({});
+  const [expandedAllotments, setExpandedAllotments] = useState({});
+  const [dataSource, setDataSource] = useState('BSE'); // 'BSE' | 'BACKOFFICE'
+
+  // Update active view when data source changes
+  useEffect(() => {
+    if (dataSource === 'BACKOFFICE') {
+      setActiveView('ALL');
+    } else {
+      setActiveView('SIP');
+    }
+  }, [dataSource]);
 
   useEffect(() => {
     const backAction = () => {
@@ -57,10 +70,10 @@ const InvestmentList = ({ navigation }) => {
 
   const isEmptyData =
     !investmentData ||
-    !investmentData.sipSummary ||
-    Object.keys(investmentData.sipSummary.schemes || {}).length === 0;
+    !investmentData.sipSummaryAggregated ||
+    Object.keys(investmentData.sipSummaryAggregated.schemes || {}).length === 0;
 
-  const sipSummary = investmentData?.sipSummary || {};
+  const sipSummary = investmentData?.sipSummaryAggregated || {};
   const schemes = sipSummary?.schemes || {};
   const schemeArray = Object.values(schemes);
   const lumpsumSummary = investmentData?.lumpsumSummary || {};
@@ -120,33 +133,29 @@ const InvestmentList = ({ navigation }) => {
   };
 
   const toggleProvisionalExpand = (index) => {
-  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  setExpandedProvisionals((prev) => ({
-    ...prev,
-    [index]: !prev[index],
-  }));
-};
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedProvisionals((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
 
-  const isSIPActive = (sip) =>
-    sip?.status === "SUCCESS" ||
-    sip?.orderConfirmationStatus === "ORDER CONFIRMED";
+  const toggleAllotmentExpand = (schemeIdx) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedAllotments((prev) => ({
+      ...prev,
+      [schemeIdx]: !prev[schemeIdx],
+    }));
+  };
 
-  const isSIPCancelled = (sip) =>
-    sip?.status === "CANCEL" || sip?.status === "CANCELLED";
-
-  const isSIPPending = (sip) =>
-    sip?.status === "RECO_PENDING" || sip?.status === "PENDING";
-
-  const isSIPProvisional = (sip) =>
-    sip?.orderConfirmationStatus === "PROVISIONAL ORDER IN PROGRESS";
-
-  const isRedeemAllowed = (order) => order?.status === "SUCCESS";
+  const isRedeemAllowed = (order) => order?.netUnits > 0;
 
   const textOrNA = (val) =>
     val !== undefined && val !== null && val !== "" ? val : "NA";
 
   const numberOrZero = (val) =>
     val !== undefined && val !== null && !isNaN(val) ? Number(val) : 0;
+
   const groupedBSEAllotments = (investmentData?.bseAllotments || [])
     .filter(
       (item) =>
@@ -162,110 +171,142 @@ const InvestmentList = ({ navigation }) => {
           schemeName: item.schemeName || "NA",
           ISIN: item.ISIN || "NA",
           allotments: [],
+          total: 0,
+          active: 0,
+          cancelled: 0,
         };
       }
 
       acc[key].allotments.push(item);
+      acc[key].total += 1;
+      if (item.orderStatus === "VALID") {
+        acc[key].active += 1;
+      } else if (item.orderStatus === "CANCELLED") {
+        acc[key].cancelled += 1;
+      }
       return acc;
     }, {});
 
-  const BSEAllotmentCard = ({ scheme }) => (
-    <View style={styles.schemeCard}>
-      <View style={styles.schemeCardHeader}>
-        <View style={styles.schemeHeaderContent}>
-          <Text style={styles.schemeCardTitle}>{scheme.schemeName}</Text>
-          <Text style={styles.schemeCardSubtitle}>{scheme.schemeCode}</Text>
-        </View>
-      </View>
+  const BSEAllotmentCard = ({ scheme, index: schemeIdx }) => {
+    const isExpanded = !!expandedAllotments[schemeIdx];
+    return (
+      <View style={styles.schemeCard}>
+        <TouchableOpacity style={styles.allotmentHeaderContainer} onPress={() => toggleAllotmentExpand(schemeIdx)}>
+          <View style={styles.schemeHeaderContent}>
+            <Text style={styles.schemeCardTitle}>{scheme.schemeName}</Text>
+            <Text style={styles.schemeCardSubtitle}>Scheme Code: {scheme.schemeCode}</Text>
+            <Text style={styles.schemeCardSubtitle}>ISIN: {scheme.ISIN}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.hideShowBtn}
 
-      {scheme.allotments.map((item, i) => (
-        <View key={i} style={styles.allotmentCard}>
-          <View style={styles.allotmentHeader}>
-            <Text style={styles.allotmentTitle}>
-              Order: {textOrNA(item.orderNo)}
-            </Text>
-            <Text
-              style={[
-                styles.statusPill,
-                item.orderConfirmationStatus ===
-                  "PROVISIONAL ORDER IN PROGRESS" && styles.provisional,
-              ]}
-            >
-              {item.orderConfirmationStatus === "PROVISIONAL ORDER IN PROGRESS"
-                ? "Provisional"
-                : "Confirmed"}
-            </Text>
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* <Text style={[styles.arrowIcon, { color: '#FFF', fontSize: 14, marginRight: 8, marginLeft: 0 }]}>
+                {isExpanded ? "▲" : "▼"}
+              </Text> */}
+              <Text style={styles.arrowIcon}>{isExpanded ? "▲" : "▼"}</Text>
+              {/* <Text style={styles.hideShowBtnText}>{isExpanded ? "Hide" : "Show"}</Text> */}
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        <View style={styles.allotmentStatsRow}>
+          <View style={[styles.allotmentStatPill, styles.totalPill]}>
+            <Text style={styles.allotmentStatText}>Total SIPs: {scheme.total}</Text>
+          </View>
+          <View style={[styles.allotmentStatPill, styles.activePill]}>
+            <Text style={styles.allotmentStatText}>Active: {scheme.active}</Text>
+          </View>
+          <View style={[styles.allotmentStatPill, styles.cancelledPill]}>
+            <Text style={styles.allotmentStatText}>Cancelled: {scheme.cancelled}</Text>
+          </View>
+        </View>
+
+        {isExpanded && (
+          <View style={styles.allotmentListContainer}>
+            {scheme.allotments.map((item, i) => (
+              <View key={i} style={styles.orderDetailCard}>
+                <View style={[styles.orderDetailHeader, { marginBottom: 8 }]}>
+                  <Text style={styles.orderDetailSchemeName}>{item.schemeName}</Text>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={styles.orderDetailAmount}>₹ {item.investedRemaining?.toFixed(2) || item.currentValue?.toFixed(2) || "0.00"}</Text>
+                    <Text style={[styles.orderDetailGain, { color: (item.gainAmount || 0) >= 0 ? "#10B981" : "#EF4444" }]}>
+                      {(item.gainAmount || 0) >= 0 ? "+" : ""}{item.gainAmount} ({item.gainPercent || 0}%)
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.orderDetailRow}>
+                  <View style={styles.orderDetailCol}>
+                    <Text style={styles.orderDetailLabel}>Order No: {item.orderNo}</Text>
+                    <Text style={styles.orderDetailLabel}>Folio No: {item.folioNo}</Text>
+                    <Text style={styles.orderDetailLabel}>Order Date: {item.orderDate}</Text>
+                    <Text style={styles.orderDetailLabel}>
+                      Units: <Text style={styles.orderDetailBold}>{item.originalAllottedUnits}</Text> | Allotted NAV: <Text style={styles.orderDetailBold}>₹{item.allottedNav}</Text>
+                    </Text>
+                  </View>
+                  <View style={[styles.orderDetailCol, { alignItems: 'flex-end', justifyContent: 'flex-end' }]}>
+                    <Text style={styles.orderDetailSecondaryLabel}>Current: ₹ {item.currentValue}</Text>
+                    <Text style={styles.orderDetailSecondaryLabel}>Current NAV: ₹{item.currentNav}</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const LumpsumCard = ({ scheme }) => {
+    // { console.log("isRedeemAllowed", isRedeemAllowed(order)) }
+    return (
+      <View style={styles.schemeCard}>
+        <View style={styles.schemeCardHeader}>
+          <View style={styles.schemeHeaderContent}>
+            <Text style={styles.schemeCardTitle}>{scheme?.schemeName}</Text>
+            <Text style={styles.schemeCardSubtitle}>{scheme?.schemeCode}</Text>
+          </View>
+        </View>
+
+        {/* Safety check: ensure orders exists before mapping */}
+        {/* {(scheme || []).map((order, i) => { */}
+        {/* {console.log("isRedeemAllowed", isRedeemAllowed(order))} */}
+        {/* return ( */}
+        <View style={styles.orderCard}>
+          <View style={styles.orderHeader}>
+            <Text style={styles.orderTitle}>Invested: {scheme?.investedAmount}</Text>
           </View>
 
           <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Units</Text>
-              <Text style={styles.detailValue}>
-                {numberOrZero(item.originalAllottedUnits.toFixed(2))}
-              </Text>
-            </View>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Amount</Text>
-              <Text style={styles.detailValue}>
-                ₹{numberOrZero(item.investedAmount.toFixed(2))}
-              </Text>
-            </View>
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Current Value</Text>
               <Text style={styles.detailValue}>
-                ₹{numberOrZero(item.currentValue)}
+                {scheme?.currentValue}
               </Text>
             </View>
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-
-  const LumpsumCard = ({ scheme }) => (
-    <View style={styles.schemeCard}>
-      <View style={styles.schemeCardHeader}>
-        <View style={styles.schemeHeaderContent}>
-          <Text style={styles.schemeCardTitle}>{scheme?.schemeName}</Text>
-          <Text style={styles.schemeCardSubtitle}>{scheme?.schemeCode}</Text>
-        </View>
-      </View>
-
-      {scheme?.orders.map((order, i) => (
-        <View key={i} style={styles.orderCard}>
-          <View style={styles.orderHeader}>
-            <Text style={styles.orderTitle}>Order: {order?.orderNo}</Text>
-          </View>
-
-          <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Units</Text>
               <Text style={styles.detailValue}>
-                {numberOrZero(order?.allottedUnit)}
+                {scheme?.netUnits}
               </Text>
             </View>
-            {/* <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Amount</Text>
-              <Text style={styles.detailValue}>
-                ₹{numberOrZero(order.amount)}
-              </Text>
-            </View> */}
           </View>
 
           <View style={styles.actionContainer}>
-            {isRedeemAllowed(order) ? (
+            {isRedeemAllowed(scheme) ? (
               <TouchableOpacity
                 style={styles.redeemBtn}
                 onPress={() => {
                   dispatch(
                     setSipInterface({
                       investmentType: "LUMPSUM",
-                      // scheme,
                       allotmentData: {
-                        ...order,
+                        ...scheme,
                         schemeName: scheme?.schemeName,
                       },
-                      sip: scheme?.orders?.[0],
+                      sip: scheme, // Potentially risky if empty
                     })
                   );
                   navigation.navigate("SipInterface");
@@ -280,9 +321,11 @@ const InvestmentList = ({ navigation }) => {
             )}
           </View>
         </View>
-      ))}
-    </View>
-  );
+        {/* ) */}
+        {/* })} */}
+      </View>
+    );
+  }
 
   const SchemeCard = ({ scheme, index: schemeIndex }) => {
     if (!scheme) return null;
@@ -304,22 +347,6 @@ const InvestmentList = ({ navigation }) => {
           <Text style={styles.arrowIcon}>{schemeExpanded ? "▲" : "▼"}</Text>
         </TouchableOpacity>
 
-        <View style={styles.sipStatsRow}>
-          <View style={[styles.statPill, styles.statPillDefault]}>
-            <Text style={styles.statPillText}>Total: {schemeSIPs.length}</Text>
-          </View>
-          <View style={[styles.statPill, styles.statPillActive]}>
-            <Text style={styles.statPillText}>
-              Active: {schemeSIPs.filter(isSIPActive).length}
-            </Text>
-          </View>
-          <View style={[styles.statPill, styles.statPillCancelled]}>
-            <Text style={styles.statPillText}>
-              Cancelled: {schemeSIPs.filter(isSIPCancelled).length}
-            </Text>
-          </View>
-        </View>
-
         {schemeExpanded &&
           schemeSIPs.map((sip, sipIndex) => {
             const allottedUnits = getAllottedUnitsFromBSE(sip.SIPRegnNo);
@@ -336,7 +363,7 @@ const InvestmentList = ({ navigation }) => {
               >
                 <View style={styles.sipItemHeader}>
                   <Text style={styles.sipItemTitle}>SIP: {sip.SIPRegnNo}</Text>
-                  <View
+                  {/* <View
                     style={[
                       styles.statusPill,
                       isSIPActive(sip) && styles.statPillActive,
@@ -348,29 +375,29 @@ const InvestmentList = ({ navigation }) => {
                       {isSIPActive(sip)
                         ? "Active"
                         : isSIPCancelled(sip)
-                        ? "Cancelled"
-                        : isSIPProvisional(sip)
-                        ? "Provisional"
-                        : "Pending"}
+                          ? "Cancelled"
+                          : isSIPProvisional(sip)
+                            ? "Provisional"
+                            : "Pending"}
                     </Text>
-                  </View>
+                  </View> */}
                 </View>
 
                 <View style={styles.sipDetailsGrid}>
                   <View style={styles.sipDetailItem}>
                     <Text style={styles.sipDetailLabel}>Order</Text>
                     <Text style={styles.sipDetailValue}>
-                      {allotmentData?.orderNo ?? "--"}
+                      {sip?.orderNo ?? "--"}
                     </Text>
                   </View>
                   <View style={styles.sipDetailItem}>
                     <Text style={styles.sipDetailLabel}>Units</Text>
-                    <Text style={styles.sipDetailValue}>{allottedUnits}</Text>
+                    <Text style={styles.sipDetailValue}>{sip?.netUnits}</Text>
                   </View>
                   <View style={styles.sipDetailItem}>
                     <Text style={styles.sipDetailLabel}>Amount</Text>
                     <Text style={styles.sipDetailValue}>
-                      ₹{allotmentData?.investedAmount? allotmentData?.investedAmount.toFixed(2) : "-"}
+                      ₹{sip?.netAmount ? sip?.netAmount.toFixed(2) : "-"}
                     </Text>
                   </View>
                 </View>
@@ -381,296 +408,161 @@ const InvestmentList = ({ navigation }) => {
     );
   };
 
-  const SipSummaryCard = () => (
-    <View style={styles.summaryCard}>
-      <View style={styles.summaryBlockRow}>
-        <View style={[styles.summaryBlock, { backgroundColor: "#EEF2FF" }]}>
-          <Text style={styles.summaryBlockLabel}>Total SIPs</Text>
-          <Text style={styles.summaryBlockValue}>{totalSIPs}</Text>
-        </View>
-        <View style={[styles.summaryBlock, { backgroundColor: "#D1FAE5" }]}>
-          <Text style={styles.summaryBlockLabel}>Active SIPs</Text>
-          <Text style={[styles.summaryBlockValue, { color: "#059669" }]}>
-            {activeSIPs}
-          </Text>
-        </View>
-        <View style={[styles.summaryBlock, { backgroundColor: "#FEE2E2" }]}>
-          <Text style={styles.summaryBlockLabel}>Lumpsums</Text>
-          <Text style={[styles.summaryBlockValue, { color: "#991B1B" }]}>
-            {totalLumpsums}
-          </Text>
-        </View>
-      </View>
+  const SipSummaryCard = () => {
+    // Determine data based on dataSource
+    const bseOverall = investmentData?.portfolioSummary?.bse?.overall || {};
+    const boOverall = investmentData?.portfolioSummary?.backoffice?.overall || {};
 
-      <View style={styles.summaryDivider} />
+    const isBackOffice = dataSource === 'BACKOFFICE';
 
-      <View style={styles.summaryBottomRow}>
-        <View style={styles.summaryColumn}>
-          <Text style={styles.summaryColumnLabel}>Invested</Text>
-          <Text style={styles.summaryColumnValue}>
-            {formatCurrency(totalInvested)}
-          </Text>
-        </View>
-        <View style={styles.summaryColumn}>
-          <Text style={styles.summaryColumnLabel}>Gain/Loss</Text>
-          <Text
-            style={[
-              styles.summaryColumnValue,
-              styles.gainLossValue,
-              overallGainLoss.gain >= 0 ? styles.gain : styles.loss,
-            ]}
-          >
-            {overallGainLoss.gain >= 0 ? "+" : ""}
-            {formatCurrency(overallGainLoss.gain)}
-          </Text>
-          <Text
-            style={[
-              styles.summaryColumnPercent,
-              overallGainLoss.gain >= 0 ? styles.gain : styles.loss,
-            ]}
-          >
-            ({overallGainLoss.gain >= 0 ? "+" : ""}
-            {overallGainLoss.percentage.toFixed(2)}%)
-          </Text>
-        </View>
-        <View style={styles.summaryColumn}>
-          <Text style={styles.summaryColumnLabel}>Current</Text>
-          <Text style={styles.summaryColumnValue}>
-            {formatCurrency(totalCurrentValue)}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
+    // For BSE
+    const bseInvested = parseFloat(bseOverall.invested || 0);
+    const bseCurrent = parseFloat(bseOverall.currentValue || 0);
+    const bseGain = parseFloat(bseOverall.gainAmount || 0);
+    const bsePercent = parseFloat(bseOverall.gainPercent || 0);
 
-const ProvisionalOrderCard = ({ order, index }) => {
-  const expanded = !!expandedProvisionals[index];
+    // For BackOffice
+    const totalAUM = parseFloat(boOverall.totalAUM || 0);
+    const camsAUM = parseFloat(boOverall.camsAUM || 0);
+    const kfinAUM = parseFloat(boOverall.kfintechAUM || 0);
 
-  return (
-    <View style={styles.schemeCard}>
-      {/* Header */}
-      <TouchableOpacity
-        style={styles.schemeCardHeader}
-        activeOpacity={0.7}
-        onPress={() => toggleProvisionalExpand(index)}
-      >
-        <View style={styles.schemeHeaderContent}>
-          <Text style={styles.schemeCardTitle}>
-            {order.schemeName || "Unknown Scheme"}
-          </Text>
-
-          <Text style={styles.schemeCardSubtitle}>
-            {order.schemaCode||order?.schemeCode || "--"}
-          </Text>
-
-          {/* <Text style={styles.schemeCardSubtitleSmall}>
-            Reg No: {order.registrationId || "--"}
-          </Text> */}
-        </View>
-
-        <View style={{ alignItems: "flex-end" }}>
-          <View style={[styles.statusPill, styles.provisional]}>
-            <Text style={styles.statusPillText}>Provisional</Text>
-          </View>
-
-          <Text style={styles.arrowIcon}>
-            {expanded ? "▲" : "▼"}
-          </Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Collapsed quick info */}
-      {!expanded && (
-        <View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
-        {(order.orderValue || order.frequencyType) && (
-  <View style={styles.detailsGrid}>
-    {order.orderValue && (
-      <View style={styles.detailItem}>
-        <Text style={styles.detailLabel}>Order Value</Text>
-        <Text style={styles.detailValue}>₹{order.orderValue}</Text>
-      </View>
-    )}
-
-    {order.frequencyType && (
-      <View style={styles.detailItem}>
-        <Text style={styles.detailLabel}>Frequency</Text>
-        <Text style={styles.detailValue}>{order.frequencyType}</Text>
-      </View>
-    )}
-  </View>
-)}
-
-        </View>
-      )}
-
-      {/* Expanded details */}
-      {expanded && (
-        <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Order ID</Text>
-              <Text style={styles.detailValue}>{order.orderId}</Text>
-            </View>
-
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>SIP Start Date</Text>
-              <Text style={styles.detailValue}>{order.sipStartDate}</Text>
-            </View>
-          </View>
-
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Installments</Text>
-              <Text style={styles.detailValue}>
-                {order.noOfInstallment || "NA"}
-              </Text>
-            </View>
-
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Pending</Text>
-              <Text style={styles.detailValue}>
-                {order.pendingInstallments}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Completed</Text>
-              <Text style={styles.detailValue}>
-                {order.completedInstallments}
-              </Text>
-            </View>
-
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Reference</Text>
-              <Text style={styles.detailValue}>
-                {order.referenceNumber}
-              </Text>
-            </View>
-          </View>
-
-          {order.bseRemarks && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={styles.detailLabel}>BSE Remarks</Text>
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: "#374151",
-                  fontWeight: "500",
-                }}
-              >
-                {order.bseRemarks}
-              </Text>
-            </View>
-          )}
-
-          <View style={{ marginTop: 8 }}>
-            <Text style={styles.detailLabel}>Created At</Text>
-            <Text style={styles.detailValue}>
-              {new Date(order.createdAt).toLocaleString()}
-            </Text>
-          </View>
-        </View>
-      )}
-    </View>
-  );
-};
-
-
-  const TabHeader = () => {
-    const tabs = [
-      { id: "all", label: "All Schemes", count: schemeArray.length },
-      {
-        id: "active",
-        label: "Active",
-        count: schemeArray.filter((s) => s.active > 0).length,
-      },
-      {
-        id: "cancelled",
-        label: "Cancelled",
-        count: schemeArray.filter((s) => s.cancelled > 0).length,
-      },
-    ];
     return (
-      <View style={styles.tabRow}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.id}
-            style={[styles.tabBtn, activeTab === tab.id && styles.tabBtnActive]}
-            onPress={() => setActiveTab(tab.id)}
-          >
-            <Text
-              style={[
-                styles.tabBtnTxt,
-                activeTab === tab.id && styles.tabBtnTxtActive,
-              ]}
-            >
-              {tab.label}
+      <View style={styles.summaryCard}>
+        <LinearGradient
+          colors={['#2B8DF6', '#6366F1']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.summaryCardAccent}
+        />
+        <View style={styles.summaryBlockRow}>
+          <View style={[styles.summaryBlock, { backgroundColor: "#EEF2FF" }]}>
+            <Text style={styles.summaryBlockLabel}>{dataSource === 'BSE' ? 'Total SIPs' : 'Total AUM'}</Text>
+            <Text style={styles.summaryBlockValue}>{dataSource === 'BSE' ? totalSIPs : formatCurrency(totalAUM)}</Text>
+          </View>
+          <View style={[styles.summaryBlock, { backgroundColor: "#D1FAE5" }]}>
+            <Text style={styles.summaryBlockLabel}>{dataSource === 'BSE' ? 'Active SIPs' : 'CAMS AUM'}</Text>
+            <Text style={[styles.summaryBlockValue, { color: "#059669" }]}>
+              {dataSource === 'BSE' ? activeSIPs : formatCurrency(camsAUM)}
             </Text>
-            <View
-              style={[
-                styles.tabBadge,
-                activeTab === tab.id && styles.tabBadgeActive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.tabBadgeTxt,
-                  activeTab === tab.id && styles.tabBadgeTxtActive,
-                ]}
-              >
-                {tab.count}
+          </View>
+          <View style={[styles.summaryBlock, { backgroundColor: "#FEE2E2" }]}>
+            <Text style={styles.summaryBlockLabel}>{dataSource === 'BSE' ? 'Lumpsums' : 'KFintech AUM'}</Text>
+            <Text style={[styles.summaryBlockValue, { color: "#DC2626" }]}>
+              {dataSource === 'BSE' ? totalLumpsums : formatCurrency(kfinAUM)}
+            </Text>
+          </View>
+        </View>
+
+        {dataSource === 'BSE' && <><View style={styles.summaryDivider} />
+
+          <View style={styles.summaryBottomRow}>
+            <View style={styles.summaryColumn}>
+              <Text style={styles.summaryColumnLabel}>Invested</Text>
+              <Text style={styles.summaryColumnValue}>
+                {formatCurrency(bseInvested)}
               </Text>
             </View>
-          </TouchableOpacity>
-        ))}
+            <View style={styles.summaryColumn}>
+              <Text style={styles.summaryColumnLabel}>Gain/Loss</Text>
+              <View style={[styles.gainLossContainer, bseGain >= 0 ? styles.gainBg : styles.lossBg]}>
+                <Text
+                  style={[
+                    styles.summaryColumnValue,
+                    styles.gainLossValue,
+                    bseGain >= 0 ? styles.gain : styles.loss,
+                  ]}
+                >
+                  {bseGain >= 0 ? "+" : ""}
+                  {formatCurrency(bseGain)}
+                </Text>
+                <Text
+                  style={[
+                    styles.summaryColumnPercent,
+                    bseGain >= 0 ? styles.gain : styles.loss,
+                  ]}
+                >
+                  ({bseGain >= 0 ? "+" : ""}
+                  {bsePercent.toFixed(2)}%)
+                </Text>
+              </View>
+            </View>
+            <View style={styles.summaryColumn}>
+              <Text style={styles.summaryColumnLabel}>Current</Text>
+              <Text style={styles.summaryColumnValue}>
+                {formatCurrency(bseCurrent)}
+              </Text>
+            </View>
+          </View></>}
       </View>
     );
   };
 
-  const ViewToggle = () => (
-    <View style={styles.viewToggleRow}>
-      {["SIP", "BSE", "LUMPSUM"].map((tab) => (
-        <TouchableOpacity
-          key={tab}
-          style={[
-            styles.viewToggleBtn,
-            activeView === tab && styles.viewToggleBtnActive,
-          ]}
-          onPress={() => setActiveView(tab)}
-        >
-          <Text
-            style={[
-              styles.viewToggleTxt,
-              activeView === tab && styles.viewToggleTxtActive,
-            ]}
-          >
-            {tab}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+  const ProvisionalOrderCard = ({ order, index }) => {
+    return (
+      <View style={styles.provisionalOrderCard}>
+        <View style={styles.provisionalHeader}>
+          <View style={styles.provisionalStatusContainer}>
+            <View style={[styles.statusPill, styles.provisionalBadge]}>
+              <Text style={styles.provisionalBadgeText}>PROVISIONAL ORDER IN PROGRESS</Text>
+            </View>
+          </View>
+          <View style={styles.provisionalTimestamps}>
+            <Text style={styles.provisionalTimestamp}>
+              Created: {order.createdAt ? new Date(order.createdAt).toLocaleString() : "NA"}
+            </Text>
+            <Text style={styles.provisionalTimestamp}>
+              Updated: {order.updatedAt ? new Date(order.updatedAt).toLocaleString() : new Date(order.createdAt).toLocaleString()}
+            </Text>
+          </View>
+        </View>
 
-  const EmptyState = () => (
-    <View style={styles.emptyStateContainer}>
-      <View style={styles.emptyStateIcon}>
-        <Text style={styles.emptyStateIconText}>💼</Text>
+        <View style={styles.provisionalDetailsGrid}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Order ID:</Text>
+            <Text style={styles.infoValue}>{order.orderId || order.orderNo || "NA"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>SIP Reg No:</Text>
+            <Text style={styles.infoValue}>{order.sipRegnNo || order.referenceNumber || "NA"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>SIP Reg Date:</Text>
+            <Text style={styles.infoValue}>{order.sipStartDate || "NA"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Frequency:</Text>
+            <Text style={styles.infoValue}>{order.frequencyType || "NA"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Client Code:</Text>
+            <Text style={styles.infoValue}>{order.clientCode || "CHA01"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Transaction Type:</Text>
+            <Text style={styles.infoValue}>{order.transactionType || "SIP"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Order Value:</Text>
+            <Text style={styles.infoValue}>₹{order.orderValue || order.amount || "0"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Folio No:</Text>
+            <Text style={styles.infoValue}>{order.folioNo || "NA"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Source:</Text>
+            <Text style={styles.infoValue}>{order.source || "cron-sync"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>BSE Remarks:</Text>
+            <Text style={styles.infoValue}>{order.bseRemarks || "ALLOTMENT DONE"}</Text>
+          </View>
+        </View>
       </View>
-      <Text style={styles.emptyStateTitle}>No Investments Yet</Text>
-      <Text style={styles.emptyStateMessage}>
-        You haven't started any SIP investments yet. Start your investment
-        journey today!
-      </Text>
-      <TouchableOpacity
-        onPress={() => navigation.navigate("SipScheme")}
-        style={styles.startBtn}
-      >
-        <Text style={styles.startBtnTxt}>Start Investing</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    );
+  };
+
+  // Removed unused ViewToggle and TabHeader from render logic scope
 
   if (loading) {
     return (
@@ -708,116 +600,132 @@ const ProvisionalOrderCard = ({ order, index }) => {
         <Text style={styles.navbarTitle}>My Investments</Text>
         <Text style={styles.navbarSubtitle}>SIP Portfolio</Text>
       </View>
-    <View style={styles.viewToggleRow}>
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.viewToggleScroll}
-  >
-    {["SIP", "ALLOTMENTS", "PROVISIONAL", "LUMPSUM"].map((tab) => (
-      <TouchableOpacity
-        key={tab}
-        style={[
-          styles.viewToggleBtn,
-          activeView === tab && styles.viewToggleBtnActive,
-        ]}
-        onPress={() => setActiveView(tab)}
-        activeOpacity={0.7}
-      >
-        <Text
-          style={[
-            styles.viewToggleTxt,
-            activeView === tab && styles.viewToggleTxtActive,
-          ]}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+        <View style={styles.mainSwitchContainer}>
+          <TouchableOpacity
+            style={[styles.mainSwitchButton, dataSource === 'BSE' && styles.mainSwitchActive]}
+            onPress={() => setDataSource('BSE')}
+          >
+            <Text style={[styles.mainSwitchText, dataSource === 'BSE' && styles.mainSwitchTextActive]}>BSE</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.mainSwitchButton, dataSource === 'BACKOFFICE' && styles.mainSwitchActive]}
+            onPress={() => setDataSource('BACKOFFICE')}
+          >
+            <Text style={[styles.mainSwitchText, dataSource === 'BACKOFFICE' && styles.mainSwitchTextActive]}>BackOffice</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View style={styles.viewToggleRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.viewToggleScroll}
         >
-          {tab}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </ScrollView>
-</View>
+          {(dataSource === 'BSE' ? ["SIP", "LUMPSUM", "ALLOTMENTS", "PROVISIONAL"] : ["SIP", "LUMPSUM", "ALLOTMENTS", "PROVISIONAL"]).map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[
+                styles.viewToggleBtn,
+                activeView === tab && styles.viewToggleBtnActive,
+              ]}
+              onPress={() => setActiveView(tab)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.viewToggleTxt,
+                  activeView === tab && styles.viewToggleTxtActive,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
 
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {activeView === "SIP" && (
+        {dataSource === 'BSE' ? (
+          <>
+            {activeView === "SIP" && (
+              <View style={styles.contentContainer}>
+                <SipSummaryCard />
+                {schemeWiseSIPs.length > 0 ? (
+                  schemeWiseSIPs.map((scheme, idx) => (
+                    <SchemeCard
+                      index={idx}
+                      key={scheme?.schemeCode || idx}
+                      scheme={scheme}
+                    />
+                  ))
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Text style={styles.emptyTabStateText}>
+                      {activeTab === "all"
+                        ? "No investment schemes found"
+                        : `No ${activeTab} schemes found`}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {activeView === "ALLOTMENTS" && (
+              <View style={styles.contentContainer}>
+                {Object.values(groupedBSEAllotments).length > 0 ? (
+                  Object.values(groupedBSEAllotments).map((scheme, idx) => (
+                    <BSEAllotmentCard key={idx} scheme={scheme} index={idx} />
+                  ))
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Text style={styles.emptyTabStateText}>
+                      No BSE allotments found
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {activeView === "LUMPSUM" && (
+              <View style={styles.contentContainer}>
+                {(investmentData?.lumpsumSummary?.schemes || []).length > 0 ? (
+                  (investmentData?.lumpsumSummary?.schemes || []).map(
+                    (scheme, idx) => <LumpsumCard key={idx} scheme={scheme} />
+                  )
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Text style={styles.emptyTabStateText}>
+                      No lumpsum investments found
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {activeView === "PROVISIONAL" && (
+              <View style={styles.contentContainer}>
+                {(investmentData?.provisionalOrders || []).length > 0 ? (
+                  (investmentData?.provisionalOrders || []).map((order, idx) => (
+                    <ProvisionalOrderCard key={idx} order={order} index={idx} />
+                  ))
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Text style={styles.emptyTabStateText}>No provisional orders found</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </>
+        ) : (
           <View style={styles.contentContainer}>
             <SipSummaryCard />
-            {schemeWiseSIPs.length > 0 ? (
-              schemeWiseSIPs.map((scheme, idx) => (
-                <SchemeCard
-                  index={idx}
-                  key={scheme?.schemeCode || idx}
-                  scheme={scheme}
-                />
-              ))
-            ) : (
-              <View style={styles.emptyTabState}>
-                <Text style={styles.emptyTabStateText}>
-                  {activeTab === "all"
-                    ? "No investment schemes found"
-                    : `No ${activeTab} schemes found`}
-                </Text>
-              </View>
-            )}
           </View>
         )}
-
-        {activeView === "ALLOTMENTS" && (
-          <View style={styles.contentContainer}>
-            {Object.values(groupedBSEAllotments).length > 0 ? (
-              Object.values(groupedBSEAllotments).map((scheme, idx) => (
-                <BSEAllotmentCard key={idx} scheme={scheme} />
-              ))
-            ) : (
-              <View style={styles.emptyTabState}>
-                <Text style={styles.emptyTabStateText}>
-                  No BSE allotments found
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        {activeView === "LUMPSUM" && (
-          <View style={styles.contentContainer}>
-            {Object.values(investmentData?.lumpsumSummary?.schemes || {})
-              .length > 0 ? (
-              Object.values(investmentData?.lumpsumSummary?.schemes || {}).map(
-                (scheme, idx) => <LumpsumCard key={idx} scheme={scheme} />
-              )
-            ) : (
-              <View style={styles.emptyTabState}>
-                <Text style={styles.emptyTabStateText}>
-                  No lumpsum investments found
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
-       {activeView === "PROVISIONAL" && (
-  <View style={styles.contentContainer}>
-    {Array.isArray(investmentData?.provisionalOrders) &&
-    investmentData.provisionalOrders.length > 0 ? (
-      investmentData.provisionalOrders.map((order, idx) => (
-        <ProvisionalOrderCard
-          key={order._id || idx}
-          order={order}
-          index={idx}
-        />
-      ))
-    ) : (
-      <View style={styles.emptyTabState}>
-        <Text style={styles.emptyTabStateText}>
-          No provisional orders found
-        </Text>
-      </View>
-    )}
-  </View>
-)}
       </ScrollView>
     </SafeAreaView>
   );
@@ -838,7 +746,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 80,
   },
-  navbar: {
+ navbar: {
     paddingTop: 20,
     backgroundColor: "#2B8DF6",
     paddingBottom: 20,
@@ -860,14 +768,29 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     margin: 16,
+    marginTop: 0,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: 20,
     backgroundColor: "#FFFFFF",
-    elevation: 4,
-    shadowColor: "#0001",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#1E293B',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  summaryCardAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
   },
   summaryBlockRow: {
     flexDirection: "row",
@@ -883,15 +806,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   summaryBlockLabel: {
-    fontSize: 13,
-    color: "#4B5563",
-    marginBottom: 6,
+    fontSize: 10,
+    color: "#64748B",
+    marginBottom: 8,
     fontWeight: "600",
+    fontFamily: Config.fontFamilys.Poppins_SemiBold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   summaryBlockValue: {
-    fontSize: 20,
-    color: "#111827",
+    fontSize: 14,
+    color: "#1E293B",
     fontWeight: "700",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
   },
   summaryDivider: {
     height: 1,
@@ -908,15 +835,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   summaryColumnLabel: {
-    fontSize: 13,
-    color: "#4B5563",
+    fontSize: 12,
+    color: "#64748B",
     marginBottom: 6,
     fontWeight: "600",
+    fontFamily: Config.fontFamilys.Poppins_Medium,
   },
   summaryColumnValue: {
     fontSize: 16,
-    color: "#111827",
+    color: "#1E293B",
     fontWeight: "700",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
+  },
+  gainLossContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  gainBg: {
+    backgroundColor: '#D1FAE5',
+  },
+  lossBg: {
+    backgroundColor: '#FEE2E2',
   },
   gainLossValue: {
     fontSize: 15,
@@ -925,10 +866,10 @@ const styles = StyleSheet.create({
   summaryColumnPercent: {
     fontSize: 12,
     marginTop: 2,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   gain: { color: "#059669" },
-  loss: { color: "#EF4444" },
+  loss: { color: "#DC2626" },
   viewToggleRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -937,35 +878,58 @@ const styles = StyleSheet.create({
   },
   viewToggleBtn: {
     paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-    backgroundColor: "#E0E7FF",
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
     marginHorizontal: 6,
-    minWidth: 100,
+    minWidth: 90,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   viewToggleBtnActive: {
-    backgroundColor: "#1568dcff",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#2B8DF6",
+    ...Platform.select({
+      ios: {
+        shadowColor: '#2B8DF6',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   viewToggleTxt: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#4683e5ff",
+    color: "#64748B",
+    fontFamily: Config.fontFamilys.Poppins_SemiBold,
   },
   viewToggleTxtActive: {
-    color: "#FFFFFF",
+    color: "#2B8DF6",
   },
   schemeCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 18,
     marginHorizontal: 16,
     marginBottom: 16,
-    elevation: 2,
-    shadowColor: "#0001",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
     overflow: "hidden",
+    borderLeftWidth: 4,
+    borderLeftColor: "#10B981",
+    ...Platform.select({
+      ios: {
+        shadowColor: '#1E293B',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   schemeCardHeader: {
     flexDirection: "row",
@@ -980,19 +944,22 @@ const styles = StyleSheet.create({
   schemeCardTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
+    color: "#1E293B",
+    marginBottom: 6,
+    fontFamily: Config.fontFamilys.Poppins_Bold,
   },
   schemeCardSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
+    fontSize: 13,
+    color: "#64748B",
     fontWeight: "500",
+    fontFamily: Config.fontFamilys.Poppins_Medium,
   },
   schemeCardSubtitleSmall: {
-    fontSize: 12,
-    color: "#9CA3AF",
+    fontSize: 11,
+    color: "#94A3B8",
     fontWeight: "500",
-    marginTop: 2,
+    marginTop: 4,
+    fontFamily: Config.fontFamilys.Poppins_Regular,
   },
   arrowIcon: {
     fontSize: 18,
@@ -1071,11 +1038,11 @@ const styles = StyleSheet.create({
   allotmentCard: {
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 12,
-    backgroundColor: "#F9FAFB",
+    borderRadius: 14,
+    backgroundColor: "#F8FAFC",
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#E2E8F0",
   },
   allotmentHeader: {
     flexDirection: "row",
@@ -1085,9 +1052,10 @@ const styles = StyleSheet.create({
   },
   allotmentTitle: {
     fontWeight: "700",
-    fontSize: 15,
-    color: "#374151",
+    fontSize: 14,
+    color: "#1E293B",
     flex: 1,
+    fontFamily: Config.fontFamilys.Poppins_Bold,
   },
   detailsGrid: {
     flexDirection: "row",
@@ -1098,32 +1066,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   detailLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginBottom: 4,
+    fontSize: 11,
+    color: "#64748B",
+    marginBottom: 6,
     fontWeight: "500",
+    fontFamily: Config.fontFamilys.Poppins_Medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   detailValue: {
-    fontSize: 15,
-    color: "#111827",
+    fontSize: 14,
+    color: "#1E293B",
     fontWeight: "600",
+    fontFamily: Config.fontFamilys.Poppins_SemiBold,
   },
   orderCard: {
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 12,
-    backgroundColor: "#F9FAFB",
+    borderRadius: 14,
+    backgroundColor: "#F8FAFC",
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#E2E8F0",
   },
   orderHeader: {
     marginBottom: 16,
   },
   orderTitle: {
     fontWeight: "700",
-    fontSize: 15,
-    color: "#374151",
+    fontSize: 14,
+    color: "#1E293B",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
   },
   actionContainer: {
     marginTop: 16,
@@ -1135,35 +1108,55 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minWidth: 80,
+    backgroundColor: "#EEF2FF",
   },
   statusPillText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
+    color: "#4F46E5",
+    fontFamily: Config.fontFamilys.Poppins_SemiBold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   provisional: {
     backgroundColor: "#FEF3C7",
   },
   redeemBtn: {
-    backgroundColor: "#3a7fedff",
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: "#2B8DF6",
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: '#2B8DF6',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   redeemTxt: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
   },
   disabledContainer: {
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: "#F1F5F9",
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   disabledTxt: {
-    color: "#9CA3AF",
+    color: "#94A3B8",
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: Config.fontFamilys.Poppins_SemiBold,
   },
   emptyStateContainer: {
     flex: 1,
@@ -1215,48 +1208,334 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   errorIcon: {
-    fontSize: 56,
-    marginBottom: 16,
+    fontSize: 64,
+    marginBottom: 20,
   },
   errorTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
+    color: "#1E293B",
+    marginBottom: 12,
+    fontFamily: Config.fontFamilys.Poppins_Bold,
   },
   errorMessage: {
-    color: "#6B7280",
+    color: "#64748B",
     fontSize: 15,
     textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 22,
+    marginBottom: 28,
+    lineHeight: 24,
+    fontFamily: Config.fontFamilys.Poppins_Regular,
   },
   retryButton: {
-    backgroundColor: "#4F46E5",
-    borderRadius: 10,
+    backgroundColor: "#2B8DF6",
+    borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 32,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#2B8DF6',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   retryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
   },
   emptyTabState: {
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: 60,
     paddingHorizontal: 32,
   },
   emptyTabStateText: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#64748B",
     fontWeight: "500",
     textAlign: "center",
+    fontFamily: Config.fontFamilys.Poppins_Medium,
+    lineHeight: 24,
   },
   viewToggleScroll: {
-  paddingHorizontal: 8,
-  alignItems: "center",
-},
+    paddingHorizontal: 8,
+    alignItems: "center",
+  },
+  // Switch Styles
+  mainSwitchContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 30,
+    padding: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#2B8DF6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  mainSwitchButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 26,
+  },
+  mainSwitchActive: {
+    backgroundColor: '#2B8DF6',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#2B8DF6',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  mainSwitchText: {
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: Config.fontFamilys.Poppins_SemiBold,
+  },
+  mainSwitchTextActive: {
+    color: '#FFFFFF',
+  },
+  navbarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 8,
+    paddingBottom: 10,
+  },
+  navbarTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navbarTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "800",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
+    letterSpacing: 0.5,
+  },
+  placeholderButton: {
+    width: 40,
+  },
+  provisionalOrderCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#1E293B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  provisionalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  provisionalStatusContainer: {
+    flex: 1,
+  },
+  provisionalBadge: {
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  provisionalBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#92400E",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
+    letterSpacing: 0.5,
+  },
+  provisionalTimestamps: {
+    alignItems: 'flex-end',
+  },
+  provisionalTimestamp: {
+    fontSize: 10,
+    color: "#64748B",
+    fontFamily: Config.fontFamilys.Poppins_Medium,
+    marginBottom: 2,
+  },
+  provisionalDetailsGrid: {
+    marginTop: 10,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    alignItems: 'flex-start',
+  },
+  infoLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#334155",
+    width: 140,
+    fontFamily: Config.fontFamilys.Poppins_Bold,
+  },
+  infoValue: {
+    fontSize: 13,
+    color: "#475569",
+    flex: 1,
+    fontFamily: Config.fontFamilys.Poppins_Medium,
+  },
+  allotmentHeaderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    padding: 20,
+  },
+  hideShowBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    // backgroundColor: "#10B981",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  hideShowBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
+  },
+  allotmentStatsRow: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  allotmentStatPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    minWidth: 110,
+    alignItems: "center",
+    justifyContent: 'center',
+  },
+  totalPill: {
+    backgroundColor: "#EFF6FF",
+    borderColor: "#BFDBFE",
+  },
+  activePill: {
+    backgroundColor: "#ECFDF5",
+    borderColor: "#A7F3D0",
+  },
+  cancelledPill: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+  },
+  allotmentStatText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#1E293B",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
+  },
+  allotmentListContainer: {
+    backgroundColor: "#F8FAFC",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+  },
+  orderDetailCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    ...Platform.select({
+      ios: {
+        shadowColor: '#1E293B',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  orderDetailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  orderDetailSchemeName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1E293B",
+    flex: 1,
+    marginRight: 10,
+    textTransform: 'uppercase',
+    fontFamily: Config.fontFamilys.Poppins_Bold,
+  },
+  orderDetailAmount: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1E293B",
+    fontFamily: Config.fontFamilys.Poppins_Bold,
+  },
+  orderDetailGain: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 4,
+    fontFamily: Config.fontFamilys.Poppins_SemiBold,
+  },
+  orderDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: 8,
+  },
+  orderDetailCol: {
+    flex: 1,
+  },
+  orderDetailLabel: {
+    fontSize: 12,
+    color: "#64748B",
+    marginBottom: 4,
+    fontFamily: Config.fontFamilys.Poppins_Regular,
+  },
+  orderDetailBold: {
+    fontWeight: "700",
+    color: "#475569",
+  },
+  orderDetailSecondaryLabel: {
+    fontSize: 12,
+    color: "#64748B",
+    fontFamily: Config.fontFamilys.Poppins_Medium,
+    marginBottom: 2,
+  },
 });
 
 export default InvestmentList;

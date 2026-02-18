@@ -141,9 +141,7 @@ const SIPCalculator = () => {
     <SafeAreaView style={styles.container}>
       {Platform.OS === 'android' && <View style={styles.androidStatusBar} />}
       <StatusBar barStyle="dark-content" backgroundColor="#2B8DF6" />
-      
       <Header />
-
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}

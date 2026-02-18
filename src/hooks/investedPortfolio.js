@@ -10,7 +10,7 @@ const InvestedPorfolio = () => {
   const fetchPortfolioData = async () => {
     try {
       setLoading(true);
-      const response = await apiGetService('/api/v1/allotement/order/units');
+      const response = await apiGetService('/api/v1/allotement/order/units/aggregated');
       console.log('Portfolio Response:', response?.data);
       setInvestmentData(response?.data || []);
     } catch (err) {
