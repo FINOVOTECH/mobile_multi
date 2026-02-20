@@ -140,41 +140,64 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
     }
   };
 
+  const getSelectedBankObject = () => {
+  const allBanks = [...DIRECT_BANKS, ...NODAL_BANKS, ...UPI_BANKS];
+  return allBanks.find((b) => b.id === selectedBankId);
+};
+
+  
   // Main submit function
-  const handleSubmit = async () => {
-    if (!paymentMethod) {
-      setError("Please select a payment method.");
-      return;
-    }
+const handleSubmit = async () => {
+  // 🔹 Validation
+  if (!paymentMethod) {
+    setError("Please select a payment method.");
+    return;
+  }
 
-    if (paymentMethod === "DIRECT" && !selectedBankId) {
-      setError("Please select a bank for Direct payment.");
-      return;
-    }
+  if (paymentMethod === "DIRECT" && !selectedBankId) {
+    setError("Please select a bank for Direct payment.");
+    return;
+  }
 
-    if (paymentMethod === "UPI" && (!upiId.trim() || !selectedBankId)) {
-      setError("Please enter UPI ID and select a bank.");
-      return;
-    }
+  if (paymentMethod === "UPI" && (!upiId.trim() || !selectedBankId)) {
+    setError("Please enter UPI ID and select a bank.");
+    return;
+  }
 
-    if (paymentMethod === "NEFT" && !neftReference.trim()) {
-      setError("Please enter NEFT reference number.");
-      return;
-    }
+  if (paymentMethod === "NEFT" && !neftReference.trim()) {
+    setError("Please enter NEFT reference number.");
+    return;
+  }
 
-    setPaymentAttempted(true);
-    setCurrentStep("processing");
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
+  // 🔹 UI state before API call
+  setPaymentAttempted(true);
+  setCurrentStep("processing");
+  setLoading(true);
+  setError(null);
+  setSuccess(false);
 
+  try {
+    // 🔥 Get selected bank object
+    const selectedBank = getSelectedBankObject();
+
+    // 🔥 Decide correct gateway payment mode
+    const gatewayMode =
+      paymentMethod === "UPI"
+        ? "UPI"
+        : selectedBank?.method || paymentMethod;
+
+    const Token = await getData(store_key_login_details);
+
+    // 🔥 Final payload (FIXED)
     const payload = {
-      modeofpayment: paymentMethod,
+      modeofpayment: gatewayMode,   // ← dynamic now
       bankid: selectedBankId,
-      accountnumber: (LoginDetails || fallbackDetails)?.user
-        ?.accountDetails?.[0]?.accountNumber,
-      ifsc: (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]
-        ?.ifscCode,
+      accountnumber:
+        (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]
+          ?.accountNumber,
+      ifsc:
+        (LoginDetails || fallbackDetails)?.user?.accountDetails?.[0]
+          ?.ifscCode,
       ordernumber: orderId,
       totalamount: amount,
       NEFTreference: paymentMethod === "NEFT" ? neftReference : "",
@@ -183,60 +206,65 @@ const PaymentModal = ({ route, onClose, onSuccess, onError }) => {
       loopbackURL: "www.google.com",
       allowloopBack: "www.google.com",
     };
-    const Token = await getData(store_key_login_details);
+
+    console.log("Gateway Mode:", gatewayMode);
     console.log("Payment payload:", payload);
-    console.log("Token", Token);
-    try {
-      const response = await fetch(`${baseUrl}/api/v1/payment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          clientCode: LoginDetails?.user?.clientCode,
-          Authorization: Token,
-        },
-        body: JSON.stringify(payload),
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    // 🔹 API CALL
+    const response = await fetch(`${baseUrl}/api/v1/payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        clientCode: LoginDetails?.user?.clientCode,
+        Authorization: Token,
+      },
+      body: JSON.stringify(payload),
+    });
 
-      const data = await response.json();
-      console.log("Payment response:", data);
-
-      setPaymentResponse(data);
-
-      if (data?.success) {
-        // ✅ STOP processing BEFORE opening WebView
-        setLoading(false);
-        setCurrentStep("form");
-
-        if (paymentMethod === "DIRECT" && data?.paymentPage) {
-          setWebViewHtml(data.paymentPage);
-          setShowWebView(true);
-          return;
-        }
-
-        // Existing non-DIRECT success flow
-        setSuccess(true);
-        setCurrentStep("result");
-        setShowPaymentModal(true);
-        if (onSuccess) onSuccess(data);
-      } else {
-        setError(data?.message || "Payment failed. Please try again.");
-        setCurrentStep("result");
-        setShowPaymentModal(true);
-        if (onError) onError(data);
-      }
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError(err.message || "Payment processing failed. Please try again.");
-      setCurrentStep("result");
-      if (onError) onError(err);
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  };
+
+    const data = await response.json();
+    console.log("Payment response:", data);
+
+    setPaymentResponse(data);
+
+    // 🔹 SUCCESS FLOW
+    if (data?.success) {
+      setLoading(false);
+      setCurrentStep("form");
+
+      // 🔥 Open WebView only for NetBanking / DIRECT / NODAL
+      if (
+        (gatewayMode === "DIRECT" || gatewayMode === "NODAL") &&
+        data?.paymentPage
+      ) {
+        setWebViewHtml(data.paymentPage);
+        setShowWebView(true);
+        return;
+      }
+
+      // 🔹 Non-gateway success flow (UPI / NEFT)
+      setSuccess(true);
+      setCurrentStep("result");
+      setShowPaymentModal(true);
+      if (onSuccess) onSuccess(data);
+    } else {
+      setError(data?.message || "Payment failed. Please try again.");
+      setCurrentStep("result");
+      setShowPaymentModal(true);
+      if (onError) onError(data);
+    }
+  } catch (err) {
+    console.error("Payment error:", err);
+    setError(err.message || "Payment processing failed. Please try again.");
+    setCurrentStep("result");
+    if (onError) onError(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Reset form function
   const resetForm = () => {
