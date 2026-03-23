@@ -147,13 +147,19 @@ async function resolveLogoFile({ logoUrl, backendBase, tenantId }) {
   );
 }
 
+// Use ImageMagick on Linux, sips on macOS
+const IS_MAC = process.platform === "darwin";
+
 function detectImageFormat(src) {
   try {
-    const out = runCapture("sips", ["-g", "format", src]);
-    const m = out.match(/format:\s*([^\n\r]+)/i);
-    return String(m?.[1] || "")
-      .trim()
-      .toLowerCase();
+    if (IS_MAC) {
+      const out = runCapture("sips", ["-g", "format", src]);
+      const m = out.match(/format:\s*([^\n\r]+)/i);
+      return String(m?.[1] || "").trim().toLowerCase();
+    }
+    // Linux: use ImageMagick identify
+    const out = runCapture("identify", ["-format", "%m", src]);
+    return String(out || "").trim().toLowerCase();
   } catch (_) {
     return "";
   }
@@ -166,22 +172,23 @@ function ensurePngSource(src, tenantId = "TENANT") {
     os.tmpdir(),
     `tenant_logo_${tenantId}_normalized.png`
   );
-  run("sips", ["--setProperty", "format", "png", src, "--out", converted]);
+  if (IS_MAC) {
+    run("sips", ["--setProperty", "format", "png", src, "--out", converted]);
+  } else {
+    run("convert", [src, "PNG:" + converted]);
+  }
   return converted;
 }
 
 function renderIcon(src, out, size) {
-  run("sips", [
-    "-z",
-    String(size),
-    String(size),
-    src,
-    "--setProperty",
-    "format",
-    "png",
-    "--out",
-    out,
-  ]);
+  if (IS_MAC) {
+    run("sips", [
+      "-z", String(size), String(size),
+      src, "--setProperty", "format", "png", "--out", out,
+    ]);
+  } else {
+    run("convert", [src, "-resize", `${size}x${size}!`, "PNG:" + out]);
+  }
 }
 
 function applyBranding({ appName, logoFile, tenantId }) {
@@ -341,7 +348,7 @@ function exportAndroid(tenantId, uploadsRoot) {
     `cd android && GRADLE_USER_HOME='${gradleHome}' ./gradlew --no-daemon --project-cache-dir '${projectCacheDir}' ${task}`;
 
   try {
-    run("/bin/zsh", ["-lc", gradleCmd("clean assembleRelease")], { cwd: ROOT });
+    run(IS_MAC ? "/bin/zsh" : "/bin/bash", ["-lc", gradleCmd("clean assembleRelease")], { cwd: ROOT });
   } catch (firstErr) {
     // Retry once with a fresh cache/workdir if shared cache is corrupted.
     const safeTenant = String(tenantId || "tenant")
@@ -357,7 +364,7 @@ function exportAndroid(tenantId, uploadsRoot) {
     const retryHome = fs.mkdtempSync(gradleBase);
     const retryProjectCache = path.join(retryHome, "project-cache");
     run(
-      "/bin/zsh",
+      IS_MAC ? "/bin/zsh" : "/bin/bash",
       [
         "-lc",
         `cd android && GRADLE_USER_HOME='${retryHome}' ./gradlew --no-daemon --project-cache-dir '${retryProjectCache}' clean assembleRelease`,
@@ -401,9 +408,9 @@ function exportIos(tenantId, uploadsRoot) {
 </dict></plist>`
   );
 
-  run("/bin/zsh", ["-lc", "cd ios && pod install"], { cwd: ROOT });
+  run(IS_MAC ? "/bin/zsh" : "/bin/bash", ["-lc", "cd ios && pod install"], { cwd: ROOT });
   run(
-    "/bin/zsh",
+    IS_MAC ? "/bin/zsh" : "/bin/bash",
     [
       "-lc",
       `cd ios && xcodebuild -workspace JyotiMF.xcworkspace -scheme JyotiMF -configuration Release -archivePath build/JyotiMF.xcarchive -destination generic/platform=iOS archive`,
@@ -411,7 +418,7 @@ function exportIos(tenantId, uploadsRoot) {
     { cwd: ROOT }
   );
   run(
-    "/bin/zsh",
+    IS_MAC ? "/bin/zsh" : "/bin/bash",
     [
       "-lc",
       `cd ios && xcodebuild -exportArchive -archivePath build/JyotiMF.xcarchive -exportPath build/export -exportOptionsPlist "${plist}"`,
