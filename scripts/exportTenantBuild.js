@@ -289,6 +289,21 @@ function applyAndroidPackageId(packageId) {
     .replace(/namespace\s+"[^"]*"/, `namespace "${id}"`)
     .replace(/applicationId\s+"[^"]*"/, `applicationId "${id}"`);
   fs.writeFileSync(gradlePath, gradle);
+
+  // Update package declarations in all Kotlin source files so BuildConfig resolves correctly
+  const kotlinDirs = [
+    path.join(ROOT, "android", "app", "src", "main", "java", "com", "jyoti", "mf"),
+    path.join(ROOT, "android", "app", "src", "main", "java", "com", "mfjyoti", "mf"),
+  ];
+  for (const dir of kotlinDirs) {
+    if (!fs.existsSync(dir)) continue;
+    for (const file of fs.readdirSync(dir).filter((f) => f.endsWith(".kt"))) {
+      const filePath = path.join(dir, file);
+      let kt = fs.readFileSync(filePath, "utf8");
+      kt = kt.replace(/^package\s+[^\n]+/m, `package ${id}`);
+      fs.writeFileSync(filePath, kt);
+    }
+  }
 }
 
 function applyIosBundleId(bundleId) {
