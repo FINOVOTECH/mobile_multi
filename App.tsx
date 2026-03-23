@@ -1,24 +1,39 @@
 import { useEffect, useState } from "react";
+import { LogBox, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import RootNavigator, { navigationRef } from "./src/navigation";
-import SplashScreen from "./src/presentation/screens/splash";
 import HandAnimation from "./src/components/handAnimation";
 import { store, persistor } from "./src/store/store";
-import { clearAll } from "./src/helpers/localStorage";
 import { checkAppVersion } from "./src/utils/versionCheck";
+import { bootstrapTenantBranding } from "./src/helpers/tenantBrandingRuntime";
+import * as Config from "./src/helpers/Config";
 
 function App() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const [navigationModule, setNavigationModule] = useState<any>(null);
 
- useEffect(() => {
+  useEffect(() => {
+    if (__DEV__) {
+      LogBox.ignoreAllLogs(true);
+    }
+  }, []);
+
+  useEffect(() => {
     const prepare = async () => {
+      // Load cached branding first (instant, no network)
+      await bootstrapTenantBranding({ skipNetwork: true }).catch(() => null);
+
+      const module = Config.useHybridApp
+        ? require("./src/navigation/hybrid")
+        : require("./src/navigation");
+      setNavigationModule(module);
       setAppIsReady(true);
+
+      // Network refresh immediately in background (no delay)
+      bootstrapTenantBranding().catch(() => null);
     };
 
     prepare();
@@ -28,28 +43,45 @@ function App() {
     if (!appIsReady) return;
 
     // ✅ Delay version check until UI is mounted
-    const timeout = setTimeout(() => {
-      checkAppVersion();
-    }, 500);
+    const timeout = setTimeout(
+      () => {
+        checkAppVersion();
+      },
+      Config.useHybridApp ? 1200 : 500
+    );
 
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+    };
   }, [appIsReady]);
-  if (!appIsReady) return <SplashScreen />;
 
-  const LoadingView = () => (
-    <HandAnimation />
+  const RootNavigator = navigationModule?.default;
+  const navigationRef = navigationModule?.navigationRef;
+
+  if (!appIsReady || !RootNavigator || !navigationRef) {
+    return <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />;
+  }
+
+  const LoadingView = () => <HandAnimation />;
+
+  const appShell = (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer ref={navigationRef}>
+        <RootNavigator />
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 
   return (
     <SafeAreaProvider>
       <Provider store={store}>
-        <PersistGate loading={<LoadingView />} persistor={persistor}>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <NavigationContainer ref={navigationRef}>
-              <RootNavigator />
-            </NavigationContainer>
-          </GestureHandlerRootView>
-        </PersistGate>
+        {Config.useHybridApp ? (
+          appShell
+        ) : (
+          <PersistGate loading={<LoadingView />} persistor={persistor}>
+            {appShell}
+          </PersistGate>
+        )}
       </Provider>
     </SafeAreaProvider>
   );

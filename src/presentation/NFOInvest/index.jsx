@@ -216,7 +216,7 @@ const NFOInvest = ({ navigation }) => {
       const Token = await getData(Config.store_key_login_details);
 
       const response = await fetch(
-        `${Config.baseUrl}/api/client/registration/mandate/history`,
+        `${Config.getBaseUrl()}/api/client/registration/mandate/history`,
         {
           method: 'GET',
           headers: {
@@ -736,7 +736,7 @@ const NFOInvest = ({ navigation }) => {
           ? '/api/v1/purchase/sip/entry'
           : '/api/v1/purchase/order/entry';
 
-      const response = await fetch(`${Config.baseUrl}/api/v1/purchase/sip/entry`, {
+      const response = await fetch(`${Config.getBaseUrl()}/api/v1/purchase/sip/entry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

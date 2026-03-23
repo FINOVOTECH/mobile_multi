@@ -216,7 +216,7 @@ const SetPasswordModal = ({
       console.log("Setting password with payload:", payload);
 
       const response = await fetch(
-        `${Config.baseUrl}/api/v1/user/onboard/login/set-password`,
+        `${Config.getBaseUrl()}/api/v1/user/onboard/login/set-password`,
         {
           method: "POST",
           headers: {

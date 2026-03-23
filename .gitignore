@@ -11,3 +11,12 @@ local.properties
 *.keystore
 *.apk
 *.aab
+
+# macOS / editor / runtime junk
+.DS_Store
+*.log
+hs_err_pid*.log
+
+# accidental local dump folders
+~/
+mongo_dumps/

@@ -40,6 +40,12 @@ const InvestmentList = ({ navigation }) => {
   const [expandedProvisionals, setExpandedProvisionals] = useState({});
   const [expandedAllotments, setExpandedAllotments] = useState({});
   const [dataSource, setDataSource] = useState('BSE'); // 'BSE' | 'BACKOFFICE'
+  const exchangePreference = String(Config?.RuntimeTenant?.exchangePreference || "BOTH").toUpperCase();
+  const sourceTabs = exchangePreference === "BSE"
+    ? [{ key: "BSE", label: "BSE" }]
+    : exchangePreference === "NSE"
+      ? [{ key: "BACKOFFICE", label: "NSE" }]
+      : [{ key: "BSE", label: "BSE" }, { key: "BACKOFFICE", label: "NSE" }];
 
   // Update active view when data source changes
   useEffect(() => {
@@ -49,6 +55,12 @@ const InvestmentList = ({ navigation }) => {
       setActiveView('SIP');
     }
   }, [dataSource]);
+
+  useEffect(() => {
+    if (exchangePreference === "NSE" && dataSource !== "BACKOFFICE") {
+      setDataSource("BACKOFFICE");
+    }
+  }, [exchangePreference, dataSource]);
 
   useEffect(() => {
     const backAction = () => {
@@ -602,18 +614,15 @@ const InvestmentList = ({ navigation }) => {
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
         <View style={styles.mainSwitchContainer}>
-          <TouchableOpacity
-            style={[styles.mainSwitchButton, dataSource === 'BSE' && styles.mainSwitchActive]}
-            onPress={() => setDataSource('BSE')}
-          >
-            <Text style={[styles.mainSwitchText, dataSource === 'BSE' && styles.mainSwitchTextActive]}>BSE</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.mainSwitchButton, dataSource === 'BACKOFFICE' && styles.mainSwitchActive]}
-            onPress={() => setDataSource('BACKOFFICE')}
-          >
-            <Text style={[styles.mainSwitchText, dataSource === 'BACKOFFICE' && styles.mainSwitchTextActive]}>BackOffice</Text>
-          </TouchableOpacity>
+          {sourceTabs.map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.mainSwitchButton, dataSource === tab.key && styles.mainSwitchActive]}
+              onPress={() => setDataSource(tab.key)}
+            >
+              <Text style={[styles.mainSwitchText, dataSource === tab.key && styles.mainSwitchTextActive]}>{tab.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
       <View style={styles.viewToggleRow}>

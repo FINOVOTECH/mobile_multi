@@ -86,7 +86,7 @@ const CustomGoalFlow = ({ onGoBack }) => {
 
       const token = await AsyncStorage.getItem("token");
 
-      const response = await fetch(`${Config.baseUrl}/api/v1/goals/simulate`, {
+      const response = await fetch(`${Config.getBaseUrl()}/api/v1/goals/simulate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

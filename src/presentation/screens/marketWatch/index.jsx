@@ -126,7 +126,7 @@ const MarketWatch = ({ navigation }) => {
       const token = getData(Config.store_key_login_details);
       const client = getData(Config.clientCode);
       const data = await fetch(
-        `${Config.baseUrl}/api/v2/historical/data/fetch/scheme/details`,
+        `${Config.getBaseUrl()}/api/v2/historical/data/fetch/scheme/details`,
         {
           method: "POST",
           headers: {
@@ -155,7 +155,7 @@ const MarketWatch = ({ navigation }) => {
       const token = getData(Config.store_key_login_details);
       const client = getData(Config.clientCode);
       const data = await fetch(
-        `${Config.baseUrl}/api/v2/historical/data/fetch/current/today-nav`,
+        `${Config.getBaseUrl()}/api/v2/historical/data/fetch/current/today-nav`,
         {
           method: "POST",
           headers: {

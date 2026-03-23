@@ -96,7 +96,7 @@ const [clientCode, setClientCode] = useState("");
     try {
       setIsLoading(true);
       const response = await fetch(
-        `${Config.baseUrl}/api/v1/user/onboard/login/reset-password`,
+        `${Config.getBaseUrl()}/api/v1/user/onboard/login/reset-password`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

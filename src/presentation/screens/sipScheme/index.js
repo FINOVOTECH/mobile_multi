@@ -21,7 +21,7 @@ import HandAnimation from "../../../components/handAnimation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width: screenWidth } = Dimensions.get("window");
-const API_BASE_URL = `${Config.baseUrl}/api/v1/mutualfund/filter/universal`;
+const API_BASE_URL = `${Config.getBaseUrl()}/api/v1/mutualfund/filter/universal`;
 const LIMIT = 50;
 
 const tabs = [

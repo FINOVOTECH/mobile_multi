@@ -31,23 +31,28 @@ console.log("POST DATA",`${url}`)
 
     const headers = {
       'Content-Type': 'application/json',
-          "tenantId": 'motisons'
     };
     // console.log("HEADES:::=", postData,clientCode,token)
 
-     if (token) headers.Authorization = token;
+    const runtimeTenantId = String(Config?.RuntimeTenant?.tenantId || "").trim().toUpperCase();
+    if (runtimeTenantId) {
+      headers["x-tenant-id"] = runtimeTenantId;
+      headers["tenantId"] = runtimeTenantId;
+    }
+
+    if (token) headers.Authorization = token;
     if (clientCode) headers.clientCode = clientCode;
 
     console.log('POST Headers:', {
       method: 'POST',
-      url: `${Config.baseUrl}${url}`,
+      url: `${Config.getBaseUrl()}${url}`,
       data: postData,
       headers,
     });
 
     const response = await axios({
       method: 'POST',
-      url: `${Config.baseUrl}${url}`,
+      url: `${Config.getBaseUrl()}${url}`,
       data: postData,
       headers,
     });
@@ -69,7 +74,7 @@ console.log("POST DATA",`${url}`)
  * @returns {Promise} Axios response or error
  */
 export const apiGetService = async (url, params = {}) => {
-  console.log("url data ==>>",`${Config.baseUrl}${url}`)
+  console.log("url data ==>>",`${Config.getBaseUrl()}${url}`)
   try {
     let localDataObj = await getData(Config?.store_key_login_details);
     // console.log('apiGetService called with url:', url, 'and params:', params, "token", localDataObj);
@@ -98,20 +103,26 @@ export const apiGetService = async (url, params = {}) => {
       'Content-Type': 'application/json',
     };
 
+    const runtimeTenantId = String(Config?.RuntimeTenant?.tenantId || "").trim().toUpperCase();
+    if (runtimeTenantId) {
+      headers["x-tenant-id"] = runtimeTenantId;
+      headers["tenantId"] = runtimeTenantId;
+    }
+
     if (token) headers.Authorization = token;
     // if()
     if (clientCode) headers.clientCode = clientCode;
 
     console.log('GET Headers:', {
       method: 'GET',
-      url: `${Config.baseUrl}${url}`,
+      url: `${Config.getBaseUrl()}${url}`,
       params,
       headers,
     });
 
     const response = await axios({
       method: 'GET',
-      url: `${Config.baseUrl}${url}`,
+      url: `${Config.getBaseUrl()}${url}`,
       params,
       headers,
     });

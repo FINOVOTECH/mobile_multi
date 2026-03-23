@@ -31,11 +31,20 @@ import { getData, storeData } from "../../../helpers/localStorage";
 import SInfoSvg from "../../svgs";
 import * as Icons from "../../../helpers/Icons";
 import ReactNativeBiometrics from "react-native-biometrics";
-import BiometricLogin from "../BiometricLogin";
+import BiometricLogin from "../BiometricLogin/index.jsx";
 import Rbutton from "../../../components/Rbutton";
 import { setPass } from "../../../store/slices/passSlice";
+import {
+  fetchAndCacheTenantBranding,
+  refreshTenantBrandingForToken,
+} from "../../../helpers/tenantBrandingRuntime";
+import { ScreenName } from "../../../constant/screenName";
 
 export default function Home() {
+  const buildTenantCode = String(Config?.defaultTenantId || "")
+    .trim()
+    .toUpperCase();
+  const showTenantSelector = __DEV__ && !buildTenantCode;
   const otpInputRefs = useRef([]);
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -51,7 +60,59 @@ console.log("DATA",DATA?.enabled , DATA.pin )
   const [validationErrors, setValidationErrors] = useState({});
   const [resendTimer, setResendTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
-  const [res, setRes] = useState()
+  const [tenantCode, setTenantCode] = useState(
+    String(Config?.RuntimeTenant?.tenantId || "").toUpperCase()
+  );
+  const [tenantLoading, setTenantLoading] = useState(false);
+  const [authRole, setAuthRole] = useState("client");
+  const [authPassword, setAuthPassword] = useState("");
+
+  const ensureTenantSelected = () => {
+    const selectedTenant = String(Config?.RuntimeTenant?.tenantId || "")
+      .trim()
+      .toUpperCase();
+    if (selectedTenant) return true;
+    if (buildTenantCode) {
+      Config.RuntimeTenant.tenantId = buildTenantCode;
+      setTenantCode(buildTenantCode);
+      return true;
+    }
+    if (!showTenantSelector) return true;
+    if (!selectedTenant) {
+      setErrorMessage("Please apply tenant code first.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleApplyTenant = async () => {
+    const key = String(tenantCode || "").trim().toUpperCase();
+    if (!key) {
+      setErrorMessage("Please enter tenant code.");
+      return;
+    }
+    setTenantLoading(true);
+    setErrorMessage("");
+    try {
+      await fetchAndCacheTenantBranding(key);
+      setTenantCode(String(Config?.RuntimeTenant?.tenantId || key));
+    } catch (err) {
+      setErrorMessage(err?.message || "Failed to load tenant branding.");
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!buildTenantCode) return;
+    const runtimeTenant = String(Config?.RuntimeTenant?.tenantId || "")
+      .trim()
+      .toUpperCase();
+    if (runtimeTenant !== buildTenantCode) {
+      Config.RuntimeTenant.tenantId = buildTenantCode;
+    }
+    setTenantCode(buildTenantCode);
+  }, [buildTenantCode]);
 
   useEffect(() => {
     if (DATA.enabled === true) {
@@ -94,7 +155,7 @@ console.log("DATA",DATA?.enabled , DATA.pin )
   const verifyWithServer = async () => {
     try {
       const response = await fetch(
-        `${Config.baseUrl}/api/v1/user/function/verify/refresh`,
+        `${Config.getBaseUrl()}/api/v1/user/function/verify/refresh`,
         {
           method: "GET",
           headers: {
@@ -108,6 +169,7 @@ console.log("DATA",DATA?.enabled , DATA.pin )
 
       if (response.ok && result?.accessToken) {
         await storeData(Config.store_key_login_details, result.accessToken);
+        await refreshTenantBrandingForToken(result.accessToken);
         await storeData(Config.clientCode, LoginData?.user?.clientCode);
         navigation.reset({
           index: 0,
@@ -181,14 +243,6 @@ console.log("DATA",DATA?.enabled , DATA.pin )
     return null;
   };
 
-  const formatInput = (value) => {
-    if (loginMethod === "phone") {
-      return value.replace(/\D/g, "").slice(0, 10);
-    } else {
-      return value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    }
-  };
-
   const validateInput = (value) => {
     const errors = {};
 
@@ -232,11 +286,81 @@ console.log("DATA",DATA?.enabled , DATA.pin )
   };
 
   const handleInputChange = (value) => {
-    const formattedValue = formatInput(value);
-    setReferenceId(formattedValue);
+    setReferenceId(String(value || "").replace(/\s/g, ""));
+  };
+
+  const inferAuthRole = () => {
+    const identity = String(referenceId || "").trim();
+    const pwd = String(authPassword || "").trim();
+    if (!pwd) return "client";
+    if (identity.includes("@")) return "staff_email";
+    return "tenant_admin";
   };
 
   const handleSendOtp = async () => {
+    if (!ensureTenantSelected()) return;
+    const inferredRole = inferAuthRole();
+    const identity = String(referenceId || "").trim();
+    if (inferredRole !== "client") {
+      const pwd = String(authPassword || "").trim();
+
+      if (!identity || !pwd) {
+        setErrorMessage("Please enter credentials.");
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage("");
+      setValidationErrors({});
+
+      try {
+        let response = null;
+        let resolvedRole = inferredRole;
+
+        if (inferredRole === "staff_email") {
+          // Try tenant-admin first for broker email; fallback to employee.
+          try {
+            response = await apiPostService("/api/v1/admin/tenant-login", {
+              email: identity.toLowerCase(),
+              password: pwd,
+            });
+            resolvedRole = "tenant_admin";
+          } catch (_) {
+            response = await apiPostService("/api/v1/employee/login", {
+              email: identity.toLowerCase(),
+              password: pwd,
+            });
+            resolvedRole = "employee";
+          }
+        } else {
+          response = await apiPostService("/api/v1/admin/tenant-login", {
+            arnCode: identity.toUpperCase(),
+            password: pwd,
+          });
+          resolvedRole = "tenant_admin";
+        }
+
+        if (response?.status === 200 && String(response?.data?.status || "").toUpperCase() === "SUCCESS") {
+          setAuthRole(resolvedRole);
+          setIsOtpSent(true);
+          setOtp(["", "", "", ""]);
+          setResendTimer(30);
+          setCanResend(false);
+          setTimeout(() => {
+            otpInputRefs.current[0]?.focus();
+          }, 500);
+        } else {
+          throw new Error(response?.data?.message || "Failed to send OTP");
+        }
+      } catch (err) {
+        setErrorMessage(err?.response?.data?.message || err?.message || "Failed to send OTP.");
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    setAuthRole("client");
     const errors = validateInput(referenceId);
 
     if (Object.keys(errors).length > 0) {
@@ -300,6 +424,7 @@ console.log("DATA",DATA?.enabled , DATA.pin )
   };
 
   const handleVerifyOtp = async () => {
+    if (!ensureTenantSelected()) return;
     const otpError = validateOtp(otp);
     if (otpError) {
       setErrorMessage(otpError);
@@ -311,6 +436,32 @@ console.log("DATA",DATA?.enabled , DATA.pin )
     setErrorMessage("");
 
     try {
+      if (authRole !== "client") {
+        const endpoint = authRole === "employee" ? "/api/v1/employee/verify-otp" : "/api/v1/admin/tenant-login/verify-otp";
+        const identity = String(referenceId || "").trim();
+        const payload = authRole === "employee"
+          ? { email: identity.toLowerCase(), password: String(authPassword || "").trim(), otp: otpString }
+          : identity.includes("@")
+            ? { email: identity.toLowerCase(), password: String(authPassword || "").trim(), otp: otpString }
+            : { arnCode: identity.toUpperCase(), password: String(authPassword || "").trim(), otp: otpString };
+
+        const response = await apiPostService(endpoint, payload);
+        const token = response?.data?.accessToken;
+        if (response?.status === 200 && token) {
+          await storeData(Config.store_key_login_details, token);
+          await storeData(Config.store_key_login_role, authRole);
+          await storeData(Config.clientCode, "");
+          await refreshTenantBrandingForToken(token);
+          dispatch(setLoginData(response?.data || {}));
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Profile" }],
+          });
+          return;
+        }
+        throw new Error(response?.data?.message || "Invalid OTP");
+      }
+
       const response = await apiPostService(
         "/api/v1/user/onboard/login/verify",
         {
@@ -325,6 +476,8 @@ console.log("DATA",DATA?.enabled , DATA.pin )
           Config.store_key_login_details,
           response?.data?.accessToken
         );
+        await storeData(Config.store_key_login_role, "client");
+        await refreshTenantBrandingForToken(response?.data?.accessToken);
 dispatch(setPass(response?.data?.user?.passwordPlain));
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
@@ -345,6 +498,8 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
           Config.store_key_login_details,
           response?.data?.accessToken
         );
+        await storeData(Config.store_key_login_role, "client");
+        await refreshTenantBrandingForToken(response?.data?.accessToken);
 
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
@@ -413,6 +568,7 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
     setIsOtpSent(false);
     setOtp(["", "", "", ""]);
     setErrorMessage("");
+    setAuthRole("client");
     setResendTimer(30);
     setCanResend(false);
   };
@@ -425,6 +581,9 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
   };
 
   const isInputValid = () => {
+    if (inferAuthRole() !== "client") {
+      return !!String(referenceId || "").trim() && !!String(authPassword || "").trim();
+    }
     if (!referenceId.trim()) return false;
     const errors = validateInput(referenceId);
     return Object.keys(errors).length === 0;
@@ -445,6 +604,12 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
   };
 
   const getOtpMessage = () => {
+    if (authRole === "employee") {
+      return `Enter the 4-digit code sent to your registered contact for ${referenceId}`;
+    }
+    if (authRole === "tenant_admin") {
+      return `Enter the 4-digit code sent to your registered contact for ${referenceId}`;
+    }
     if (loginMethod === "phone") {
       return `Enter the 4-digit code sent to **${referenceId.slice(
         0,
@@ -461,11 +626,46 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
 
   const renderLoginScreen = () => (
     <View style={simpleStyles.container}>
-      <Text style={simpleStyles.mainTitle}>
-        Enter your mobile number or client code
-      </Text>
+      <Text style={simpleStyles.mainTitle}>Login</Text>
+      {showTenantSelector ? (
+        <View style={simpleStyles.tenantWrap}>
+          <Text style={simpleStyles.inputLabel}>Tenant Code</Text>
+          <View style={simpleStyles.tenantRow}>
+            <View style={[simpleStyles.inputOuterContainer, { flex: 1 }]}>
+              <View style={simpleStyles.inputInnerContainer}>
+                <TextInput
+                  style={simpleStyles.input}
+                  placeholder="e.g. MOTISONS"
+                  placeholderTextColor="#AAB7B8"
+                  value={tenantCode}
+                  autoCapitalize="characters"
+                  onChangeText={(v) => setTenantCode(String(v || "").replace(/[^A-Za-z0-9_-]/g, "").toUpperCase())}
+                />
+              </View>
+            </View>
+            <TouchableOpacity
+              style={simpleStyles.applyTenantBtn}
+              onPress={handleApplyTenant}
+              disabled={tenantLoading}
+            >
+              <Text style={simpleStyles.applyTenantTxt}>
+                {tenantLoading ? "..." : "Apply"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {!!Config?.RuntimeTenant?.appName && (
+            <Text style={simpleStyles.tenantHint}>Brand: {Config.RuntimeTenant.appName}</Text>
+          )}
+        </View>
+      ) : null}
 
-      <View style={simpleStyles.methodToggle}>
+      {inferAuthRole() === "client" ? (
+        <Text style={simpleStyles.mainTitle}>
+          Enter your mobile number or client code
+        </Text>
+      ) : null}
+
+      {inferAuthRole() === "client" ? <View style={simpleStyles.methodToggle}>
         <TouchableOpacity
           style={[
             simpleStyles.toggleButton,
@@ -506,10 +706,12 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
             Client Code
           </Text>
         </TouchableOpacity>
-      </View>
+      </View> : null}
 
       <View style={simpleStyles.inputGroup}>
-        <Text style={simpleStyles.inputLabel}>{getInputLabel()}</Text>
+        <Text style={simpleStyles.inputLabel}>
+          Login ID
+        </Text>
 
         {/* Apply Rbutton border style to input container */}
         <View
@@ -528,16 +730,29 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
           >
             <TextInput
               style={simpleStyles.input}
-              placeholder={getInputPlaceholder()}
+              placeholder={inferAuthRole() === "client" ? getInputPlaceholder() : "Enter email or ARN code"}
               placeholderTextColor="#AAB7B8"
               value={referenceId}
               onChangeText={handleInputChange}
-              keyboardType={loginMethod === "phone" ? "phone-pad" : "default"}
-              autoCapitalize={
-                loginMethod === "clientCode" ? "characters" : "none"
-              }
+              keyboardType="default"
+              autoCapitalize="none"
               returnKeyType="done"
               onSubmitEditing={isInputValid() ? handleSendOtp : undefined}
+            />
+          </View>
+        </View>
+
+        <View style={[simpleStyles.inputOuterContainer, { marginTop: 10 }]}>
+          <View style={simpleStyles.inputInnerContainer}>
+            <TextInput
+              style={simpleStyles.input}
+              placeholder="Password (only for admin/employee)"
+              placeholderTextColor="#AAB7B8"
+              value={authPassword}
+              onChangeText={setAuthPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              returnKeyType="done"
             />
           </View>
         </View>
@@ -556,7 +771,7 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
 
       <View style={simpleStyles.footer}>
         <Text style={simpleStyles.policyText}>
-          By proceeding, you agree with Jyoti's{" "}
+          By proceeding, you agree with {(Config?.RuntimeTenant?.appName || "your broker") + "'s"}{" "}
           <Text style={simpleStyles.policyLink}>terms and conditions</Text> and{" "}
           <Text style={simpleStyles.policyLink}>privacy policy.</Text>
         </Text>
@@ -567,27 +782,41 @@ dispatch(setPass(response?.data?.user?.passwordPlain));
           disabled={!isInputValid()}
           loading={isLoading}
         />
-        <TouchableOpacity
-          style={simpleStyles.otpLoginButton}
-          onPress={handleLoginWithOPass}
-        >
-          <Text style={simpleStyles.otpLoginText}>Login with Password</Text>
-        </TouchableOpacity>
+        {inferAuthRole() === "client" ? (
+          <TouchableOpacity
+            style={simpleStyles.otpLoginButton}
+            onPress={handleLoginWithOPass}
+          >
+            <Text style={simpleStyles.otpLoginText}>Login with Password</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {/* <View style={simpleStyles.trustBadge}>
           <Text style={simpleStyles.trustIcon}>✔️</Text>
           <Text style={simpleStyles.trustText}>Trusted by many Brokers</Text>
         </View> */}
 
-        <TouchableOpacity
-          style={simpleStyles.registerContainer}
-          onPress={() => navigation?.navigate("Registration")}
-        >
-          <Text style={simpleStyles.registerText}>
-            Don't have an account?
-            <Text style={simpleStyles.registerLink}> Register Now</Text>
-          </Text>
-        </TouchableOpacity>
+        {inferAuthRole() === "client" ? (
+          <TouchableOpacity
+            style={simpleStyles.registerContainer}
+            onPress={() => navigation?.navigate("Registration")}
+          >
+            <Text style={simpleStyles.registerText}>
+              Don't have an account?
+              <Text style={simpleStyles.registerLink}> Register Now</Text>
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {inferAuthRole() === "client" ? (
+          <TouchableOpacity
+            style={simpleStyles.staffLinkContainer}
+            onPress={() => navigation?.navigate(ScreenName.HybridWeb)}
+          >
+            <Text style={simpleStyles.staffLinkText}>Staff Login</Text>
+            <Text style={simpleStyles.staffLinkSubText}>Broker & Employee access</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     </View>
   );
@@ -759,6 +988,34 @@ const simpleStyles = StyleSheet.create({
   inputGroup: {
     marginBottom: heightToDp(3),
   },
+  tenantWrap: {
+    marginBottom: heightToDp(2.5),
+  },
+  tenantRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  applyTenantBtn: {
+    backgroundColor: "#000000",
+    borderRadius: 8,
+    paddingHorizontal: widthToDp(4),
+    paddingVertical: heightToDp(1.7),
+    minWidth: widthToDp(18),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  applyTenantTxt: {
+    color: "#ffffff",
+    fontFamily: Config.fontFamilys?.Poppins_SemiBold || "System",
+    fontSize: widthToDp(3.4),
+  },
+  tenantHint: {
+    marginTop: heightToDp(0.8),
+    color: "#6B7280",
+    fontSize: widthToDp(3.1),
+    fontFamily: Config.fontFamilys?.Poppins_Medium || "System",
+  },
   inputLabel: {
     fontSize: widthToDp(3.5),
     color: "#7A7A7A",
@@ -862,6 +1119,22 @@ const simpleStyles = StyleSheet.create({
     color: "#000000", // Using Rbutton green color
     fontWeight: "700",
     fontFamily: Config.fontFamilys?.Poppins_Bold || "System",
+  },
+  staffLinkContainer: {
+    marginTop: heightToDp(1),
+    paddingVertical: heightToDp(1),
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  staffLinkText: {
+    fontSize: widthToDp(3.5),
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  staffLinkSubText: {
+    fontSize: widthToDp(3),
+    color: "#6B7280",
   },
   backButton: {
     width: widthToDp(10),

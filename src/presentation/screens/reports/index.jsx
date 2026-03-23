@@ -90,7 +90,7 @@ const ReportsScreen = ({ navigation }) => {
       const localFile = `${downloadDir}/${item.fileName}`;
       
       // Construct URL with clientCode if needed
-      let url = `${Config.baseUrl}${item.endPoint}`;
+      let url = `${Config.getBaseUrl()}${item.endPoint}`;
       // If API expects clientCode as query parameter
       url;
 

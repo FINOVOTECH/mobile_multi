@@ -31,9 +31,10 @@ import { getData, storeData } from "../../../helpers/localStorage";
 import SInfoSvg from "../../svgs";
 import * as Icons from "../../../helpers/Icons";
 import ReactNativeBiometrics from "react-native-biometrics";
-import BiometricLogin from "../BiometricLogin";
+import BiometricLogin from "../BiometricLogin/index.jsx";
 import Rbutton from "../../../components/Rbutton";
 import { setPass } from "../../../store/slices/passSlice";
+import { refreshTenantBrandingForToken } from "../../../helpers/tenantBrandingRuntime";
 
 export default function Home() {
   const otpInputRefs = useRef([]);
@@ -100,8 +101,10 @@ export default function Home() {
      
            const response = await apiPostService('/api/v1/user/onboard/login-pwd/verify', payload);
 
-       if (response?.status === 200 && response?.data?.accessToken) {
-        await storeData(Config.store_key_login_details, result.accessToken);
+      if (response?.status === 200 && response?.data?.accessToken) {
+        await storeData(Config.store_key_login_details, response?.data?.accessToken);
+        await storeData(Config.store_key_login_role, "client");
+        await refreshTenantBrandingForToken(response?.data?.accessToken);
         // await storeData(Config.clientCode, LoginData?.user?.clientCode);
         navigation.reset({
           index: 0,
@@ -319,6 +322,7 @@ export default function Home() {
           Config.store_key_login_details,
           response?.data?.accessToken
         );
+        await refreshTenantBrandingForToken(response?.data?.accessToken);
 
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
@@ -339,6 +343,7 @@ export default function Home() {
           Config.store_key_login_details,
           response?.data?.accessToken
         );
+        await refreshTenantBrandingForToken(response?.data?.accessToken);
 
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
@@ -550,7 +555,7 @@ export default function Home() {
 
       <View style={simpleStyles.footer}>
         <Text style={simpleStyles.policyText}>
-          By proceeding, you agree with Jyoti's{" "}
+          By proceeding, you agree with {(Config?.RuntimeTenant?.appName || "your broker") + "'s"}{" "}
           <Text style={simpleStyles.policyLink}>terms and conditions</Text> and{" "}
           <Text style={simpleStyles.policyLink}>privacy policy.</Text>
         </Text>

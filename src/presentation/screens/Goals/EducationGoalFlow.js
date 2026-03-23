@@ -47,7 +47,7 @@ const EducationGoalFlow = ({ onGoBack }) => {
       setLoading(true);
       const token = await AsyncStorage.getItem("token");
 
-      const res = await fetch(`${Config.baseUrl}/api/v1/goals/simulate`, {
+      const res = await fetch(`${Config.getBaseUrl()}/api/v1/goals/simulate`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),

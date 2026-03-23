@@ -1,6 +1,95 @@
-export const baseUrl = "https://onekyc.finovo.tech:8039";
-// export const baseUrl = "http://192.168.100.40:8038";
+import { Platform } from "react-native";
+
+// ─── Local dev machine LAN IP (fallback for WiFi testing without adb reverse) ───
+// Update this to your machine's current WiFi IP if you cannot use adb reverse.
+// Find it with: ipconfig getifaddr en0   (macOS)
+const DEV_MACHINE_LAN_IP = "192.168.100.138";
+
+const getAndroidDeviceSignals = () => {
+  const constants = Platform?.constants || {};
+  const model = String(constants.Model || constants.model || "").toLowerCase();
+  const brand = String(constants.Brand || constants.brand || "").toLowerCase();
+  const device = String(constants.Device || constants.device || "").toLowerCase();
+  const fingerprint = String(
+    constants.Fingerprint || constants.fingerprint || ""
+  ).toLowerCase();
+  return { model, brand, device, fingerprint };
+};
+
+const isAndroidEmulator = () => {
+  if (Platform.OS !== "android") return false;
+  const { model, brand, device, fingerprint } = getAndroidDeviceSignals();
+  return (
+    model.includes("sdk") ||
+    model.includes("emulator") ||
+    model.includes("google_sdk") ||
+    device.includes("emulator") ||
+    device.includes("sdk") ||
+    brand.includes("generic") ||
+    fingerprint.includes("generic") ||
+    fingerprint.includes("vbox")
+  );
+};
+
+// ─── API base URL ───────────────────────────────────────────────────────────────
+// Physical Android device: uses the LAN IP so the phone can reach the dev machine
+// directly over WiFi without needing adb reverse port forwarding.
+// The actual backend/frontend URLs are also stored in mobileAppConfig (DB) and
+// take precedence at runtime — this is just the fallback for first-boot / no-cache.
+const DEV_API_BASE_URL = (() => {
+  if (Platform.OS === "ios") return "http://localhost:8000";
+  if (isAndroidEmulator()) return "http://10.0.2.2:8000";
+  if (DEV_MACHINE_LAN_IP) return `http://${DEV_MACHINE_LAN_IP}:8000`; // physical device
+  return "http://localhost:8000";
+})();
+
+const PROD_API_BASE_URL = "https://mf.finovo.tech/finovo";
+
+const DEV_WEB_HOST_TEMPLATE = (() => {
+  if (Platform.OS === "ios") return "http://localhost:5174";
+  if (isAndroidEmulator()) return "http://10.0.2.2:5174";
+  if (DEV_MACHINE_LAN_IP) return `http://${DEV_MACHINE_LAN_IP}:5174`; // physical device
+  return "http://localhost:5174";
+})();
+
+const PROD_WEB_HOST_TEMPLATE = "https://mf.finovo.tech";
+const WEB_FALLBACK_URL = "https://mf.finovo.tech";
+
+// ─── Runtime-overridable URLs ────────────────────────────────────────────────
+// These start with the build-time defaults but can be overridden at runtime
+// by mobileAppConfig from the tenant branding API response.
+const _defaults = {
+  baseUrl: __DEV__ ? DEV_API_BASE_URL : PROD_API_BASE_URL,
+  hybridWebHostTemplate: __DEV__ ? DEV_WEB_HOST_TEMPLATE : PROD_WEB_HOST_TEMPLATE,
+};
+let _runtimeBaseUrl = "";
+let _runtimeWebHost = "";
+
+export const getBaseUrl = () => _runtimeBaseUrl || _defaults.baseUrl;
+export const getHybridWebHostTemplate = () => _runtimeWebHost || _defaults.hybridWebHostTemplate;
+
+// Backward-compatible named exports — used by most of the codebase
+export const baseUrl = _defaults.baseUrl;
+export const tenantBrandingBaseUrl = _defaults.baseUrl;
+export const hybridWebHostTemplate = _defaults.hybridWebHostTemplate;
+export const hybridWebFallbackUrl = WEB_FALLBACK_URL;
+export const useHybridApp = true;
+export const defaultTenantId = "MOTISONS";
+export const hybridClientOnlyApp = true;
 export const store_key_login_details = "token"
+export const store_key_login_role = "loginRole"
+
+/**
+ * Called by tenantBrandingRuntime after fetching mobileAppConfig from the API.
+ * Overrides the API base URL and frontend URL at runtime so the app
+ * can switch between LOCAL and LIVE without a rebuild.
+ */
+export const setRuntimeUrls = ({ apiBaseUrl, webHostTemplate } = {}) => {
+  const newApi = String(apiBaseUrl || "").trim().replace(/\/+$/, "");
+  const newWeb = String(webHostTemplate || "").trim().replace(/\/+$/, "");
+  if (newApi) _runtimeBaseUrl = newApi;
+  if (newWeb) _runtimeWebHost = newWeb;
+};
 
 export const clientCode = "clientCode";
 export const WEIGHTS = {
@@ -103,5 +192,25 @@ export const Colors = {
         bg_7: "rgba(137, 59, 59, 0.19)",
         bg_8: "rgba(2, 28, 45, 1)",
         bg_9: "rgba(0, 90, 195, 1)",
+    },
+};
+
+export const RuntimeTenant = {
+    tenantId: defaultTenantId,
+    appName: "",
+    brokerName: "",
+    brokerUrl: "",
+    logoUrl: "",
+    exchangePreference: "BOTH",
+    availableExchanges: ["BSE", "NSE", "ALL"],
+    preferredExchange: "BSE",
+    primaryColor: Colors.primary,
+    secondaryColor: Colors.secondary,
+    accentColor: Colors.secondary,
+    mobileAppConfig: {},
+    mobileAccess: {
+        enableClientLogin: true,
+        enableEmployeeLogin: true,
+        enableTenantAdminLogin: true,
     },
 };

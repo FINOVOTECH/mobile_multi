@@ -6,13 +6,11 @@ import {
   View,
   FlatList,
   Platform,
-    Dimensions,
   TouchableOpacity,
   ActivityIndicator,
   BackHandler,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { TabView, TabBar } from "react-native-tab-view";
 import * as Config from "../../../helpers/Config";
 import SInfoSvg from "../../svgs";
 import moment from "moment";
@@ -21,14 +19,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import DatePickerModal from "../../../components/DatePickerModal";
 
 const Transaction = ({ navigation }) => {
-    const [tabIndex, setTabIndex] = useState(0);
-    const [transactionData, setTransactionData] = useState([]);
+  const [transactionData, setTransactionData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [page, setPage] = useState(1);
   const [TOKEN, setTOKEN] = useState("");
   const [hasMore, setHasMore] = useState(true);
   const [tokenLoaded, setTokenLoaded] = useState(false);
+  const [selectedExchange, setSelectedExchange] = useState("AUTO");
+  const [availableExchanges, setAvailableExchanges] = useState(
+    Config?.RuntimeTenant?.availableExchanges || ["BSE", "NSE", "ALL"]
+  );
 
   const today = new Date();
 
@@ -75,7 +76,13 @@ useEffect(() => {
       setHasMore(true);
       FetchTransaction(1, true);
     }
-  }, [fromDate, toDate, TOKEN, tokenLoaded]);
+  }, [fromDate, toDate, TOKEN, tokenLoaded, selectedExchange]);
+
+  useEffect(() => {
+    if (selectedExchange !== "AUTO") return;
+    const pref = String(Config?.RuntimeTenant?.exchangePreference || "BOTH").toUpperCase();
+    if (pref === "BSE" || pref === "NSE") setSelectedExchange(pref);
+  }, [selectedExchange]);
 
   /* -------------------- FETCH API -------------------- */
   const FetchTransaction = async (pageNumber = 1, reset = false) => {
@@ -87,7 +94,7 @@ useEffect(() => {
       const from = moment(fromDate).format("DD/MM/YYYY");
       const to = moment(toDate).format("DD/MM/YYYY");
 
-      const url = `${Config.baseUrl}/api/v1/user/orderstatus/orderstatus/me?fromDate=${from}&toDate=${to}&page=${pageNumber}&limit=20`;
+      const url = `${Config.getBaseUrl()}/api/v1/user/orderstatus/transactions/me?fromDate=${from}&toDate=${to}&exchange=${selectedExchange}&page=${pageNumber}&limit=20&sync=1`;
 
       const response = await fetch(url, {
         headers: {
@@ -98,10 +105,11 @@ useEffect(() => {
 
       const data = await response.json();
       const results = data?.data || [];
+      if (Array.isArray(data?.availableExchanges) && data.availableExchanges.length) {
+        setAvailableExchanges(data.availableExchanges);
+      }
 
-     setTransactionData(prev =>
-  reset ? results : [...prev, ...results]
-);
+      setTransactionData(prev => (reset ? results : [...prev, ...results]));
       setHasMore(pageNumber < (data?.totalPages || 1));
       setPage(pageNumber);
     } catch (err) {
@@ -129,7 +137,8 @@ useEffect(() => {
       if (newSet.has(orderNo)) newSet.delete(orderNo);
       else newSet.add(orderNo);
       return newSet;
-    });}
+    });
+  }
 
   /* -------------------- LOAD MORE -------------------- */
   const loadMoreData = useCallback(() => {
@@ -347,6 +356,23 @@ useEffect(() => {
     <Text style={styles.quickText}>This Month</Text>
   </TouchableOpacity>
 </View>
+      </View>
+
+      <View style={styles.exchangeTabs}>
+        {(availableExchanges || []).map((exchange) => {
+          const selected = selectedExchange === exchange;
+          return (
+            <TouchableOpacity
+              key={exchange}
+              style={[styles.exchangeTab, selected && styles.exchangeTabActive]}
+              onPress={() => setSelectedExchange(exchange)}
+            >
+              <Text style={[styles.exchangeTabText, selected && styles.exchangeTabTextActive]}>
+                {exchange}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* -------------------- FROM PICKER -------------------- */}
@@ -571,5 +597,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: Config?.Colors?.primary,
+  },
+  exchangeTabs: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 12,
+    marginBottom: 8,
+  },
+  exchangeTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFFFFF",
+  },
+  exchangeTabActive: {
+    backgroundColor: Config?.Colors?.primary,
+    borderColor: Config?.Colors?.primary,
+  },
+  exchangeTabText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#4B5563",
+  },
+  exchangeTabTextActive: {
+    color: "#FFFFFF",
   },
 });

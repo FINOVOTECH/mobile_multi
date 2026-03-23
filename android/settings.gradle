@@ -1,6 +1,14 @@
 pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
 plugins { id("com.facebook.react.settings") }
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+def appRoot = file("../")
+def rnConfigCommand = [
+        "node",
+        "${appRoot}/node_modules/@react-native-community/cli/build/bin.js",
+        "config"
+]
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand(rnConfigCommand, appRoot)
+}
 rootProject.name = "Jyoti Wealth"
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')

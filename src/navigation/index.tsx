@@ -70,6 +70,10 @@ import NFO from '../presentation/screens/NFO';
 import LoginWithPass from '../presentation/screens/loginWithPass';
 import Goals from '../presentation/screens/Goals/GoalManager';
 import NFOInvest from '../presentation/NFOInvest';
+import HybridWeb from '../presentation/screens/hybridWeb';
+import { getStoredLoginRole, isStaffRole, ROLE_CLIENT } from '../helpers/authRole';
+import RoleDashboard from '../presentation/screens/roleDashboard';
+import ClientLookup from '../presentation/screens/clientLookup';
 const Stack = createNativeStackNavigator<StackParamList>();
 const Tab = createBottomTabNavigator();
 
@@ -163,12 +167,14 @@ const ExitNotification = ({ visible, onHide }) => {
             <Text style={styles.iconText}>G</Text>
           </View> */}
           <Image
-            source={Icons.logo}
+            source={Config.RuntimeTenant.logoUrl ? { uri: Config.RuntimeTenant.logoUrl } : Icons.logo}
             style={{ width: 32, height: 32, borderRadius: 25 }}
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.notificationText}>Press back again to exit Jyoti Wealth</Text>
+        <Text style={styles.notificationText}>
+          Press back again to exit {Config.RuntimeTenant.appName || "Finovo Wealth"}
+        </Text>
       </View>
     </Animated.View>
   );
@@ -178,9 +184,17 @@ function BottomTabNavigator() {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [showExitNotification, setShowExitNotification] = useState(false);
   const [backPressCount, setBackPressCount] = useState(0);
+  const [loginRole, setLoginRole] = useState(ROLE_CLIENT);
   const backPressTimer = useRef(null);
+  const staffMode = isStaffRole(loginRole);
+
+  const loadRole = React.useCallback(async () => {
+    const role = await getStoredLoginRole();
+    setLoginRole(role);
+  }, []);
 
   useEffect(() => {
+    loadRole();
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
       () => {
@@ -198,7 +212,13 @@ function BottomTabNavigator() {
       keyboardDidHideListener?.remove();
       keyboardDidShowListener?.remove();
     };
-  }, []);
+  }, [loadRole]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadRole();
+    }, [loadRole])
+  );
 
   useFocusEffect(
     React.useCallback(() => {
@@ -266,7 +286,7 @@ function BottomTabNavigator() {
           ),
           tabBarStyle: {
             // height: widthToDp(24),
-            backgroundColor: '#2B8DF6',
+            backgroundColor: Config.Colors.primary,
             position: 'absolute',
             shadowOffset: {
               width: 6,
@@ -346,6 +366,22 @@ function BottomTabNavigator() {
                   />
                 </View>
               );
+            } else if (route.name === ScreenName.Settings) {
+              iconComponent = focused ? (
+                <View style={iconContainerStyle}>
+                  <SInfoSvg.BottomActiveTracker
+                    color={Config.Colors.white}
+                    width={widthToDp(6)}
+                  />
+                </View>
+              ) : (
+                <View style={iconContainerStyle}>
+                  <SInfoSvg.BottomInactiveTracker
+                    color={Config.Colors.gray}
+                    width={widthToDp(6)}
+                  />
+                </View>
+              );
             } else if (route.name === ScreenName.DashBoard) {
               iconComponent = focused ? (
                 <View style={iconContainerStyle}>
@@ -374,38 +410,69 @@ function BottomTabNavigator() {
           },
         }}
       >
-        <Tab.Screen
-          name={ScreenName.Profile}
-          component={Profile}
-          options={{
-            tabBarLabel: 'Home',
-            unmountOnBlur: true,
-          }}
-        />
-        <Tab.Screen
-          name={ScreenName.SipScheme}
-          component={SipScheme}
-          options={{
-            tabBarLabel: 'Invest',
-            unmountOnBlur: true,
-          }}
-        />
-        <Tab.Screen
-          name={ScreenName.DashBoard}
-          component={InvestmentList}
-          options={{
-            tabBarLabel: 'Dashboard',
-            unmountOnBlur: true,
-          }}
-        />
-        <Tab.Screen
-          name={ScreenName.Track}
-          component={Tracker}
-          options={{
-            tabBarLabel: 'Tracker',
-            unmountOnBlur: true,
-          }}
-        />
+        {staffMode ? (
+          <>
+            <Tab.Screen
+              name={ScreenName.Profile}
+              component={RoleDashboard}
+              options={{
+                tabBarLabel: 'Home',
+                unmountOnBlur: true,
+              }}
+            />
+            <Tab.Screen
+              name={ScreenName.Track}
+              component={ClientLookup}
+              options={{
+                tabBarLabel: 'Clients',
+                unmountOnBlur: true,
+              }}
+            />
+            <Tab.Screen
+              name={ScreenName.Settings}
+              component={Setting}
+              options={{
+                tabBarLabel: 'Settings',
+                unmountOnBlur: true,
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <Tab.Screen
+              name={ScreenName.Profile}
+              component={Profile}
+              options={{
+                tabBarLabel: 'Home',
+                unmountOnBlur: true,
+              }}
+            />
+            <Tab.Screen
+              name={ScreenName.SipScheme}
+              component={SipScheme}
+              options={{
+                tabBarLabel: 'Invest',
+                unmountOnBlur: true,
+              }}
+            />
+            <Tab.Screen
+              name={ScreenName.DashBoard}
+              component={InvestmentList}
+              options={{
+                tabBarLabel: 'Dashboard',
+                unmountOnBlur: true,
+              }}
+            />
+            <Tab.Screen
+              name={ScreenName.Track}
+              component={Tracker}
+              options={{
+                tabBarLabel: 'Tracker',
+                unmountOnBlur: true,
+              }}
+            />
+          </>
+        )}
         {/* <Tab.Screen
           name={ScreenName.LoginWithPass}
           component={LoginWithPass}
@@ -427,11 +494,12 @@ function BottomTabNavigator() {
 export default function RootNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName={Config.useHybridApp ? ScreenName.HybridWeb : ScreenName.Home}
       screenOptions={{
         headerShown: false,
       }}
     >
+      <Stack.Screen name={ScreenName.HybridWeb} component={HybridWeb} />
 
       <Stack.Screen name={ScreenName.Home} component={Home} />
       <Stack.Screen name={ScreenName.Registration} component={Registration} />

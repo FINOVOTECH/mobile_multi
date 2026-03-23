@@ -36,17 +36,32 @@ const CommonHeader = ({
         </TouchableOpacity>
       ) : (
         <TouchableOpacity onPress={onProfilePress} style={styles.iconButton}>
-          <Image
-            source={Icons.logo}
-            style={{
-              width: widthToDp(12),
-              height: heightToDp(5),
-              borderRadius: 25,
-              overflow: 'hidden',
-              borderWidth: 0.5,
-              borderColor: Config.Colors.gray,
-            }}
-          />
+          {Config.RuntimeTenant.logoUrl ? (
+            <Image
+              source={{ uri: Config.RuntimeTenant.logoUrl }}
+              style={{
+                width: widthToDp(12),
+                height: heightToDp(5),
+                borderRadius: 25,
+                overflow: 'hidden',
+                borderWidth: 0.5,
+                borderColor: Config.Colors.gray,
+              }}
+              resizeMode="contain"
+            />
+          ) : (
+            <Image
+              source={Icons.logo}
+              style={{
+                width: widthToDp(12),
+                height: heightToDp(5),
+                borderRadius: 25,
+                overflow: 'hidden',
+                borderWidth: 0.5,
+                borderColor: Config.Colors.gray,
+              }}
+            />
+          )}
         </TouchableOpacity>
       )}
 
@@ -74,7 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: widthToDp(2),
     paddingVertical: heightToDp(1),
-    backgroundColor:  "#8F5AC0",
+    backgroundColor: Config.Colors.primary,
     // borderWidth:1,
     // borderColor:Config.Colors.black
   },

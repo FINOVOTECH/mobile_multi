@@ -1,26 +1,26 @@
 {
-  "root": "/Users/finovotech/Desktop/l/JyotiPortFolio",
-  "reactNativePath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native",
+  "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app",
+  "reactNativePath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native",
   "reactNativeVersion": "0.80",
   "dependencies": {
     "@react-native-async-storage/async-storage": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-async-storage/async-storage",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-async-storage/async-storage",
       "name": "@react-native-async-storage/async-storage",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec",
           "version": "2.2.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-async-storage/async-storage/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-async-storage/async-storage/android",
           "packageImportPath": "import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;",
           "packageInstance": "new AsyncStoragePackage()",
           "buildTypes": [],
           "libraryName": "rnasyncstorage",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -29,17 +29,17 @@
       }
     },
     "@react-native-community/blur": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/blur",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/blur",
       "name": "@react-native-community/blur",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/blur/react-native-blur.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/blur/react-native-blur.podspec",
           "version": "4.4.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/blur/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/blur/android",
           "packageImportPath": "import com.reactnativecommunity.blurview.BlurViewPackage;",
           "packageInstance": "new BlurViewPackage()",
           "buildTypes": [],
@@ -49,7 +49,7 @@
             "AndroidBlurViewComponentDescriptor",
             "VibrancyViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/blur/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/blur/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -58,23 +58,23 @@
       }
     },
     "@react-native-community/datetimepicker": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/datetimepicker",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/datetimepicker",
       "name": "@react-native-community/datetimepicker",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/datetimepicker/RNDateTimePicker.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/datetimepicker/RNDateTimePicker.podspec",
           "version": "8.4.2",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/datetimepicker/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/datetimepicker/android",
           "packageImportPath": "import com.reactcommunity.rndatetimepicker.RNDateTimePickerPackage;",
           "packageInstance": "new RNDateTimePickerPackage()",
           "buildTypes": [],
           "libraryName": "RNDateTimePickerCGen",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/datetimepicker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/datetimepicker/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -83,22 +83,22 @@
       }
     },
     "@react-native-community/masked-view": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/masked-view",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/masked-view",
       "name": "@react-native-community/masked-view",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/masked-view/RNCMaskedView.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/masked-view/RNCMaskedView.podspec",
           "version": "0.1.11",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/masked-view/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/masked-view/android",
           "packageImportPath": "import org.reactnative.maskedview.RNCMaskedViewPackage;",
           "packageInstance": "new RNCMaskedViewPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/masked-view/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/masked-view/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -107,17 +107,17 @@
       }
     },
     "@react-native-community/slider": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/slider",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/slider",
       "name": "@react-native-community/slider",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/slider/react-native-slider.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/slider/react-native-slider.podspec",
           "version": "4.5.7",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/slider/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/slider/android",
           "packageImportPath": "import com.reactnativecommunity.slider.ReactSliderPackage;",
           "packageInstance": "new ReactSliderPackage()",
           "buildTypes": [],
@@ -125,7 +125,7 @@
           "componentDescriptors": [
             "RNCSliderComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/@react-native-community/slider/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/@react-native-community/slider/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -134,17 +134,17 @@
       }
     },
     "lottie-react-native": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/lottie-react-native",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/lottie-react-native",
       "name": "lottie-react-native",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/lottie-react-native/lottie-react-native.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/lottie-react-native/lottie-react-native.podspec",
           "version": "7.2.4",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/lottie-react-native/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/lottie-react-native/android",
           "packageImportPath": "import com.airbnb.android.react.lottie.LottiePackage;",
           "packageInstance": "new LottiePackage()",
           "buildTypes": [],
@@ -152,7 +152,7 @@
           "componentDescriptors": [
             "LottieAnimationViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -161,22 +161,22 @@
       }
     },
     "react-native-biometrics": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-biometrics",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-biometrics",
       "name": "react-native-biometrics",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-biometrics/react-native-biometrics.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-biometrics/react-native-biometrics.podspec",
           "version": "3.0.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-biometrics/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-biometrics/android",
           "packageImportPath": "import com.rnbiometrics.ReactNativeBiometricsPackage;",
           "packageInstance": "new ReactNativeBiometricsPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-biometrics/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-biometrics/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -185,22 +185,22 @@
       }
     },
     "react-native-device-info": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-device-info",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-device-info",
       "name": "react-native-device-info",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-device-info/RNDeviceInfo.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-device-info/RNDeviceInfo.podspec",
           "version": "14.1.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-device-info/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-device-info/android",
           "packageImportPath": "import com.learnium.RNDeviceInfo.RNDeviceInfo;",
           "packageInstance": "new RNDeviceInfo()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-device-info/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-device-info/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -209,22 +209,22 @@
       }
     },
     "react-native-file-viewer": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-file-viewer",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-file-viewer",
       "name": "react-native-file-viewer",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-file-viewer/RNFileViewer.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-file-viewer/RNFileViewer.podspec",
           "version": "2.1.5",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-file-viewer/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-file-viewer/android",
           "packageImportPath": "import com.vinzscam.reactnativefileviewer.RNFileViewerPackage;",
           "packageInstance": "new RNFileViewerPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-file-viewer/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-file-viewer/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -233,22 +233,22 @@
       }
     },
     "react-native-fs": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-fs",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-fs",
       "name": "react-native-fs",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-fs/RNFS.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-fs/RNFS.podspec",
           "version": "2.20.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-fs/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-fs/android",
           "packageImportPath": "import com.rnfs.RNFSPackage;",
           "packageInstance": "new RNFSPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-fs/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-fs/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -257,17 +257,17 @@
       }
     },
     "react-native-gesture-handler": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-gesture-handler",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-gesture-handler",
       "name": "react-native-gesture-handler",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-gesture-handler/RNGestureHandler.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-gesture-handler/RNGestureHandler.podspec",
           "version": "2.27.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-gesture-handler/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-gesture-handler/android",
           "packageImportPath": "import com.swmansion.gesturehandler.RNGestureHandlerPackage;",
           "packageInstance": "new RNGestureHandlerPackage()",
           "buildTypes": [],
@@ -276,7 +276,7 @@
             "RNGestureHandlerButtonComponentDescriptor",
             "RNGestureHandlerRootViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -285,23 +285,23 @@
       }
     },
     "react-native-haptic-feedback": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-haptic-feedback",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-haptic-feedback",
       "name": "react-native-haptic-feedback",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-haptic-feedback/RNReactNativeHapticFeedback.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-haptic-feedback/RNReactNativeHapticFeedback.podspec",
           "version": "2.3.3",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-haptic-feedback/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-haptic-feedback/android",
           "packageImportPath": "import com.mkuczera.RNReactNativeHapticFeedbackPackage;",
           "packageInstance": "new RNReactNativeHapticFeedbackPackage()",
           "buildTypes": [],
           "libraryName": "RNHapticFeedbackSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-haptic-feedback/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-haptic-feedback/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -310,22 +310,22 @@
       }
     },
     "react-native-inappbrowser-reborn": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-inappbrowser-reborn",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-inappbrowser-reborn",
       "name": "react-native-inappbrowser-reborn",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-inappbrowser-reborn/RNInAppBrowser.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-inappbrowser-reborn/RNInAppBrowser.podspec",
           "version": "3.7.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-inappbrowser-reborn/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-inappbrowser-reborn/android",
           "packageImportPath": "import com.proyecto26.inappbrowser.RNInAppBrowserPackage;",
           "packageInstance": "new RNInAppBrowserPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-inappbrowser-reborn/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-inappbrowser-reborn/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -334,22 +334,22 @@
       }
     },
     "react-native-linear-gradient": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-linear-gradient",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-linear-gradient",
       "name": "react-native-linear-gradient",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-linear-gradient/BVLinearGradient.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-linear-gradient/BVLinearGradient.podspec",
           "version": "2.8.3",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-linear-gradient/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-linear-gradient/android",
           "packageImportPath": "import com.BV.LinearGradient.LinearGradientPackage;",
           "packageInstance": "new LinearGradientPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-linear-gradient/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-linear-gradient/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -358,17 +358,17 @@
       }
     },
     "react-native-pager-view": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-pager-view",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-pager-view",
       "name": "react-native-pager-view",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-pager-view/react-native-pager-view.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-pager-view/react-native-pager-view.podspec",
           "version": "6.8.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-pager-view/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-pager-view/android",
           "packageImportPath": "import com.reactnativepagerview.PagerViewPackage;",
           "packageInstance": "new PagerViewPackage()",
           "buildTypes": [],
@@ -376,7 +376,7 @@
           "componentDescriptors": [
             "RNCViewPagerComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-pager-view/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-pager-view/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -385,23 +385,23 @@
       }
     },
     "react-native-permissions": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-permissions",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-permissions",
       "name": "react-native-permissions",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-permissions/RNPermissions.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-permissions/RNPermissions.podspec",
           "version": "5.4.2",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-permissions/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-permissions/android",
           "packageImportPath": "import com.zoontek.rnpermissions.RNPermissionsPackage;",
           "packageInstance": "new RNPermissionsPackage()",
           "buildTypes": [],
           "libraryName": "RNPermissionsSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -410,23 +410,23 @@
       }
     },
     "react-native-reanimated": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-reanimated",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-reanimated",
       "name": "react-native-reanimated",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-reanimated/RNReanimated.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-reanimated/RNReanimated.podspec",
           "version": "3.18.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-reanimated/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-reanimated/android",
           "packageImportPath": "import com.swmansion.reanimated.ReanimatedPackage;",
           "packageInstance": "new ReanimatedPackage()",
           "buildTypes": [],
           "libraryName": "rnreanimated",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -435,17 +435,17 @@
       }
     },
     "react-native-safe-area-context": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-safe-area-context",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-safe-area-context",
       "name": "react-native-safe-area-context",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec",
           "version": "5.5.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-safe-area-context/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-safe-area-context/android",
           "packageImportPath": "import com.th3rdwave.safeareacontext.SafeAreaContextPackage;",
           "packageInstance": "new SafeAreaContextPackage()",
           "buildTypes": [],
@@ -454,7 +454,7 @@
             "RNCSafeAreaProviderComponentDescriptor",
             "RNCSafeAreaViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -463,17 +463,17 @@
       }
     },
     "react-native-screens": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-screens",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-screens",
       "name": "react-native-screens",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-screens/RNScreens.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-screens/RNScreens.podspec",
           "version": "4.11.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-screens/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-screens/android",
           "packageImportPath": "import com.swmansion.rnscreens.RNScreensPackage;",
           "packageInstance": "new RNScreensPackage()",
           "buildTypes": [],
@@ -491,7 +491,7 @@
             "RNSScreenContentWrapperComponentDescriptor",
             "RNSModalScreenComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -500,17 +500,17 @@
       }
     },
     "react-native-svg": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-svg",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-svg",
       "name": "react-native-svg",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-svg/RNSVG.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-svg/RNSVG.podspec",
           "version": "15.12.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-svg/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-svg/android",
           "packageImportPath": "import com.horcrux.svg.SvgPackage;",
           "packageInstance": "new SvgPackage()",
           "buildTypes": [],
@@ -546,7 +546,7 @@
             "RNSVGTSpanComponentDescriptor",
             "RNSVGUseComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-svg/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-svg/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -555,23 +555,23 @@
       }
     },
     "react-native-vector-icons": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-vector-icons",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-vector-icons",
       "name": "react-native-vector-icons",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-vector-icons/RNVectorIcons.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-vector-icons/RNVectorIcons.podspec",
           "version": "10.2.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-vector-icons/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-vector-icons/android",
           "packageImportPath": "import com.oblador.vectoricons.VectorIconsPackage;",
           "packageInstance": "new VectorIconsPackage()",
           "buildTypes": [],
           "libraryName": "RNVectorIconsSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -580,22 +580,22 @@
       }
     },
     "react-native-version-check": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-version-check",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-version-check",
       "name": "react-native-version-check",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-version-check/react-native-version-check.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-version-check/react-native-version-check.podspec",
           "version": "3.5.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-version-check/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-version-check/android",
           "packageImportPath": "import io.xogus.reactnative.versioncheck.RNVersionCheckPackage;",
           "packageInstance": "new RNVersionCheckPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-version-check/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-version-check/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -604,17 +604,17 @@
       }
     },
     "react-native-webview": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-webview",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-webview",
       "name": "react-native-webview",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-webview/react-native-webview.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-webview/react-native-webview.podspec",
           "version": "13.15.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-webview/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-webview/android",
           "packageImportPath": "import com.reactnativecommunity.webview.RNCWebViewPackage;",
           "packageInstance": "new RNCWebViewPackage()",
           "buildTypes": [],
@@ -622,7 +622,7 @@
           "componentDescriptors": [
             "RNCWebViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/react-native-webview/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/react-native-webview/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -631,22 +631,22 @@
       }
     },
     "rn-fetch-blob": {
-      "root": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/rn-fetch-blob",
+      "root": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/rn-fetch-blob",
       "name": "rn-fetch-blob",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/rn-fetch-blob/rn-fetch-blob.podspec",
+          "podspecPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/rn-fetch-blob/rn-fetch-blob.podspec",
           "version": "0.12.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/rn-fetch-blob/android",
+          "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/rn-fetch-blob/android",
           "packageImportPath": "import com.RNFetchBlob.RNFetchBlobPackage;",
           "packageInstance": "new RNFetchBlobPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/finovotech/Desktop/l/JyotiPortFolio/node_modules/rn-fetch-blob/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/node_modules/rn-fetch-blob/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -817,7 +817,7 @@
         {
           "name": "--path <path>",
           "description": "Path to the React Native project root.",
-          "default": "/Users/finovotech/Desktop/l/JyotiPortFolio"
+          "default": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app"
         },
         {
           "name": "--platform <string>",
@@ -1117,7 +1117,7 @@
   "assets": [],
   "project": {
     "ios": {
-      "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/ios",
+      "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/ios",
       "xcodeProject": {
         "name": "JyotiMF.xcworkspace",
         "path": ".",
@@ -1126,7 +1126,7 @@
       "assets": []
     },
     "android": {
-      "sourceDir": "/Users/finovotech/Desktop/l/JyotiPortFolio/android",
+      "sourceDir": "/Users/finovotech/Downloads/Multi_MFD/Mobile_app/android",
       "appName": "app",
       "packageName": "com.mfjyoti.mf",
       "applicationId": "com.mfjyoti.mf",

@@ -1,4 +1,5 @@
 export type StackParamList = {
+  HybridWeb: undefined;
   Home: undefined;
   Settings: undefined;
   MarketWatch: undefined;

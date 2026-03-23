@@ -31,10 +31,12 @@ import { getData, storeData } from "../../../helpers/localStorage";
 import SInfoSvg from "../../svgs";
 import * as Icons from "../../../helpers/Icons";
 import ReactNativeBiometrics from "react-native-biometrics";
-import BiometricLogin from "../BiometricLogin";
+import BiometricLogin from "../BiometricLogin/index.jsx";
 import Rbutton from "../../../components/Rbutton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setPass, setPassData } from "../../../store/slices/passSlice";
+import { refreshTenantBrandingForToken } from "../../../helpers/tenantBrandingRuntime";
+import { ScreenName } from "../../../constant/screenName";
 
 export default function LoginWithPass() {
   const navigation = useNavigation();
@@ -91,7 +93,7 @@ const pinInputRef = useRef(null);
   const verifyWithServer = async () => {
     try {
       const response = await fetch(
-        `${Config.baseUrl}/api/v1/user/function/verify/refresh`,
+        `${Config.getBaseUrl()}/api/v1/user/function/verify/refresh`,
         {
           method: "GET",
           headers: {
@@ -105,6 +107,8 @@ const pinInputRef = useRef(null);
 
       if (response.ok && result?.accessToken) {
         await storeData(Config.store_key_login_details, result.accessToken);
+        await storeData(Config.store_key_login_role, "client");
+        await refreshTenantBrandingForToken(result.accessToken);
         await storeData(Config.clientCode, LoginData?.user?.clientCode);
         navigation.reset({
           index: 0,
@@ -190,6 +194,8 @@ const pinInputRef = useRef(null);
           Config.store_key_login_details,
           response?.data?.accessToken
         );
+        await storeData(Config.store_key_login_role, "client");
+        await refreshTenantBrandingForToken(response?.data?.accessToken);
 
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
@@ -210,6 +216,8 @@ const pinInputRef = useRef(null);
           Config.store_key_login_details,
           response?.data?.accessToken
         );
+        await storeData(Config.store_key_login_role, "client");
+        await refreshTenantBrandingForToken(response?.data?.accessToken);
 
         if (response?.data?.user?.clientCode) {
           await storeData(Config.clientCode, response?.data?.user?.clientCode);
@@ -380,15 +388,15 @@ const pinInputRef = useRef(null);
         )}
       </View>
 
-      {errorMessage ? (
-        <Text style={simpleStyles.errorText}>{errorMessage}</Text>
-      ) : null}
+        {errorMessage ? (
+          <Text style={simpleStyles.errorText}>{errorMessage}</Text>
+        ) : null}
 
       <View style={simpleStyles.spacer} />
 
       <View style={simpleStyles.footer}>
         <Text style={simpleStyles.policyText}>
-          By proceeding, you agree with Jyoti's{" "}
+          By proceeding, you agree with {(Config?.RuntimeTenant?.appName || "your broker") + "'s"}{" "}
           <Text style={simpleStyles.policyLink}>terms and conditions</Text> and{" "}
           <Text style={simpleStyles.policyLink}>privacy policy.</Text>
         </Text>
@@ -422,6 +430,16 @@ const pinInputRef = useRef(null);
             <Text style={simpleStyles.registerLink}> Register Now</Text>
           </Text>
         </TouchableOpacity>
+
+        {Config.useHybridApp ? (
+          <TouchableOpacity
+            style={simpleStyles.staffLinkContainer}
+            onPress={() => navigation?.navigate(ScreenName.HybridWeb)}
+          >
+            <Text style={simpleStyles.staffLinkText}>Staff Login</Text>
+            <Text style={simpleStyles.staffLinkSubText}>Broker & Employee access</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     </View>
   );
@@ -603,6 +621,22 @@ const simpleStyles = StyleSheet.create({
     color: "#000000",
     fontWeight: "700",
     fontFamily: Config.fontFamilys?.Poppins_Bold || "System",
+  },
+  staffLinkContainer: {
+    marginTop: heightToDp(1),
+    paddingVertical: heightToDp(1),
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  staffLinkText: {
+    fontSize: widthToDp(3.5),
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  staffLinkSubText: {
+    fontSize: widthToDp(3),
+    color: "#6b7280",
   },
   pinContainer: {
   flexDirection: "row",

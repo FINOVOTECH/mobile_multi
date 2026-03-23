@@ -1,4 +1,5 @@
 export enum ScreenName {
+  HybridWeb = 'HybridWeb',
   Home = 'Home',
   Profile = 'Profile',
   SipScheme = 'SipScheme',

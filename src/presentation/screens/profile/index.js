@@ -124,7 +124,7 @@ export default function Profile({ }) {
       const clientCode = await getData(Config.clientCode);
       const cleanToken = rawToken ? rawToken.replace(/"/g, '') : '';
       const response = await fetch(
-        `${Config.baseUrl}/api/client/registration/mandate/history`,
+        `${Config.getBaseUrl()}/api/client/registration/mandate/history`,
         {
           method: 'GET',
           headers: {
