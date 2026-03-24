@@ -301,16 +301,17 @@ const toTenantUrl = (tenantId = "", path = "/") => {
     } else {
       base = normalizedTemplateBase;
     }
-  } else if (brokerBase) {
-    base = brokerBase;
   } else if (liveTemplateBase) {
     base = liveTemplateBase;
+  } else if (brokerBase) {
+    base = brokerBase;
   } else {
     base = normalizedTemplateBase;
   }
 
   base = normalizeAndroidLocalhostSubdomain(base);
-  return normalizeLaunchUrlForDevice(withTenantQuery(base, t, path));
+  const launchUrl = withTenantQuery(base, t, path);
+  return normalizeLaunchUrlForDevice(ensureTenantQuery(launchUrl, t));
 };
 
 const normalizeLaunchUrlForDevice = (rawUrl = "") => {
