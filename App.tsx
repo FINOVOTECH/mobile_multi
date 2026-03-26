@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LogBox, View } from "react-native";
+import { ActivityIndicator, Image, LogBox, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
@@ -58,8 +58,38 @@ function App() {
   const RootNavigator = navigationModule?.default;
   const navigationRef = navigationModule?.navigationRef;
 
+  const appName =
+    String(Config?.RuntimeTenant?.appName || Config?.RuntimeTenant?.brokerName || "")
+      .trim() || "Mutual Fund Desk";
+  const logoUri = String(Config?.RuntimeTenant?.logoUrl || "").trim();
+
   if (!appIsReady || !RootNavigator || !navigationRef) {
-    return <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />;
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#FFFFFF",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 24,
+        }}
+      >
+        {logoUri ? (
+          <Image
+            source={{ uri: logoUri }}
+            resizeMode="contain"
+            style={{ width: 76, height: 76, borderRadius: 14, marginBottom: 14 }}
+          />
+        ) : null}
+        <Text style={{ fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 6 }}>
+          {appName}
+        </Text>
+        <Text style={{ fontSize: 13, color: "#6B7280", marginBottom: 12 }}>
+          Initializing secure session...
+        </Text>
+        <ActivityIndicator size="small" color={Config.Colors.primary} />
+      </View>
+    );
   }
 
   const LoadingView = () => <HandAnimation />;

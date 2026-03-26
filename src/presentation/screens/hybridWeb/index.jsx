@@ -4,6 +4,7 @@ import {
   AppState,
   Alert,
   BackHandler,
+  Linking,
   Modal,
   Platform,
   Switch,
@@ -25,6 +26,8 @@ const rnBiometrics = new ReactNativeBiometrics({
 });
 const BIOMETRIC_LOGIN_STORAGE_KEY = "mobile.biometric.quickLogin.v1";
 const TENANT_ID_CACHE_KEY = "tenant_id_cache_v1";
+const HYBRID_LAST_URL_CACHE_KEY = "hybrid.last.stable.url.v1";
+const HYBRID_RUNTIME_METRICS_KEY = "hybrid.runtime.metrics.v1";
 
 const MOBILE_VIEWPORT_FIX_SCRIPT = `
   (function () {
@@ -196,11 +199,19 @@ const withTenantQuery = (base = "", tenant = "", path = "/") => {
     .trim()
     .toLowerCase();
   if (!base || !t) return "";
-  const p = path.startsWith("/") ? path : `/${path}`;
-  const baseWithPath = /\/$/.test(base) ? base.slice(0, -1) : base;
-  const url = `${baseWithPath}${p === "/" ? "" : p}`;
-  const joiner = url.includes("?") ? "&" : "?";
-  return `${url}${joiner}tenant=${encodeURIComponent(t)}`;
+  try {
+    const parsed = new URL(base);
+    const p = path.startsWith("/") ? path : `/${path}`;
+    if (p && p !== "/") parsed.pathname = p;
+    parsed.searchParams.set("tenant", t);
+    return parsed.toString();
+  } catch (_) {
+    const p = path.startsWith("/") ? path : `/${path}`;
+    const baseWithPath = /\/$/.test(base) ? base.slice(0, -1) : base;
+    const url = `${baseWithPath}${p === "/" ? "" : p}`;
+    const joiner = url.includes("?") ? "&" : "?";
+    return `${url}${joiner}tenant=${encodeURIComponent(t)}`;
+  }
 };
 
 const ensureTenantQuery = (rawUrl = "", tenant = "") => {
@@ -303,6 +314,9 @@ const toTenantUrl = (tenantId = "", path = "/") => {
     }
   } else if (liveTemplateBase) {
     base = liveTemplateBase;
+  } else if (normalizedTemplateBase) {
+    // In LIVE mode prefer product tenant host template over broker marketing site.
+    base = normalizedTemplateBase;
   } else if (brokerBase) {
     base = brokerBase;
   } else {
@@ -397,6 +411,68 @@ const isLikelyPostLoginUrl = (rawUrl = "") => {
   ].some((token) => url.includes(token));
 };
 
+const TRUSTED_WEBVIEW_HOST_PATTERNS = [
+  /\.finovo\.tech$/i,
+  /\.bsestarmf\.in$/i,
+  /\.nseindia\.com$/i,
+  /\.billdesk\.com$/i,
+  /\.razorpay\.com$/i,
+  /\.cashfree\.com$/i,
+  /\.payu\.in$/i,
+  /\.paytm\.com$/i,
+  /\.phonepe\.com$/i,
+  /\.hdfcbank\.com$/i,
+  /\.icicibank\.com$/i,
+  /\.axisbank\.com$/i,
+  /\.kotak\.com$/i,
+  /\.yesbank\.in$/i,
+  /\.sbi\.co\.in$/i,
+  /\.onlinesbi\.sbi$/i,
+  /\.idfcfirstbank\.com$/i,
+  /\.federalbank\.co\.in$/i,
+];
+
+const isTrustedWebViewHost = (hostname = "") => {
+  const host = String(hostname || "").toLowerCase();
+  if (!host) return false;
+  return TRUSTED_WEBVIEW_HOST_PATTERNS.some((pattern) => pattern.test(host));
+};
+
+const isSafeInWebViewUrl = (rawUrl = "", appHost = "") => {
+  const value = String(rawUrl || "").trim();
+  if (!value) return true;
+  if (
+    value === "about:blank" ||
+    value.startsWith("javascript:") ||
+    value.startsWith("data:") ||
+    value.startsWith("blob:")
+  ) {
+    return true;
+  }
+  try {
+    const parsed = new URL(value);
+    const protocol = String(parsed.protocol || "").toLowerCase();
+    if (protocol !== "http:" && protocol !== "https:") return false;
+    const host = String(parsed.host || "").toLowerCase();
+    const hostname = String(parsed.hostname || "").toLowerCase();
+    const app = String(appHost || "").toLowerCase();
+    if (app && host === app) return true;
+    if (isTrustedWebViewHost(hostname)) return true;
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "10.0.2.2" ||
+      hostname.endsWith(".localhost")
+    ) {
+      return true;
+    }
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return true;
+    return false;
+  } catch (_) {
+    return true;
+  }
+};
+
 const ROLE_LABEL = {
   TENANT_ADMIN: "Broker",
   EMPLOYEE: "Employee",
@@ -444,8 +520,36 @@ const buildApiErrorMessage = ({
   return status ? `[${status}] ${message}` : message;
 };
 
+const parseClosePatterns = (input = []) => {
+  const rows = Array.isArray(input) ? input : [];
+  const normalized = rows
+    .map((row) => String(row || "").trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 12);
+  if (!normalized.length) {
+    return ["success", "failure", "response", "callback", "status", "redirect"];
+  }
+  return normalized;
+};
+
+const buildExternalResultInjectScript = (payload = {}) => {
+  const safe = JSON.stringify(payload || {});
+  return `(function(){try{var d=${safe};window.dispatchEvent(new CustomEvent("mobile:external-flow-result",{detail:d}));}catch(_){}})();true;`;
+};
+
 export default function HybridWeb() {
   const webRef = useRef(null);
+  const pendingExternalReturnRef = useRef(false);
+  const lastExternalUrlRef = useRef("");
+  const renderProcessRestartCountRef = useRef(0);
+  const perfRef = useRef({
+    bootAt: Date.now(),
+    firstLoadAt: 0,
+    resumeCount: 0,
+    reloadCount: 0,
+    renderProcessGoneCount: 0,
+    deepLinkReturnCount: 0,
+  });
   const [persistedTenantCode, setPersistedTenantCode] = useState("");
   const buildTenantCode = String(Config?.defaultTenantId || "")
     .trim()
@@ -469,6 +573,7 @@ export default function HybridWeb() {
   const [authBusy, setAuthBusy] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(initialTenantUrl !== "about:blank");
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState("");
   const [currentUrl, setCurrentUrl] = useState(initialTenantUrl);
   const [showStaffCTA, setShowStaffCTA] = useState(true);
@@ -478,6 +583,16 @@ export default function HybridWeb() {
   const [biometricBusy, setBiometricBusy] = useState(false);
   const [biometricSession, setBiometricSession] = useState(null);
   const [enableBiometricLogin, setEnableBiometricLogin] = useState(true);
+  const [externalFlow, setExternalFlow] = useState({
+    visible: false,
+    title: "External Page",
+    mode: "URL",
+    url: "",
+    html: "",
+    closePatterns: parseClosePatterns([]),
+    source: "NATIVE",
+    startedAt: 0,
+  });
   const appStateRef = useRef(AppState.currentState);
   const forceClientOnly = Config?.hybridClientOnlyApp === true;
   const mobileAccess = Config?.RuntimeTenant?.mobileAccess || {};
@@ -492,6 +607,13 @@ export default function HybridWeb() {
     .toUpperCase();
   const hasTenant = !!tenantCode;
   const url = useMemo(() => toTenantUrl(tenantCode), [tenantCode]);
+  const appHost = useMemo(() => {
+    try {
+      return new URL(String(currentUrl || "")).host || "";
+    } catch (_) {
+      return "";
+    }
+  }, [currentUrl]);
 
   // Get accurate native safe area insets (e.g. Android gesture bar, iPhone notch).
   // We inject these into the WebView as CSS variables so the web layout handles
@@ -674,6 +796,7 @@ export default function HybridWeb() {
     }
     setCurrentUrl(nextUrl);
     setLoading(true);
+    setHasLoadedOnce(false);
     setShowAuthModal(false);
     if (normalizedRole === "CLIENT") {
       setShowStaffCTA(false);
@@ -684,18 +807,177 @@ export default function HybridWeb() {
     }
   };
 
+  const persistRuntimeMetrics = () => {
+    const payload = {
+      ...perfRef.current,
+      tenantId: resolveTenantCode(),
+      updatedAt: new Date().toISOString(),
+    };
+    try {
+      global.__HYBRID_RUNTIME_METRICS__ = payload;
+    } catch (_) {}
+    AsyncStorage.setItem(HYBRID_RUNTIME_METRICS_KEY, JSON.stringify(payload)).catch(
+      () => {}
+    );
+  };
+
+  const emitExternalFlowResult = (payload = {}) => {
+    const message = {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    };
+    if (webRef.current) {
+      webRef.current.injectJavaScript(buildExternalResultInjectScript(message));
+    }
+  };
+
+  const closeExternalFlow = (payload = {}) => {
+    setExternalFlow((prev) => ({ ...prev, visible: false, url: "", html: "" }));
+    emitExternalFlowResult({
+      type: "EXTERNAL_FLOW_RESULT",
+      ...payload,
+    });
+  };
+
+  const openExternalFlow = ({
+    title = "External Page",
+    url: targetUrl = "",
+    html = "",
+    source = "NATIVE",
+    closePatterns = [],
+  } = {}) => {
+    const safeUrl = String(targetUrl || "").trim();
+    const safeHtml = String(html || "").trim();
+    if (!safeUrl && !safeHtml) return false;
+
+    const lower = safeUrl.toLowerCase();
+    const isNativeScheme =
+      lower.startsWith("intent:") ||
+      lower.startsWith("upi:") ||
+      lower.startsWith("tel:") ||
+      lower.startsWith("mailto:") ||
+      lower.startsWith("sms:") ||
+      lower.startsWith("whatsapp:");
+
+    if (isNativeScheme) {
+      pendingExternalReturnRef.current = true;
+      lastExternalUrlRef.current = safeUrl;
+      Linking.openURL(safeUrl).catch(() => {
+        setError("Unable to open external page.");
+      });
+      return true;
+    }
+
+    pendingExternalReturnRef.current = true;
+    lastExternalUrlRef.current = safeUrl;
+    setExternalFlow({
+      visible: true,
+      title: String(title || "External Page"),
+      mode: safeHtml ? "HTML" : "URL",
+      url: safeUrl,
+      html: safeHtml,
+      closePatterns: parseClosePatterns(closePatterns),
+      source,
+      startedAt: Date.now(),
+    });
+    return true;
+  };
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const tenantKey = resolveTenantCode();
+        const raw = await AsyncStorage.getItem(HYBRID_LAST_URL_CACHE_KEY);
+        const cached = parseJsonSafely(raw);
+        const cachedTenant = String(cached?.tenantId || "")
+          .trim()
+          .toUpperCase();
+        const cachedUrl = String(cached?.url || "").trim();
+        if (!active || !cachedUrl || !tenantKey) return;
+        if (cachedTenant !== tenantKey) return;
+        setCurrentUrl((prev) => {
+          if (prev && prev !== "about:blank") return prev;
+          return cachedUrl;
+        });
+      } catch (_) {
+        // no-op
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleDeepLinkReturn = (event = {}) => {
+      const deepUrl = String(event?.url || "").trim();
+      if (!deepUrl) return;
+      perfRef.current.deepLinkReturnCount += 1;
+      persistRuntimeMetrics();
+      closeExternalFlow({
+        status: "RETURNED",
+        source: "DEEPLINK",
+        url: deepUrl,
+      });
+    };
+
+    Linking.getInitialURL()
+      .then((urlFromLaunch) => {
+        if (urlFromLaunch) handleDeepLinkReturn({ url: urlFromLaunch });
+      })
+      .catch(() => {});
+
+    const sub = Linking.addEventListener("url", handleDeepLinkReturn);
+    return () => {
+      try {
+        sub?.remove?.();
+      } catch (_) {}
+    };
+  }, []);
+
   useEffect(() => {
     const nextUrl = url || "about:blank";
     const freshUrl = nextUrl;
     setCurrentUrl((prev) => (prev === freshUrl ? prev : freshUrl));
     if (nextUrl !== "about:blank") {
       setLoading(true);
+      setHasLoadedOnce(false);
     }
   }, [url]);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (nextState) => {
+      const prevState = appStateRef.current;
       appStateRef.current = nextState;
+      if (
+        (prevState === "background" || prevState === "inactive") &&
+        nextState === "active"
+      ) {
+        perfRef.current.resumeCount += 1;
+        persistRuntimeMetrics();
+      }
+      if (
+        (prevState === "background" || prevState === "inactive") &&
+        nextState === "active" &&
+        pendingExternalReturnRef.current
+      ) {
+        const lastExternal = lastExternalUrlRef.current;
+        pendingExternalReturnRef.current = false;
+        setTimeout(() => {
+          if (!webRef.current) return;
+          webRef.current.injectJavaScript(
+            `(function(){try{window.dispatchEvent(new CustomEvent("mobile:return-from-external",{detail:{url:${JSON.stringify(
+              lastExternal
+            )}}}));window.dispatchEvent(new Event("focus"));}catch(e){}})();true;`
+          );
+          emitExternalFlowResult({
+            status: "RETURNED",
+            source: "APP_STATE",
+            url: lastExternal,
+          });
+        }, 280);
+      }
     });
     return () => sub.remove();
   }, []);
@@ -770,6 +1052,7 @@ export default function HybridWeb() {
     setCurrentUrl(toTenantUrl(next));
     setError("");
     setLoading(true);
+    setHasLoadedOnce(false);
     if (roleMode === "CLIENT") {
       setShowAuthModal(false);
       setShowStaffCTA(false);
@@ -794,12 +1077,14 @@ export default function HybridWeb() {
       if (nextTenant) {
         setCurrentUrl(toTenantUrl(nextTenant, "/"));
         setLoading(true);
+        setHasLoadedOnce(false);
       }
       return;
     }
 
     setCurrentUrl("about:blank");
     setLoading(false);
+    setHasLoadedOnce(false);
   };
 
   const sendOtpForRole = async () => {
@@ -1006,7 +1291,40 @@ export default function HybridWeb() {
       const msg = JSON.parse(raw);
       const nextTenant = resolveTenantCode();
 
-      if (msg.type === "BIOMETRIC_ENABLE") {
+      if (msg.type === "OPEN_EXTERNAL_FLOW") {
+        const payload = msg?.payload && typeof msg.payload === "object" ? msg.payload : {};
+        const opened = openExternalFlow({
+          title: String(payload?.title || "External Page"),
+          url: String(payload?.url || ""),
+          source: "WEB_BRIDGE_EXTERNAL",
+          closePatterns: payload?.closePatterns || [],
+        });
+        if (!opened) {
+          emitExternalFlowResult({
+            type: "EXTERNAL_FLOW_RESULT",
+            status: "OPEN_FAILED",
+            source: "WEB_BRIDGE_EXTERNAL",
+            url: String(payload?.url || ""),
+          });
+        }
+      } else if (msg.type === "OPEN_PAYMENT_FLOW") {
+        const payload = msg?.payload && typeof msg.payload === "object" ? msg.payload : {};
+        const opened = openExternalFlow({
+          title: String(payload?.title || "Payment Gateway"),
+          url: String(payload?.url || ""),
+          html: String(payload?.html || ""),
+          source: "WEB_BRIDGE_PAYMENT",
+          closePatterns: payload?.closePatterns || ["success", "failure", "response", "callback", "status"],
+        });
+        if (!opened) {
+          emitExternalFlowResult({
+            type: "EXTERNAL_FLOW_RESULT",
+            status: "OPEN_FAILED",
+            source: "WEB_BRIDGE_PAYMENT",
+            url: String(payload?.url || ""),
+          });
+        }
+      } else if (msg.type === "BIOMETRIC_ENABLE") {
         // Client wants to enable biometric quick-login
         // msg.payload = { token, clientCode, identity }
         if (!biometricAvailable) {
@@ -1069,18 +1387,16 @@ export default function HybridWeb() {
   };
 
   // ── Client biometric quick-login on app start ──
-  const pendingBioInjectRef = useRef(null);
-
   useEffect(() => {
     if (!biometricAvailable) return;
     if (!forceClientOnly) return;
     let active = true;
     (async () => {
+      const nextTenant = resolveTenantCode();
       try {
-        const nextTenant = resolveTenantCode();
         if (!nextTenant) return;
-        const raw = await AsyncStorage.getItem(BIOMETRIC_LOGIN_STORAGE_KEY);
-        const parsed = parseBiometricStore(raw);
+        const storedRaw = await AsyncStorage.getItem(BIOMETRIC_LOGIN_STORAGE_KEY);
+        const parsed = parseBiometricStore(storedRaw);
         const entry = parsed?.[nextTenant];
         if (!entry?.biometricLoginToken || entry?.role !== "CLIENT") return;
         if (!active) return;
@@ -1091,27 +1407,47 @@ export default function HybridWeb() {
         });
         if (!promptResult?.success || !active) return;
 
-        // Prepare session injection script — will run as soon as WebView is ready
-        const token = entry.biometricLoginToken;
-        const identity = entry.identity || "";
-        const injectSession = `
-          (function(){
-            try {
-              sessionStorage.setItem('token', ${JSON.stringify(token)});
-              sessionStorage.setItem('clientCode', ${JSON.stringify(identity)});
-              if (window.location.pathname === '/' || window.location.pathname === '/login') {
-                window.location.href = window.location.origin + '/home' + window.location.search;
-              }
-            } catch(e) {}
-          })();true;
-        `;
-        // Try injecting immediately if WebView is already loaded
-        if (webRef.current) {
-          webRef.current.injectJavaScript(injectSession);
+        const res = await fetch(
+          `${resolveTenantApiBaseForAuth()}/api/v1/tenant/${encodeURIComponent(
+            nextTenant
+          )}/mobile-webview-auth/biometric-login`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              role: "CLIENT",
+              biometricLoginToken: entry.biometricLoginToken,
+            }),
+          }
+        );
+        const responseRaw = await res.text();
+        const data = parseJsonSafely(responseRaw);
+        if (!res.ok || !data?.success || !data?.launchUrl) {
+          throw new Error(
+            buildApiErrorMessage({
+              fallback: "Biometric login failed",
+              status: res.status,
+              data,
+              raw: responseRaw,
+            })
+          );
         }
-        // Also store it so onLoadEnd can inject if WebView hasn't loaded yet
-        pendingBioInjectRef.current = injectSession;
-      } catch (_) {}
+
+        applyLaunchUrl({ role: "CLIENT", launchUrl: data.launchUrl });
+
+        if (data?.biometricLoginToken) {
+          await upsertBiometricSession(nextTenant, {
+            role: "CLIENT",
+            identity: entry.identity || "",
+            biometricLoginToken: data.biometricLoginToken,
+          });
+        }
+      } catch (e) {
+        const msg = String(e?.message || "");
+        if (/invalid biometric token|token|disabled|mismatch|expired/i.test(msg)) {
+          await removeBiometricSession(nextTenant);
+        }
+      }
     })();
     return () => { active = false; };
   }, [biometricAvailable, forceClientOnly]);
@@ -1126,15 +1462,13 @@ export default function HybridWeb() {
         javaScriptEnabled
         domStorageEnabled
         cacheEnabled
-        cacheMode={
-          Platform.OS === "android" ? "LOAD_DEFAULT" : undefined
-        }
-        androidLayerType="none"
+        cacheMode={Platform.OS === "android" ? "LOAD_CACHE_ELSE_NETWORK" : undefined}
+        androidLayerType="hardware"
         keyboardDisplayRequiresUserAction={false}
         sharedCookiesEnabled
         thirdPartyCookiesEnabled
         setSupportMultipleWindows={false}
-        startInLoadingState
+        startInLoadingState={false}
         renderLoading={() => (
           <View style={styles.webviewLoading}>
             <ActivityIndicator size="large" color={Config.Colors.primary} />
@@ -1155,6 +1489,16 @@ export default function HybridWeb() {
         onNavigationStateChange={(navState) => {
           setCanGoBack(!!navState?.canGoBack);
           const nextUrl = String(navState?.url || "");
+          if (/^https?:\/\//i.test(nextUrl)) {
+            const payload = {
+              tenantId: resolveTenantCode(),
+              url: nextUrl,
+              updatedAt: new Date().toISOString(),
+            };
+            AsyncStorage.setItem(HYBRID_LAST_URL_CACHE_KEY, JSON.stringify(payload)).catch(
+              () => {}
+            );
+          }
           if (roleMode === "CLIENT" && isLikelyPostLoginUrl(nextUrl)) {
             setClientSessionStarted(true);
             setShowStaffCTA(false);
@@ -1162,18 +1506,46 @@ export default function HybridWeb() {
         }}
         onLoadStart={() => {
           setError("");
-          setLoading(true);
+          if (hasLoadedOnce) {
+            perfRef.current.reloadCount += 1;
+            persistRuntimeMetrics();
+          }
+          if (!hasLoadedOnce) setLoading(true);
+        }}
+        onShouldStartLoadWithRequest={(request) => {
+          const reqUrl = String(request?.url || "");
+          if (!reqUrl) return false;
+          if (isSafeInWebViewUrl(reqUrl, appHost)) return true;
+
+          const lower = reqUrl.toLowerCase();
+          const isNativeScheme =
+            lower.startsWith("intent:") ||
+            lower.startsWith("upi:") ||
+            lower.startsWith("tel:") ||
+            lower.startsWith("mailto:") ||
+            lower.startsWith("sms:") ||
+            lower.startsWith("whatsapp:");
+
+          const opened = openExternalFlow({
+            title: "External Page",
+            url: reqUrl,
+            source: isNativeScheme ? "NATIVE_SCHEME" : "BLOCKED_NAV",
+            closePatterns: ["success", "failure", "response", "callback", "status"],
+          });
+          if (!opened) setError("Unable to open external page.");
+          return false;
         }}
         onLoadProgress={(e) => {
           if ((e?.nativeEvent?.progress || 0) > 0.4) setLoading(false);
         }}
         onLoadEnd={() => {
           setLoading(false);
-          // Inject pending biometric session as soon as page finishes loading
-          if (pendingBioInjectRef.current && webRef.current) {
-            webRef.current.injectJavaScript(pendingBioInjectRef.current);
-            pendingBioInjectRef.current = null;
+          setHasLoadedOnce(true);
+          renderProcessRestartCountRef.current = 0;
+          if (!perfRef.current.firstLoadAt) {
+            perfRef.current.firstLoadAt = Date.now();
           }
+          persistRuntimeMetrics();
         }}
         onHttpError={(e) => {
           setLoading(false);
@@ -1184,8 +1556,21 @@ export default function HybridWeb() {
           setError(statusCode ? `[${statusCode}] ${description}` : description);
         }}
         onRenderProcessGone={() => {
+          perfRef.current.renderProcessGoneCount += 1;
+          persistRuntimeMetrics();
+          // Auto-recover once/twice silently to avoid user-facing retry friction.
+          if (renderProcessRestartCountRef.current < 2) {
+            renderProcessRestartCountRef.current += 1;
+            setError("");
+            setLoading(true);
+            setTimeout(() => {
+              setCurrentUrl((prev) => prev || toTenantUrl(resolveTenantCode()) || "about:blank");
+              webRef.current?.reload();
+            }, 260);
+            return;
+          }
           setLoading(false);
-          setError("Web engine was restarted by Android. Tap Retry.");
+          setError("Android web engine restarted repeatedly. Please reopen the app.");
         }}
         onError={(e) => {
           setLoading(false);
@@ -1196,6 +1581,90 @@ export default function HybridWeb() {
         }}
         onMessage={handleWebViewMessage}
       />
+
+      <Modal
+        visible={externalFlow.visible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() =>
+          closeExternalFlow({
+            status: "CLOSED_BY_USER",
+            source: externalFlow.source || "NATIVE_MODAL",
+            url: externalFlow.url || "",
+          })
+        }
+      >
+        <View style={styles.externalFlowRoot}>
+          <View style={styles.externalFlowHeader}>
+            <Text style={styles.externalFlowTitle}>
+              {externalFlow.title || "External Page"}
+            </Text>
+            <TouchableOpacity
+              style={styles.externalFlowClose}
+              onPress={() =>
+                closeExternalFlow({
+                  status: "CLOSED_BY_USER",
+                  source: externalFlow.source || "NATIVE_MODAL",
+                  url: externalFlow.url || "",
+                })
+              }
+            >
+              <Text style={styles.externalFlowCloseTxt}>X</Text>
+            </TouchableOpacity>
+          </View>
+          <WebView
+            source={
+              externalFlow.mode === "HTML"
+                ? { html: externalFlow.html || "" }
+                : { uri: externalFlow.url || "about:blank" }
+            }
+            javaScriptEnabled
+            domStorageEnabled
+            sharedCookiesEnabled
+            thirdPartyCookiesEnabled
+            startInLoadingState
+            onShouldStartLoadWithRequest={(request) => {
+              const reqUrl = String(request?.url || "");
+              if (!reqUrl) return false;
+              const lower = reqUrl.toLowerCase();
+              const isNativeScheme =
+                lower.startsWith("intent:") ||
+                lower.startsWith("upi:") ||
+                lower.startsWith("tel:") ||
+                lower.startsWith("mailto:") ||
+                lower.startsWith("sms:") ||
+                lower.startsWith("whatsapp:");
+              if (isNativeScheme) {
+                lastExternalUrlRef.current = reqUrl;
+                pendingExternalReturnRef.current = true;
+                Linking.openURL(reqUrl).catch(() => {});
+                return false;
+              }
+              return true;
+            }}
+            onNavigationStateChange={(navState) => {
+              const nextUrl = String(navState?.url || "").toLowerCase();
+              const shouldClose = (externalFlow.closePatterns || []).some((pattern) =>
+                nextUrl.includes(String(pattern || "").toLowerCase())
+              );
+              if (shouldClose) {
+                closeExternalFlow({
+                  status: "COMPLETED",
+                  source: externalFlow.source || "NATIVE_MODAL",
+                  url: String(navState?.url || ""),
+                });
+              }
+            }}
+            onError={() =>
+              closeExternalFlow({
+                status: "ERROR",
+                source: externalFlow.source || "NATIVE_MODAL",
+                url: externalFlow.url || "",
+              })
+            }
+          />
+        </View>
+      </Modal>
 
       {!hasTenant ? (
         <View style={styles.emptyState}>
@@ -1500,6 +1969,41 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
+  },
+  externalFlowRoot: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
+  externalFlowHeader: {
+    height: 52,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#ffffff",
+  },
+  externalFlowTitle: {
+    color: "#111827",
+    fontSize: 15,
+    fontWeight: "700",
+    flex: 1,
+  },
+  externalFlowClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  externalFlowCloseTxt: {
+    color: "#111827",
+    fontSize: 12,
+    fontWeight: "800",
   },
   input: {
     borderWidth: 1,
