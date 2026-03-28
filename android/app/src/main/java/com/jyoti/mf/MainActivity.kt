@@ -1,4 +1,4 @@
-package com.mfjyoti.mf
+package com.motisons.mf
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

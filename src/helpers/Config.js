@@ -43,7 +43,7 @@ const DEV_API_BASE_URL = (() => {
   return "http://localhost:8000";
 })();
 
-const PROD_API_BASE_URL = "http://localhost:8048";
+const PROD_API_BASE_URL = "http://localhost:8000";
 
 const DEV_WEB_HOST_TEMPLATE = (() => {
   if (Platform.OS === "ios") return "http://localhost:5174";
@@ -52,7 +52,7 @@ const DEV_WEB_HOST_TEMPLATE = (() => {
   return "http://localhost:5174";
 })();
 
-const PROD_WEB_HOST_TEMPLATE = "http://localhost:5174";
+const PROD_WEB_HOST_TEMPLATE = "http://localhost:5173/?tenant=MOTISONS";
 const WEB_FALLBACK_URL = "https://mf.finovo.tech";
 
 // ─── Runtime-overridable URLs ────────────────────────────────────────────────
@@ -74,7 +74,7 @@ export const tenantBrandingBaseUrl = _defaults.baseUrl;
 export const hybridWebHostTemplate = _defaults.hybridWebHostTemplate;
 export const hybridWebFallbackUrl = WEB_FALLBACK_URL;
 export const useHybridApp = true;
-export const defaultTenantId = "INDUS";
+export const defaultTenantId = "MOTISONS";
 export const hybridClientOnlyApp = true;
 export const store_key_login_details = "token"
 export const store_key_login_role = "loginRole"
