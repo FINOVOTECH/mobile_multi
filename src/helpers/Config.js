@@ -43,7 +43,9 @@ const DEV_API_BASE_URL = (() => {
   return "http://localhost:8000";
 })();
 
-const PROD_API_BASE_URL = "http://localhost:8000";
+// Generic production-safe fallbacks for source control.
+// White-label export scripts can rewrite these per tenant/build at release time.
+const PROD_API_BASE_URL = "https://mf.finovo.tech";
 
 const DEV_WEB_HOST_TEMPLATE = (() => {
   if (Platform.OS === "ios") return "http://localhost:5174";
@@ -52,8 +54,8 @@ const DEV_WEB_HOST_TEMPLATE = (() => {
   return "http://localhost:5174";
 })();
 
-const PROD_WEB_HOST_TEMPLATE = "http://localhost:5173/?tenant=MOTISONS";
-const WEB_FALLBACK_URL = "https://mf.finovo.tech";
+const PROD_WEB_HOST_TEMPLATE = "https://{tenant}.finovo.tech";
+const WEB_FALLBACK_URL = "https://mf.jupitrwealth.com";
 
 // ─── Runtime-overridable URLs ────────────────────────────────────────────────
 // These start with the build-time defaults but can be overridden at runtime
